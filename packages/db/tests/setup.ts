@@ -8,10 +8,13 @@ const execAsync = promisify(exec)
 beforeAll(async () => {
   // Set test environment
   process.env.NODE_ENV = 'test'
-  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/jobsphere_test'
+  // Keep a caller-supplied local test URL (CI service container, docker-compose.test
+  // on :5433); fall back to the historical default otherwise.
+  process.env.DATABASE_URL ||= 'postgresql://test:test@localhost:5432/jobsphere_test'
 
-  // Run migrations
-  await execAsync('pnpm prisma migrate deploy')
+  // Run migrations. This repo is yarn — `pnpm` here made the whole suite fail
+  // with "This project is configured to use yarn" on any machine that had a DB.
+  await execAsync('yarn prisma migrate deploy')
 
   console.log('✅ Test database initialized')
 })

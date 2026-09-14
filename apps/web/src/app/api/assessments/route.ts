@@ -144,7 +144,9 @@ export const POST = withCsrfProtection<NextRequest>(
                     text: question.text,
                     choices: question.choices || [],
                     correctIndexes: question.correctIndexes || [],
-                    code: question.code,
+                    // The schema field is starterCode; passing `code` made Prisma reject
+                    // every assessment that contained a coding question (500).
+                    starterCode: question.code,
                     language: question.language,
                     skillTag: question.skillTag,
                     points: question.points,

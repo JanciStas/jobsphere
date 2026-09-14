@@ -32,6 +32,24 @@ function redactPii(value: unknown, seen = new WeakSet<object>()): unknown {
   return value
 }
 
+/**
+ * Non-Error throwables (Prisma/Zod issues, plain objects, strings) must still
+ * say something useful. String(obj) says "[object Object]".
+ */
+function describeNonError(value: unknown): unknown {
+  if (value === undefined || value === null) return String(value)
+  if (typeof value === 'object') {
+    const v = value as Record<string, unknown>
+    return {
+      ...(typeof v.name === 'string' ? { name: v.name } : {}),
+      ...(typeof v.message === 'string' ? { message: v.message } : {}),
+      ...(typeof v.code === 'string' ? { code: v.code } : {}),
+      ...(!('message' in v) ? { value: redactPii(v) } : {}),
+    }
+  }
+  return String(value)
+}
+
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development'
 
@@ -56,6 +74,17 @@ class Logger {
   }
 
   error(message: string, error?: Error | unknown, context?: LogContext) {
+    // Two call shapes exist in this codebase: logger.error(msg, err, ctx) and
+    // logger.error(msg, { error: err, ...ctx }). The second one — 101 call sites
+    // at the time of writing — used to hit String(object) and log every failure
+    // as "[object Object]", which is how a month of failing embedding jobs stayed
+    // undiagnosable from production logs. Detect it and unpack, rather than
+    // touch 101 call sites.
+    if (error && !(error instanceof Error) && typeof error === 'object' && 'error' in error) {
+      const { error: inner, ...rest } = error as Record<string, unknown>
+      context = { ...rest, ...context }
+      error = inner
+    }
     const errorContext = {
       ...context,
       ...(error instanceof Error
@@ -63,7 +92,7 @@ class Logger {
             error: error.message,
             stack: error.stack,
           }
-        : { error: String(error) }),
+        : { error: describeNonError(error) }),
     }
     console.error(this.formatMessage('error', message, errorContext))
 

@@ -292,7 +292,7 @@ CLAMAV_PORT=3310
 
 **Rate Limiting** (`apps/web/src/lib/rate-limit.ts`):
 
-- Uses Redis (Upstash) with sliding window algorithm
+- Uses Redis (Upstash) with sliding window algorithm — **v produkcii `KV_REST_API_URL/TOKEN` nie sú nastavené, limiter padá na in-memory fallback, ktorý sa resetuje každým cold startom** (nález 2026-09-14 M2)
 - Presets:
   - `auth`: 5 req/min (login, signup)
   - `api`: 100 req/min (authenticated APIs)
@@ -399,7 +399,7 @@ const t = await getTranslations('JobsPage')
 
 - Framework: Vitest
 - Location: `apps/web/src/lib/__tests__/`
-- Coverage target: 80% lines, functions, statements; 75% branches
+- Coverage prah je **ratchet na nameraných hodnotách** (`apps/web/vitest.config.ts`: statements 22 / branches 61 / functions 39 / lines 22), nie 80 % — pozri poznámku z 2026-07-29 nižšie
 
 **E2E Tests:**
 
@@ -464,8 +464,8 @@ STRIPE_SECRET_KEY         # Billing
 ### Semantic Search
 
 - Uses pgvector extension for vector similarity
-- Embeddings stored in `Candidate.cvEmbedding` and `Job.embedding` (float array)
-- Generate embeddings via `embedding.worker.ts`
+- Embeddings stored in `ResumeSection.embeddingVector` and `Job.embedding` (pgvector `Unsupported("vector")`; HNSW indexy existujú len v SQL migrácii)
+- Generate embeddings via `embedding.worker.ts` (queue path) alebo hodinový backfill `/api/cron/embeddings` (Vercel Cron — jediná cesta, ktorá v produkcii reálne beží)
 - Search implementation: `apps/web/src/lib/semantic-search.ts`
 
 ### Email System
@@ -510,7 +510,7 @@ All 30+ incomplete features have been completed across 5 implementation phases.
 **Email Sequences & Assessments:**
 
 - ✅ Automated email sequences with smart conditions (stage_changed, replied, opened)
-- ✅ Condition evaluation using EmailEvent tracking - `apps/workers/src/workers/emailSequences.ts`
+- ✅ Condition evaluation using EmailEvent tracking - `apps/web/src/workers/email-sequence.worker.ts` (`apps/workers/` je mimo workspaces a mŕtve od PR #12)
 - ✅ Assessment reminder emails with candidate notifications
 - ✅ Worker-based email sending with retry logic
 
@@ -540,11 +540,11 @@ All 30+ incomplete features have been completed across 5 implementation phases.
 
 **BullMQ Cron Jobs:**
 
-- ✅ Replaced node-cron with BullMQ repeatable jobs - `apps/web/src/lib/cron.ts`
+- ⚠️ BullMQ repeatable jobs (`apps/web/src/lib/cron.ts`) **nikdy v produkcii nebežali** — Vercel nemá worker proces. Od 2026-08-14 beží plánovaná práca cez **Vercel Cron** (`vercel.json` → `/api/cron/{email-sequences,assessment-reminders,retention,embeddings}`), ktorý volá tie isté procesory cez `JobLike`
 - ✅ Assessment reminders: Daily at 9 AM UTC
 - ✅ Email sequences: Every 15 minutes
 - ✅ Redis-backed persistence with automatic retry
-- Call `initializeCronJobs()` on worker startup
+- `initializeCronJobs()` je relevantné len pre samostatný worker proces (`yarn workers`), ktorý v produkcii neexistuje
 
 **Web Vitals Monitoring:**
 
@@ -592,7 +592,7 @@ yarn build
 
 ### Migration Required
 
-Before deployment, run database migration to add GDPR models:
+Produkcia historicky preberala schému cez `db push`, takže `_prisma_migrations` nemusí sedieť — **`migrate deploy` proti produkcii nepúšťať** (a `db push` by zahodil HNSW indexy). Nové migrácie sú idempotentné a aplikujú sa `prisma db execute --file`. Historický postup (len pre čerstvú DB):
 
 ```bash
 cd packages/db
@@ -604,7 +604,7 @@ npx prisma generate
 
 ### Production Readiness
 
-**Status: 10/10** - All features complete
+**Status (2026-09-14): 70 % pripravenosti** — pozri `PRODUCTION_TEST_REPORT_2026-09-14.md`. Pôvodné „10/10 — All features complete" z januára neplatí: billing bez Stripe kľúčov, E2E 21/300, integrácia 256/371.
 
 - ✅ Email verification & password reset
 - ✅ Email sequences with smart conditions
@@ -646,7 +646,7 @@ Príkazy projektu: typecheck=`yarn typecheck` · lint=`yarn lint` · test=`yarn 
 
 ## Security posture
 
-skóre: **91/100** (po remediácii 2026-07-10; audit odhalil 62, opravené H1 + 5 Medium + 6 Low na vetve `fix/pre-prod-security-remediation`) | otvorené: **0 Critical · 0 High** · 1 Medium deferred (M5 — mŕtve šifrovanie IMAP/SMTP, schema refactor) + scraper consent (legal) | verdikt: **GO** — jadro čisté, build zelený, testy zelené | posledný audit: **2026-07-10** (10-agentový live+kód test) | report: `PRODUCTION_TEST_REPORT.md`
+skóre: **74/100** (sweep 2026-09-14; 10.7.2026 bolo 91 — rozdiel je celý v zostarnutých závislostiach) | otvorené: **0 Critical · 4 High** (H3 mŕtva results route, H4 Stripe env, SEC-1 Next 14.2.35, H6 E2E) · 8 Medium (M1 OAuth tlačidlá, M2 KV, M3 Sentry, M4 integrácia, M9 Trivy, SEC-2, SEC-3, M5 IMAP/SMTP deferred) · 6 Low | verdikt: **GO s podmienkami** — env kľúče do produkcie + results route pred marketingom | posledný test: **2026-09-14** (7 oblastí, vážené 70 %) | report: `PRODUCTION_TEST_REPORT_2026-09-14.md`
 
 > Predošlá baseline (100/100, 2026-06-29): `bezpecnostny-audit/SECURITY_REPORT_2026-06-29.md` · tracking: `bezpecnostny-audit/findings.json`. M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
 

@@ -4,6 +4,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   reactStrictMode: true,
   swcMinify: true,
   transpilePackages: ['@jobsphere/db'],

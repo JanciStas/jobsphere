@@ -88,5 +88,223 @@
     "status": "fixed",
     "summary": "Imported the deprecated @/lib/db re-export instead of @/lib/prisma. Switched to @/lib/prisma.",
     "fixedAt": "2026-06-29"
+  },
+  {
+    "id": "2026-07-H1",
+    "severity": "High",
+    "category": "B - AuthN/AuthZ",
+    "file": "api/email/oauth/{gmail,microsoft}/route.ts",
+    "status": "fixed",
+    "summary": "E-mail OAuth POST endpointy ukladali tokeny v plaintext (obchádzali AES-256-GCM).",
+    "source": "PRODUCTION_TEST_REPORT.md",
+    "fixedAt": "2026-07-10"
+  },
+  {
+    "id": "2026-07-M1",
+    "severity": "Medium",
+    "category": "B - IDOR",
+    "file": "api/user/cvs",
+    "status": "fixed",
+    "summary": "user/cvs vracalo CV iného usera v rámci org — chýbal userId scoping.",
+    "source": "PRODUCTION_TEST_REPORT.md",
+    "fixedAt": "2026-07-10"
+  },
+  {
+    "id": "2026-07-M2",
+    "severity": "Medium",
+    "category": "B - AuthN",
+    "file": "api/upload/photo",
+    "status": "fixed",
+    "summary": "upload/photo bez auth() guardu.",
+    "source": "PRODUCTION_TEST_REPORT.md",
+    "fixedAt": "2026-07-10"
+  },
+  {
+    "id": "2026-07-M4",
+    "severity": "Medium",
+    "category": "E - Web boundary (CSRF)",
+    "file": "api/sequences/[id]/enroll",
+    "status": "fixed",
+    "summary": "POST bez withCsrfProtection.",
+    "source": "PRODUCTION_TEST_REPORT.md",
+    "fixedAt": "2026-07-10"
+  },
+  {
+    "id": "2026-07-M5",
+    "severity": "Medium",
+    "category": "A - Secrets",
+    "file": "EmailAccount (IMAP/SMTP)",
+    "status": "deferred",
+    "summary": "Šifrovanie mail tokenov fakticky mŕtve; IMAP/SMTP heslá plaintext — schema refactor, samostatný PR.",
+    "source": "PRODUCTION_TEST_REPORT.md"
+  },
+  {
+    "id": "2026-07-M6",
+    "severity": "Medium",
+    "category": "UX",
+    "file": "job cards",
+    "status": "fixed",
+    "summary": "Karty ponúk zobrazovali surový markdown.",
+    "source": "PRODUCTION_TEST_REPORT.md",
+    "fixedAt": "2026-07-10"
+  },
+  {
+    "id": "2026-09-H1",
+    "severity": "High",
+    "category": "B - Routing/Auth",
+    "file": "apps/web/src/middleware.ts",
+    "status": "fixed",
+    "summary": "Chránené cesty bez locale (/dashboard…) → nekonečná redirect slučka na /dashboard/login (ERR_TOO_MANY_REDIRECTS), overené live.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-H2",
+    "severity": "High",
+    "category": "D - Validation/Prisma",
+    "file": "apps/web/src/app/api/assessments/route.ts",
+    "status": "fixed",
+    "summary": "POST posielal code namiesto starterCode → Prisma validation error → 500 pre každý assessment s CODE otázkou.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-H3",
+    "severity": "High",
+    "category": "Logic",
+    "file": "[locale]/assessment/[id]/results/[attemptId]/assessment-results-client.tsx",
+    "status": "open",
+    "summary": "Stránka výsledkov volá neexistujúci GET /api/assessments/[id]/results/[attemptId]; výsledky sa nikdy nezobrazia.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-H4",
+    "severity": "High",
+    "category": "A - Config",
+    "file": "Vercel production env",
+    "status": "open",
+    "summary": "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY chýbajú → billing nefunkčný, webhook nemôže overiť podpis.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-SEC-1",
+    "severity": "High",
+    "category": "I - Dependencies",
+    "file": "apps/web/package.json (next 14.2.35)",
+    "status": "open",
+    "summary": "Next.js mimo bezpečnostnej podpory; yarn audit 2 Critical (RCE na Windows hostoch, v Vercel konfigurácii nedosiahnuteľné).",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-M1",
+    "severity": "Medium",
+    "category": "B - AuthN",
+    "file": "[locale]/login/login-client.tsx",
+    "status": "open",
+    "summary": "Google a Apple tlačidlá zobrazené, produkcia má len provider credentials → klik končí chybou NextAuth.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-M2",
+    "severity": "Medium",
+    "category": "J - Rate limiting",
+    "file": "Vercel production env (KV_REST_API_URL/TOKEN)",
+    "status": "open",
+    "summary": "Rate limit v produkcii in-memory, reset pri každom cold starte — kontrola sa tvári, že beží.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-M3",
+    "severity": "Medium",
+    "category": "J - Logging",
+    "file": "apps/web/src/lib/logger.ts + Sentry DSN",
+    "status": "fixed",
+    "summary": "101 volaní logger.error(msg,{error}) logovalo [object Object] (opravené); Sentry DSN v produkcii chýba (open).",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-M5",
+    "severity": "Medium",
+    "category": "QA",
+    "file": "packages/db/tests/setup.ts",
+    "status": "fixed",
+    "summary": "Suita 16 testov nikdy nemohla bežať (pnpm v yarn repe, hardcoded 5432) — fake gate.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-M9",
+    "severity": "Medium",
+    "category": "QA/CI",
+    "file": ".github/workflows/ci.yml (Trivy)",
+    "status": "open",
+    "summary": "Trivy bez exit-code → nikdy nezlyhá. Flip by sčervenal main kvôli Next advisories — rozhodnutie vlastníka.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-SEC-2",
+    "severity": "Medium",
+    "category": "I - Dependencies",
+    "file": "next-auth 4.24.7",
+    "status": "open",
+    "summary": "< 4.24.15: homoglyph bypass v email normalizeri (Email provider); upgrade.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-SEC-3",
+    "severity": "Medium",
+    "category": "I - Dependencies",
+    "file": "@xmldom/xmldom 0.8.11 via mammoth",
+    "status": "open",
+    "summary": "13 High advisories vrátane kvadratickej zložitosti pri parsovaní DOCX.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-SEC-4",
+    "severity": "Low",
+    "category": "E - Web boundary",
+    "file": "apps/web/next.config.js",
+    "status": "fixed",
+    "summary": "X-Powered-By: Next.js unikal — poweredByHeader:false.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-SEC-5",
+    "severity": "Low",
+    "category": "I - Dependencies",
+    "file": "swagger-ui-react 5.x",
+    "status": "open",
+    "summary": "Zraniteľný reťazec js-yaml/minimatch/brace-expansion/lodash; api-docs stránka.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-SEC-6",
+    "severity": "Low",
+    "category": "I - Dependencies",
+    "file": "axios via @sendgrid/mail",
+    "status": "open",
+    "summary": "High transitive s nízkou dosiahnuteľnosťou (SendGrid neaktívny).",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-L3",
+    "severity": "Low",
+    "category": "J - Health",
+    "file": "Vercel production env (HEALTH_CHECK_SECRET)",
+    "status": "open",
+    "summary": "/api/health/db a /api/health/redis vracajú 503 — mŕtve sondy.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-L10",
+    "severity": "Low",
+    "category": "A - Secrets hygiene",
+    "file": ".gitignore",
+    "status": "fixed",
+    "summary": "Playwright auth states (session cookies test userov) neboli gitignored — vzor nekryl apps/web/.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-14"
   }
 ]
