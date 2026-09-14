@@ -21,7 +21,12 @@ export default async function middleware(request: NextRequest) {
 
   if (isProtectedRoute) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
-    const locale = pathname.split('/')[1] || 'sk'
+    // Only trust the first segment as a locale if it IS one. For a locale-less
+    // URL like /dashboard the segment is "dashboard", and redirecting to
+    // /dashboard/login lands back on a protected path — an infinite redirect
+    // loop (ERR_TOO_MANY_REDIRECTS) for every old bookmark and emailed link.
+    const firstSegment = pathname.split('/')[1]
+    const locale = (locales as readonly string[]).includes(firstSegment) ? firstSegment : 'sk'
     if (!token) {
       return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
     }

@@ -21,10 +21,6 @@ export default defineConfig({
       'tests/performance/**',
       // A11y tests require live browser/Playwright. Run separately.
       'tests/a11y/**',
-      // account-lockout tests require full NextAuth + bcryptjs mock integration
-      // which conflicts with Vitest's CJS/ESM interop for these modules.
-      // Run separately via: yarn test:run src/lib/__tests__/account-lockout.test.ts
-      'src/lib/__tests__/account-lockout.test.ts',
     ],
     coverage: {
       provider: 'v8',
