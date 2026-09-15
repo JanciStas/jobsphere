@@ -43,10 +43,14 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-    applicationActivity: { create: vi.fn() },
+    applicationActivity: { create: vi.fn(), deleteMany: vi.fn() },
+    interview: { deleteMany: vi.fn() },
     userOrgRole: { findFirst: vi.fn() },
     emailSequence: { findFirst: vi.fn() },
     emailSequenceRun: { create: vi.fn() },
+    // deleteApplication deletes RESTRICT children through the batch form; the
+    // mock resolves the already-built operations together, like the real client.
+    $transaction: vi.fn((operations: unknown[]) => Promise.all(operations)),
   },
 }))
 
@@ -76,6 +80,8 @@ function expectNoWrites() {
   expect(prisma.application.update).not.toHaveBeenCalled()
   expect(prisma.application.delete).not.toHaveBeenCalled()
   expect(prisma.applicationActivity.create).not.toHaveBeenCalled()
+  expect(prisma.applicationActivity.deleteMany).not.toHaveBeenCalled()
+  expect(prisma.interview.deleteMany).not.toHaveBeenCalled()
 }
 
 beforeEach(() => {
@@ -160,6 +166,16 @@ describe('deleteApplication — candidate ownership', () => {
 
   it('allows the owning candidate', async () => {
     await expect(deleteApplication('app-1')).resolves.toEqual({ success: true })
+    // Activities and interviews hold ON DELETE RESTRICT keys to the application,
+    // so a withdrawal removes them first — inside one transaction, so a partial
+    // failure leaves the application in place.
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1)
+    expect(prisma.applicationActivity.deleteMany).toHaveBeenCalledWith({
+      where: { applicationId: 'app-1' },
+    })
+    expect(prisma.interview.deleteMany).toHaveBeenCalledWith({
+      where: { applicationId: 'app-1' },
+    })
     expect(prisma.application.delete).toHaveBeenCalledWith({ where: { id: 'app-1' } })
   })
 })

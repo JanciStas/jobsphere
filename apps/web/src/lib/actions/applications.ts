@@ -242,9 +242,14 @@ export async function deleteApplication(applicationId: string): Promise<{ succes
     throw new Error('Forbidden')
   }
 
-  await prisma.application.delete({
-    where: { id: applicationId },
-  })
+  // ApplicationActivity and Interview both hold ON DELETE RESTRICT foreign keys
+  // to Application, so the children have to go first or the delete raises P2003.
+  // Same bug as DELETE /api/applications/[id]; see the note there.
+  await prisma.$transaction([
+    prisma.applicationActivity.deleteMany({ where: { applicationId } }),
+    prisma.interview.deleteMany({ where: { applicationId } }),
+    prisma.application.delete({ where: { id: applicationId } }),
+  ])
 
   revalidatePath('/dashboard')
 
