@@ -498,7 +498,10 @@ export default function JobsClient({
             ))}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          // Test hook: the "Recommended for you" carousel above renders job
+          // cards too and is deliberately unfiltered, so there is no other way
+          // to address the filtered result set.
+          <div data-testid="job-results" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {jobs.map((job) => (
               <Card key={job.id} className="flex flex-col transition-shadow hover:shadow-lg">
                 <CardHeader>

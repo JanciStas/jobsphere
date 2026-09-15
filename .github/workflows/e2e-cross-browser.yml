@@ -118,6 +118,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           SKIP_ENV_VALIDATION: 'true'
 
       - name: Run E2E tests
@@ -135,6 +139,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           CI: 'true'
 
       - name: Upload test results
@@ -256,6 +264,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           SKIP_ENV_VALIDATION: 'true'
 
       - name: Run E2E tests on ${{ matrix.device }}
@@ -273,6 +285,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           CI: 'true'
 
       - name: Upload test results
@@ -385,6 +401,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           SKIP_ENV_VALIDATION: 'true'
 
       - name: Run E2E tests on ${{ matrix.device }}
@@ -402,6 +422,10 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # /api/cv/upload cannot succeed without these: no blob token -> 500,
+          # and the antivirus check fails closed when ClamAV is unreachable.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
           CI: 'true'
 
       - name: Upload test results

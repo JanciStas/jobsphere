@@ -21,5 +21,14 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage", "*.config.js", "*.config.ts"]
+  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage", "*.config.js", "*.config.ts"],
+  "overrides": [
+    {
+      "files": ["**/tests/fixtures/files/*.js"],
+      "env": { "node": true },
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ]
 }

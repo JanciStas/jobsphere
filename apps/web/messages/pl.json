@@ -519,6 +519,24 @@
       "quickPick": "Szybki wybór (dopasowanie AI)",
       "quickPickHint": "Top 30 = cała baza kandydatów Twojej firmy"
     },
+    "tasks": {
+      "pageTitle": "Zadania",
+      "pageSubtitle": "Działania następcze, które Ty lub Twój zespół komuś jesteście winni.",
+      "taskPlaceholder": "Oddzwonić do niej w sprawie oferty…",
+      "taskLabel": "Zadanie",
+      "dueDateLabel": "Termin",
+      "adding": "Dodawanie…",
+      "add": "Dodaj",
+      "onlyMine": "Tylko moje",
+      "empty": "Nic tu nie ma.",
+      "due": "Termin {date}",
+      "reopen": "Otwórz ponownie",
+      "done": "Gotowe",
+      "delete": "Usuń",
+      "deleteConfirm": "Usunąć to zadanie?",
+      "loadFailed": "Nie udało się załadować zadań",
+      "createFailed": "Nie udało się utworzyć zadania"
+    },
     "applicantsTable": {
       "empty": "Nie znaleziono kandydatów. Utwórz ogłoszenie o pracę i poczekaj na aplikacje.",
       "createPosition": "Utwórz stanowisko",
@@ -1491,5 +1509,22 @@
       "key": "Klucz",
       "value": "Wartość"
     }
+  },
+  "notifications": {
+    "label": "Powiadomienia",
+    "labelUnread": "Powiadomienia, {count} nieprzeczytanych",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "empty": "Jeszcze nic."
+  },
+  "candidateTags": {
+    "title": "Tagi",
+    "empty": "Brak tagów.",
+    "removeTag": "Usuń tag {name}",
+    "newTagPlaceholder": "Nazwa nowego tagu",
+    "create": "Utwórz",
+    "cancel": "Anuluj",
+    "newTag": "Nowy tag",
+    "addFailed": "Nie udało się dodać tagu",
+    "createFailed": "Nie udało się utworzyć tagu"
   }
 }

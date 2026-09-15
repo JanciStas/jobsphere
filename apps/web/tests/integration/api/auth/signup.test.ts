@@ -10,14 +10,39 @@ import { prisma } from '../../helpers/test-db'
 
 describe('POST /api/auth/signup', () => {
   beforeEach(async () => {
-    // Clean up any test signup users from previous runs
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: 'signup-test',
-        },
-      },
+    // Clean up any test signup users from previous runs.
+    //
+    // A bare user.deleteMany() is not enough: the employer case creates an
+    // Organization plus a UserOrgRole, and both FKs are ON DELETE RESTRICT, so
+    // this raised P2003 (UserOrgRole_userId_fkey) and took the whole file down.
+    // The organisation has to go too — otherwise its slug survives, the route's
+    // uniqueness loop hands the next run 'test-company-inc-1', and the slug
+    // assertion fails on every re-run against a persistent database.
+    const staleUsers = await prisma.user.findMany({
+      where: { email: { contains: 'signup-test' } },
+      select: { id: true },
     })
+    const staleUserIds = staleUsers.map((u) => u.id)
+
+    if (staleUserIds.length > 0) {
+      const memberships = await prisma.userOrgRole.findMany({
+        where: { userId: { in: staleUserIds } },
+        select: { orgId: true },
+      })
+      const orgIds = [...new Set(memberships.map((m) => m.orgId))]
+
+      await prisma.freelancerProfile.deleteMany({ where: { userId: { in: staleUserIds } } })
+      await prisma.userOrgRole.deleteMany({ where: { userId: { in: staleUserIds } } })
+      await prisma.user.deleteMany({ where: { id: { in: staleUserIds } } })
+
+      if (orgIds.length > 0) {
+        await prisma.userOrgRole.deleteMany({ where: { orgId: { in: orgIds } } })
+        await prisma.organization.deleteMany({ where: { id: { in: orgIds } } })
+      }
+    }
+
+    // Belt and braces for an organisation left behind by an interrupted run.
+    await prisma.organization.deleteMany({ where: { slug: { startsWith: 'test-company-inc' } } })
   })
 
   describe('Candidate Signup', () => {
@@ -163,14 +188,18 @@ describe('POST /api/auth/signup', () => {
       const response = await POST(request)
       const data = await parseResponse(response)
 
-      // Assert
+      // Assert — the route surfaces the FIRST issue's message as `error` (the
+      // literal string 'Validation failed' is the ZodError fallback branch, which
+      // validateRequest never reaches), with the full list in `issues`.
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Validation failed')
+      expect(data.error).toBe('Invalid email address')
       expect(data.issues).toBeDefined()
       expect(data.issues[0].path).toContain('email')
     })
 
-    it('should reject password shorter than 8 characters', async () => {
+    // strongPasswordSchema requires 12, not 8 — the old title and assertion were
+    // both a minimum behind the schema.
+    it('should reject a password shorter than the 12-character minimum', async () => {
       // Arrange
       const request = createTestRequest('POST', {
         email: 'signup-test-short-pass@test.com',
@@ -184,8 +213,14 @@ describe('POST /api/auth/signup', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Validation failed')
-      expect(data.issues[0].message).toContain('at least 8 characters')
+      expect(data.error).toContain('at least 12 characters')
+      expect(data.issues.some((i: any) => i.path.includes('password'))).toBe(true)
+
+      // And nothing was written.
+      const user = await prisma.user.findUnique({
+        where: { email: 'signup-test-short-pass@test.com' },
+      })
+      expect(user).toBeNull()
     })
 
     it('should reject missing required fields', async () => {
@@ -201,8 +236,11 @@ describe('POST /api/auth/signup', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Validation failed')
+      expect(data.error).toBe('Required')
       expect(data.issues.length).toBeGreaterThan(0)
+      const paths = data.issues.map((i: any) => i.path)
+      expect(paths).toContain('password')
+      expect(paths).toContain('name')
     })
 
     it('returns an indistinguishable response for an already-registered email', async () => {

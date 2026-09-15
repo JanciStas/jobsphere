@@ -28,7 +28,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES (
           'test-job-vector-1',
@@ -45,7 +45,7 @@ describe('Vector Search (pgvector)', () => {
           'EUR',
           true,
           false,
-          ${`[${embedding.join(',')}]`}::vector
+          ${`[${embedding.join(',')}]`}::vector, NOW()
         )
       `
 
@@ -71,8 +71,10 @@ describe('Vector Search (pgvector)', () => {
         },
       })
 
-      // Create embedding (smaller dimension for test)
-      const embedding = Array.from({ length: 768 }, () => Math.random())
+      // 1536, not 768: the HNSW migration pinned "embeddingVector" to
+      // vector(1536) (pgvector refuses to index a dimensionless column), so a
+      // 768-wide vector is rejected with "expected 1536 dimensions, not 768".
+      const embedding = Array.from({ length: 1536 }, () => Math.random())
 
       await prisma.$executeRaw`
         INSERT INTO "ResumeSection" (
@@ -105,8 +107,10 @@ describe('Vector Search (pgvector)', () => {
       const job = await createTestJob({ title: 'Job Without Embedding' })
 
       // Embedding should be null by default
-      const retrieved = await prisma.$queryRaw<Array<{ id: string; embedding: any }>>`
-        SELECT id, embedding
+      // embedding is Unsupported("vector(1536)"); Prisma cannot deserialize it
+      // straight out of $queryRaw, so read it as text — null stays null.
+      const retrieved = await prisma.$queryRaw<Array<{ id: string; embedding: string | null }>>`
+        SELECT id, embedding::text AS embedding
         FROM "Job"
         WHERE id = ${job.id}
       `
@@ -124,15 +128,23 @@ describe('Vector Search (pgvector)', () => {
       // Create similar embedding (small perturbation)
       const similarEmbedding = baseEmbedding.map((val) => val + (Math.random() - 0.5) * 0.1)
 
-      // Create dissimilar embedding (random)
-      const dissimilarEmbedding = Array.from({ length: 1536 }, () => Math.random())
+      // Create dissimilar embedding.
+      //
+      // This used to be another Math.random() vector, and the "< 0.5" assertion
+      // below could never hold: every component of Math.random() is positive, so
+      // two such vectors both sit in the positive orthant and their expected
+      // cosine similarity is E[xy] / E[x^2] = 0.25 / (1/3) = 0.75, regardless of
+      // dimension. The measured value was 0.751 — the maths, not a flaky search.
+      // Centring on zero gives a genuinely unrelated direction (expected cosine
+      // ~0), which is what "dissimilar" was meant to mean.
+      const dissimilarEmbedding = Array.from({ length: 1536 }, () => Math.random() - 0.5)
 
       // Insert jobs with embeddings
       await prisma.$executeRaw`
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -150,7 +162,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${baseEmbedding.join(',')}]`}::vector
+            ${`[${baseEmbedding.join(',')}]`}::vector, NOW()
           ),
           (
             'job-react-2',
@@ -167,7 +179,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${similarEmbedding.join(',')}]`}::vector
+            ${`[${similarEmbedding.join(',')}]`}::vector, NOW()
           ),
           (
             'job-python-1',
@@ -184,7 +196,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${dissimilarEmbedding.join(',')}]`}::vector
+            ${`[${dissimilarEmbedding.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -216,6 +228,9 @@ describe('Vector Search (pgvector)', () => {
       // Third result should be dissimilar Python job
       expect(results[2].id).toBe('job-python-1')
       expect(results[2].similarity).toBeLessThan(0.5)
+      // Ranking, not just the absolute number: the unrelated job must score
+      // strictly below the related one.
+      expect(results[2].similarity).toBeLessThan(results[1].similarity)
     })
 
     it('should calculate distance between embeddings', async () => {
@@ -226,7 +241,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -244,7 +259,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${embedding1.join(',')}]`}::vector
+            ${`[${embedding1.join(',')}]`}::vector, NOW()
           ),
           (
             'job-distance-2',
@@ -261,7 +276,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${embedding2.join(',')}]`}::vector
+            ${`[${embedding2.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -293,7 +308,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -311,7 +326,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${queryEmbedding.join(',')}]`}::vector
+            ${`[${queryEmbedding.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -336,7 +351,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -354,7 +369,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${queryEmbedding.join(',')}]`}::vector
+            ${`[${queryEmbedding.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -381,7 +396,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -399,7 +414,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             true,
             false,
-            ${`[${embedding1.join(',')}]`}::vector
+            ${`[${embedding1.join(',')}]`}::vector, NOW()
           ),
           (
             'job-hybrid-2',
@@ -416,7 +431,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             true,
             false,
-            ${`[${embedding2.join(',')}]`}::vector
+            ${`[${embedding2.join(',')}]`}::vector, NOW()
           ),
           (
             'job-hybrid-3',
@@ -433,7 +448,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${embedding3.join(',')}]`}::vector
+            ${`[${embedding3.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -467,7 +482,7 @@ describe('Vector Search (pgvector)', () => {
         INSERT INTO "Job" (
           id, "orgId", title, description, "createdBy", locale, status,
           "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-          remote, hybrid, embedding
+          remote, hybrid, embedding, "updatedAt"
         )
         VALUES
           (
@@ -485,7 +500,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${embedding.join(',')}]`}::vector
+            ${`[${embedding.join(',')}]`}::vector, NOW()
           ),
           (
             'job-salary-2',
@@ -502,7 +517,7 @@ describe('Vector Search (pgvector)', () => {
             'EUR',
             false,
             false,
-            ${`[${embedding.join(',')}]`}::vector
+            ${`[${embedding.join(',')}]`}::vector, NOW()
           )
       `
 
@@ -540,7 +555,7 @@ describe('Vector Search (pgvector)', () => {
             INSERT INTO "Job" (
               id, "orgId", title, description, "createdBy", locale, status,
               "employmentType", seniority, "salaryMin", "salaryMax", "salaryCurrency",
-              remote, hybrid, embedding
+              remote, hybrid, embedding, "updatedAt"
             )
             VALUES (
               ${'job-perf-' + i},
@@ -557,7 +572,7 @@ describe('Vector Search (pgvector)', () => {
               'EUR',
               false,
               false,
-              ${`[${embedding.join(',')}]`}::vector
+              ${`[${embedding.join(',')}]`}::vector, NOW()
             )
           `,
         )

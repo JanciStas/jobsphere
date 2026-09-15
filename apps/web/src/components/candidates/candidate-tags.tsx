@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { X, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +22,7 @@ interface Tag {
  * had.
  */
 export function CandidateTags({ candidateId }: { candidateId: string }) {
+  const t = useTranslations('candidateTags')
   const [attached, setAttached] = useState<Tag[]>([])
   const [available, setAvailable] = useState<Tag[]>([])
   const [adding, setAdding] = useState(false)
@@ -54,7 +56,7 @@ export function CandidateTags({ candidateId }: { candidateId: string }) {
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setError(body.error ?? 'Could not add that tag')
+      setError(body.error ?? t('addFailed'))
       return
     }
     await load()
@@ -93,7 +95,7 @@ export function CandidateTags({ candidateId }: { candidateId: string }) {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setError(body.error ?? 'Could not create that tag')
+      setError(body.error ?? t('createFailed'))
       return
     }
 
@@ -109,12 +111,12 @@ export function CandidateTags({ candidateId }: { candidateId: string }) {
   return (
     <Card className="mt-6">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Tags</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {attached.length === 0 && (
-            <span className="text-sm text-muted-foreground">No tags yet.</span>
+            <span className="text-sm text-muted-foreground">{t('empty')}</span>
           )}
           {attached.map((tag) => (
             <span
@@ -126,7 +128,7 @@ export function CandidateTags({ candidateId }: { candidateId: string }) {
               <button
                 type="button"
                 onClick={() => detach(tag.id)}
-                aria-label={`Remove tag ${tag.name}`}
+                aria-label={t('removeTag', { name: tag.name })}
                 className="opacity-60 hover:opacity-100"
               >
                 <X className="h-3 w-3" />
@@ -156,20 +158,20 @@ export function CandidateTags({ candidateId }: { candidateId: string }) {
               autoFocus
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="New tag name"
+              placeholder={t('newTagPlaceholder')}
               className="h-8 flex-1 rounded-md border bg-background px-2 text-sm"
             />
             <Button type="submit" size="sm" disabled={!newName.trim()}>
-              Create
+              {t('create')}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setAdding(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
           </form>
         ) : (
           <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
             <Plus className="mr-1 h-4 w-4" />
-            New tag
+            {t('newTag')}
           </Button>
         )}
 

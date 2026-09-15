@@ -519,6 +519,24 @@
       "quickPick": "Rychlý výběr (AI matching)",
       "quickPickHint": "Top 30 = celá databáze uchazečů vaší firmy"
     },
+    "tasks": {
+      "pageTitle": "Úkoly",
+      "pageSubtitle": "Následné kroky, které dlužíte vy nebo váš tým někomu jinému.",
+      "taskPlaceholder": "Zavolat jí zpět ohledně nabídky…",
+      "taskLabel": "Úkol",
+      "dueDateLabel": "Termín",
+      "adding": "Přidávání…",
+      "add": "Přidat",
+      "onlyMine": "Jen moje",
+      "empty": "Zatím nic.",
+      "due": "Termín {date}",
+      "reopen": "Znovu otevřít",
+      "done": "Hotovo",
+      "delete": "Smazat",
+      "deleteConfirm": "Smazat tento úkol?",
+      "loadFailed": "Úkoly se nepodařilo načíst",
+      "createFailed": "Úkol se nepodařilo vytvořit"
+    },
     "applicantsTable": {
       "empty": "Nenašli se žádní kandidáti. Vytvořte pracovní nabídku a počkejte na přihlášky.",
       "createPosition": "Vytvořit pozici",
@@ -1491,5 +1509,22 @@
       "key": "Klíč",
       "value": "Hodnota"
     }
+  },
+  "notifications": {
+    "label": "Oznámení",
+    "labelUnread": "Oznámení, {count} nepřečtených",
+    "markAllRead": "Označit vše jako přečtené",
+    "empty": "Zatím nic."
+  },
+  "candidateTags": {
+    "title": "Štítky",
+    "empty": "Zatím žádné štítky.",
+    "removeTag": "Odebrat štítek {name}",
+    "newTagPlaceholder": "Název nového štítku",
+    "create": "Vytvořit",
+    "cancel": "Zrušit",
+    "newTag": "Nový štítek",
+    "addFailed": "Štítek se nepodařilo přidat",
+    "createFailed": "Štítek se nepodařilo vytvořit"
   }
 }

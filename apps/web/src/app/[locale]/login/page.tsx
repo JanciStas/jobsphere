@@ -34,5 +34,12 @@ export default async function LoginPage({ params, searchParams }: Props) {
     )
   }
 
-  return <LoginClient params={params} notice={notice} />
+  // Mirrors the provider registration in lib/auth.ts — a button for a
+  // provider that isn't configured just throws when clicked.
+  const providersAvailable = {
+    google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    apple: Boolean(process.env.APPLE_ID && process.env.APPLE_SECRET),
+  }
+
+  return <LoginClient params={params} notice={notice} providersAvailable={providersAvailable} />
 }

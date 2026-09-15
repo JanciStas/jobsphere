@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
-import { getPrismaClient, seedTestData, cleanupDynamicData, cleanupAllTestData, disconnectDb, TEST_IDS, createTestJob, createTestCandidate } from '../helpers/test-db'
+import {
+  getPrismaClient,
+  seedTestData,
+  cleanupDynamicData,
+  cleanupAllTestData,
+  disconnectDb,
+  TEST_IDS,
+  createTestJob,
+  createTestCandidate,
+} from '../helpers/test-db'
 import { Prisma } from '@prisma/client'
 
 /**
@@ -227,7 +236,7 @@ describe('Database Transactions', () => {
             remote: false,
             hybrid: false,
           },
-        })
+        }),
       )
 
       const results = await Promise.all(promises)
@@ -425,34 +434,91 @@ describe('Database Transactions', () => {
   })
 
   describe('Transaction Isolation', () => {
-    it('should isolate reads within transaction from external writes', async () => {
+    // This pair used to be one test asserting that a second read inside a
+    // transaction still sees the pre-transaction value. That is REPEATABLE READ
+    // behaviour; Postgres (and therefore every Prisma transaction in this app that
+    // does not ask for anything else) defaults to READ COMMITTED, where each
+    // statement takes a fresh snapshot. It also raced the external write against a
+    // sleep, so it could fail in either direction depending on machine speed. Both
+    // levels are now pinned explicitly, and the two sides hand off through
+    // promises instead of timers.
+    const deferred = () => {
+      let resolve!: () => void
+      const promise = new Promise<void>((r) => {
+        resolve = r
+      })
+      return { promise, resolve }
+    }
+
+    it('sees externally committed writes inside a transaction (READ COMMITTED default)', async () => {
       const job = await createTestJob({ title: 'Isolation Test Job' })
 
-      // Start a long-running transaction
-      const transactionPromise = prisma.$transaction(async (tx) => {
-        const jobInTx = await tx.job.findUnique({ where: { id: job.id } })
-        expect(jobInTx?.title).toBe('Isolation Test Job')
+      const firstReadDone = deferred()
+      const externalWriteCommitted = deferred()
 
-        // Wait a bit to allow external update
-        await new Promise((resolve) => setTimeout(resolve, 100))
+      const transactionPromise = prisma.$transaction(
+        async (tx) => {
+          const jobInTx = await tx.job.findUnique({ where: { id: job.id } })
+          expect(jobInTx?.title).toBe('Isolation Test Job')
 
-        // Read again within transaction - should see original value
-        const jobInTxAgain = await tx.job.findUnique({ where: { id: job.id } })
-        expect(jobInTxAgain?.title).toBe('Isolation Test Job')
+          firstReadDone.resolve()
+          await externalWriteCommitted.promise
 
-        return jobInTx
-      })
+          // READ COMMITTED: the second statement takes a new snapshot, so the
+          // committed external write is visible inside the open transaction.
+          const jobInTxAgain = await tx.job.findUnique({ where: { id: job.id } })
+          expect(jobInTxAgain?.title).toBe('Updated Externally')
 
-      // Update job externally while transaction is running
-      await new Promise((resolve) => setTimeout(resolve, 50))
+          return jobInTx
+        },
+        { timeout: 20000, maxWait: 10000 },
+      )
+
+      await firstReadDone.promise
       await prisma.job.update({
         where: { id: job.id },
         data: { title: 'Updated Externally' },
       })
+      externalWriteCommitted.resolve()
 
       await transactionPromise
 
-      // After transaction, see the external update
+      const jobAfter = await prisma.job.findUnique({ where: { id: job.id } })
+      expect(jobAfter?.title).toBe('Updated Externally')
+    })
+
+    it('holds a stable snapshot when the transaction asks for REPEATABLE READ', async () => {
+      const job = await createTestJob({ title: 'Snapshot Test Job' })
+
+      const firstReadDone = deferred()
+      const externalWriteCommitted = deferred()
+
+      const transactionPromise = prisma.$transaction(
+        async (tx) => {
+          // The first statement fixes the snapshot, before the external write.
+          const jobInTx = await tx.job.findUnique({ where: { id: job.id } })
+          expect(jobInTx?.title).toBe('Snapshot Test Job')
+
+          firstReadDone.resolve()
+          await externalWriteCommitted.promise
+
+          const jobInTxAgain = await tx.job.findUnique({ where: { id: job.id } })
+          expect(jobInTxAgain?.title).toBe('Snapshot Test Job')
+
+          return jobInTx
+        },
+        { isolationLevel: 'RepeatableRead', timeout: 20000, maxWait: 10000 },
+      )
+
+      await firstReadDone.promise
+      await prisma.job.update({
+        where: { id: job.id },
+        data: { title: 'Updated Externally' },
+      })
+      externalWriteCommitted.resolve()
+
+      await transactionPromise
+
       const jobAfter = await prisma.job.findUnique({ where: { id: job.id } })
       expect(jobAfter?.title).toBe('Updated Externally')
     })

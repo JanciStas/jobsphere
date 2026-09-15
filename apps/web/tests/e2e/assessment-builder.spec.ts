@@ -1,259 +1,216 @@
 /**
  * E2E Test - Assessment Builder
  *
- * Tests the assessment creation and management flow
+ * Tests the assessment creation and management flow.
+ *
+ * This file used to be written against an assessment builder that was never
+ * built: it addressed questions as `questions.0.*`, clicked an "Add Question"
+ * button and selected a type from a `<select>`. The real builder
+ * (src/app/[locale]/employer/assessments/builder/assessment-builder-client.tsx)
+ * is SECTION-based. Concretely:
+ *
+ *   - form paths are `sections.<s>.questions.<q>.<field>`
+ *   - the form starts with one section ("Section 1", expanded) and NO questions
+ *   - questions are added by clicking a type button inside the section:
+ *     "Multiple Choice" | "Multi-Select" | "Short Text" | "Long Text" | "Code"
+ *   - the correct answers field is a free-text input of comma-separated indexes,
+ *     not a set of checkboxes
+ *   - a CODE question's starter code is `...questions.<q>.code` (not starterCode)
+ *   - there is no per-question rubric field in the UI
+ *   - saving redirects to /{locale}/employer/assessments/{id}/results and raises
+ *     a sonner toast titled "Assessment created successfully!"
  */
 
 import { test, expect } from '../fixtures/auth'
+import type { Page } from '@playwright/test'
+
+const BUILDER_URL = '/en/employer/assessments/builder'
+
+/** Field paths for section 0, question `q`. */
+function q(index: number, field: string) {
+  return `sections.0.questions.${index}.${field}`
+}
+
+/** Fill the four Basic Information fields. */
+async function fillBasics(
+  page: Page,
+  {
+    name,
+    description,
+    durationMin = '60',
+    passingScore = '70',
+  }: {
+    name: string
+    description?: string
+    durationMin?: string
+    passingScore?: string
+  },
+) {
+  await page.fill('input[name=name]', name)
+  if (description !== undefined) await page.fill('textarea[name=description]', description)
+  await page.fill('input[name=durationMin]', durationMin)
+  await page.fill('input[name=passingScore]', passingScore)
+}
+
+/** Add a question of `type` to the first section. */
+async function addQuestion(
+  page: Page,
+  type: 'Multiple Choice' | 'Multi-Select' | 'Short Text' | 'Long Text' | 'Code',
+) {
+  await page.getByRole('button', { name: type, exact: true }).click()
+}
 
 test.describe('Assessment Builder', () => {
+  test.beforeEach(async ({ recruiterUser }) => {
+    await recruiterUser.goto(BUILDER_URL)
+    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/builder/)
+    await expect(recruiterUser.locator('h1')).toContainText('Create Assessment')
+  })
+
   test('recruiter can create a complete assessment with multiple question types', async ({
     recruiterUser,
   }) => {
-    // Navigate to assessment builder
-    await recruiterUser.goto('/en/employer/assessments/builder')
+    await fillBasics(recruiterUser, {
+      name: 'JavaScript Skills Test E2E',
+      description: 'Comprehensive JavaScript test for React developers',
+    })
 
-    // Verify we're on the correct page
-    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/builder/)
-    await expect(recruiterUser.locator('h1')).toContainText('Assessment')
-
-    // Fill in basic assessment info
-    await recruiterUser.fill('input[name=name]', 'JavaScript Skills Test E2E')
-    await recruiterUser.fill(
-      'textarea[name=description]',
-      'Comprehensive JavaScript test for React developers',
-    )
-    await recruiterUser.fill('input[name=durationMin]', '60')
-    await recruiterUser.fill('input[name=passingScore]', '70')
-
-    // The form should have a default question, let's fill it out
-    // Find the first question's text field
-    const firstQuestionText = recruiterUser.locator('textarea[name="questions.0.text"]')
-    await expect(firstQuestionText).toBeVisible({ timeout: 5000 })
+    // Question 1 — multiple choice. The type button seeds four choices and
+    // correctIndexes [0], so only the text needs filling.
+    await addQuestion(recruiterUser, 'Multiple Choice')
+    const firstQuestionText = recruiterUser.locator(`textarea[name="${q(0, 'text')}"]`)
+    await expect(firstQuestionText).toBeVisible()
     await firstQuestionText.fill('What is the purpose of React hooks?')
 
-    // Select question type - Multiple Choice
-    await recruiterUser.selectOption('select[name="questions.0.type"]', 'MCQ')
-
-    // Add choices for the MCQ question
-    // Click "Add Choice" button for the first question
-    await recruiterUser.click('button:has-text("Add Choice")').catch(() => {
-      // If button doesn't exist, choices might be pre-created
-    })
-
-    // Fill in choices
-    await recruiterUser.fill(
-      'input[name="questions.0.choices.0"]',
-      'To manage state and side effects in functional components',
-    )
-    await recruiterUser.fill('input[name="questions.0.choices.1"]', 'To create class components')
-    await recruiterUser.fill('input[name="questions.0.choices.2"]', 'To style components')
-
-    // Mark the correct answer (first choice)
-    await recruiterUser.check('input[name="questions.0.correctIndexes"][value="0"]').catch(() => {
-      // Alternative selector if checkboxes are named differently
-      recruiterUser.check('input[type=checkbox]').first()
-    })
-
-    // Add a second question - Code type
-    await recruiterUser.click('button:has-text("Add Question")')
-
-    // Fill second question
-    await recruiterUser.fill(
-      'textarea[name="questions.1.text"]',
-      'Write a function that returns the sum of two numbers',
-    )
-
-    await recruiterUser.selectOption('select[name="questions.1.type"]', 'CODE')
-
-    // For code questions, there might be a language selector
     await recruiterUser
-      .selectOption('select[name="questions.1.language"]', 'javascript')
-      .catch(() => {
-        // Language selector might not exist
-      })
-
-    // Fill in starter code if the field exists
+      .locator(`input[name="${q(0, 'choices.0')}"]`)
+      .fill('To manage state and side effects in functional components')
     await recruiterUser
-      .fill(
-        'textarea[name="questions.1.starterCode"]',
-        'function sum(a, b) {\n  // Your code here\n}',
-      )
-      .catch(() => {
-        // Starter code field might not exist
-      })
+      .locator(`input[name="${q(0, 'choices.1')}"]`)
+      .fill('To create class components')
+    await recruiterUser.locator(`input[name="${q(0, 'choices.2')}"]`).fill('To style components')
 
-    // Add a third question - Short text
-    await recruiterUser.click('button:has-text("Add Question")')
+    // Question 2 — code.
+    await addQuestion(recruiterUser, 'Code')
+    await recruiterUser
+      .locator(`textarea[name="${q(1, 'text')}"]`)
+      .fill('Write a function that returns the sum of two numbers')
+    await recruiterUser.selectOption(`select[name="${q(1, 'language')}"]`, 'javascript')
+    await recruiterUser
+      .locator(`textarea[name="${q(1, 'code')}"]`)
+      .fill('function sum(a, b) {\n  // Your code here\n}')
 
-    await recruiterUser.fill(
-      'textarea[name="questions.2.text"]',
-      'Explain the difference between var, let, and const',
-    )
+    // Question 3 — short text.
+    await addQuestion(recruiterUser, 'Short Text')
+    await recruiterUser
+      .locator(`textarea[name="${q(2, 'text')}"]`)
+      .fill('Explain the difference between var, let, and const')
 
-    await recruiterUser.selectOption('select[name="questions.2.type"]', 'SHORT_TEXT')
+    await recruiterUser.getByRole('button', { name: /create assessment/i }).click()
 
-    // Submit the assessment
-    await recruiterUser.click('button:has-text("Create Assessment")')
-
-    // Wait for success notification
-    await expect(recruiterUser.locator('text=Assessment created')).toBeVisible({ timeout: 10000 })
-
-    // Should redirect or stay on page with success message
-    // Verify the assessment was created (might redirect to list or detail page)
+    // Saving lands on the assessment's results page.
+    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/[^/]+\/results/, {
+      timeout: 15000,
+    })
   })
 
   test('assessment builder shows validation errors for required fields', async ({
     recruiterUser,
   }) => {
-    await recruiterUser.goto('/en/employer/assessments/builder')
+    // Submit with an empty name and a section that has no questions.
+    await recruiterUser.getByRole('button', { name: /create assessment/i }).click()
 
-    // Try to submit without filling required fields
-    await recruiterUser.click('button:has-text("Create Assessment")')
-
-    // Should see validation errors or stay on same page
     await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/builder/)
-
-    // HTML5 validation or Zod errors should prevent submission
+    // zod (via zodResolver) blocks the submit and renders a field error.
+    await expect(recruiterUser.locator('p.text-destructive').first()).toBeVisible()
   })
 
   test('recruiter can remove questions from assessment', async ({ recruiterUser }) => {
-    await recruiterUser.goto('/en/employer/assessments/builder')
-
-    // Fill minimal info
-    await recruiterUser.fill('input[name=name]', 'Test Assessment')
-    await recruiterUser.fill('input[name=durationMin]', '30')
-    await recruiterUser.fill('input[name=passingScore]', '60')
-
-    // Add a second question
-    await recruiterUser.click('button:has-text("Add Question")')
-
-    // Count questions (should have 2 now)
-    const questionCount = await recruiterUser
-      .locator('[data-testid="question-item"]')
-      .count()
-      .catch(() => {
-        // If data-testid doesn't exist, try alternative selector
-        return recruiterUser.locator('textarea[name^="questions."]').count()
-      })
-
-    expect(questionCount).toBeGreaterThanOrEqual(2)
-
-    // Remove the second question
-    const deleteButtons = recruiterUser.locator('button[aria-label="Delete question"]')
-    const deleteButtonCount = await deleteButtons.count()
-
-    if (deleteButtonCount > 0) {
-      await deleteButtons.last().click()
-
-      // Verify question was removed
-      const newQuestionCount = await recruiterUser.locator('textarea[name^="questions."]').count()
-      expect(newQuestionCount).toBe(questionCount - 1)
-    }
-  })
-
-  test('assessment builder supports multiple choice questions with multiple correct answers', async ({
-    recruiterUser,
-  }) => {
-    await recruiterUser.goto('/en/employer/assessments/builder')
-
-    // Fill basic info
-    await recruiterUser.fill('input[name=name]', 'Multi-Select Test')
-    await recruiterUser.fill('input[name=durationMin]', '30')
-    await recruiterUser.fill('input[name=passingScore]', '50')
-
-    // Fill first question
-    await recruiterUser.fill(
-      'textarea[name="questions.0.text"]',
-      'Which of the following are React hooks? (Select all that apply)',
-    )
-
-    // Select MULTI_SELECT type (if available)
-    await recruiterUser
-      .selectOption('select[name="questions.0.type"]', 'MULTI_SELECT')
-      .catch(async () => {
-        // If MULTI_SELECT doesn't exist, try MCQ
-        await recruiterUser.selectOption('select[name="questions.0.type"]', 'MCQ')
-      })
-
-    // Add and fill choices
-    await recruiterUser.fill('input[name="questions.0.choices.0"]', 'useState')
-    await recruiterUser.fill('input[name="questions.0.choices.1"]', 'useEffect')
-    await recruiterUser.fill('input[name="questions.0.choices.2"]', 'componentDidMount')
-    await recruiterUser.fill('input[name="questions.0.choices.3"]', 'useContext')
-
-    // Mark multiple correct answers (0, 1, and 3)
-    await recruiterUser.check('input[name="questions.0.correctIndexes"][value="0"]').catch(() => {})
-    await recruiterUser.check('input[name="questions.0.correctIndexes"][value="1"]').catch(() => {})
-    await recruiterUser.check('input[name="questions.0.correctIndexes"][value="3"]').catch(() => {})
-
-    // Submit
-    await recruiterUser.click('button:has-text("Create Assessment")')
-
-    // Verify success
-    await expect(recruiterUser.locator('text=Assessment created')).toBeVisible({ timeout: 10000 })
-  })
-
-  test('assessment builder allows editing question points and rubric', async ({
-    recruiterUser,
-  }) => {
-    await recruiterUser.goto('/en/employer/assessments/builder')
-
-    // Fill basic info
-    await recruiterUser.fill('input[name=name]', 'Points Test')
-    await recruiterUser.fill('input[name=durationMin]', '45')
-    await recruiterUser.fill('input[name=passingScore]', '60')
-
-    // Fill question text
-    await recruiterUser.fill('textarea[name="questions.0.text"]', 'Describe your experience')
-
-    // Set points for the question (if field exists)
-    await recruiterUser.fill('input[name="questions.0.points"]', '10').catch(() => {
-      // Points field might not exist
+    await fillBasics(recruiterUser, {
+      name: 'Test Assessment',
+      durationMin: '30',
+      passingScore: '60',
     })
 
-    // Fill rubric/grading criteria (if field exists)
-    await recruiterUser
-      .fill(
-        'textarea[name="questions.0.rubric"]',
-        'Full points: Clear, detailed explanation with examples',
-      )
-      .catch(() => {
-        // Rubric field might not exist
-      })
+    await addQuestion(recruiterUser, 'Short Text')
+    await addQuestion(recruiterUser, 'Short Text')
 
-    // Submit
-    await recruiterUser.click('button:has-text("Create Assessment")')
+    const questions = recruiterUser.locator(
+      'textarea[name^="sections.0.questions."][name$=".text"]',
+    )
+    await expect(questions).toHaveCount(2)
 
-    await expect(recruiterUser.locator('text=Assessment created')).toBeVisible({ timeout: 10000 })
+    // The delete buttons are icon-only; they carry an aria-label so they are
+    // addressable (and announced) by name.
+    await recruiterUser.getByRole('button', { name: 'Delete question 2' }).click()
+
+    await expect(questions).toHaveCount(1)
   })
 
-  test('assessment builder prevents submission with invalid duration or passing score', async ({
+  test('assessment builder supports multi-select questions with several correct answers', async ({
     recruiterUser,
   }) => {
-    await recruiterUser.goto('/en/employer/assessments/builder')
+    await fillBasics(recruiterUser, {
+      name: 'Multi-Select Test',
+      durationMin: '30',
+      passingScore: '50',
+    })
 
-    // Fill basic info with invalid values
-    await recruiterUser.fill('input[name=name]', 'Invalid Test')
-    await recruiterUser.fill('textarea[name=description]', 'Test description')
+    await addQuestion(recruiterUser, 'Multi-Select')
+    await recruiterUser
+      .locator(`textarea[name="${q(0, 'text')}"]`)
+      .fill('Which of the following are React hooks? (Select all that apply)')
 
-    // Try negative duration
-    await recruiterUser.fill('input[name=durationMin]', '-10')
+    await recruiterUser.locator(`input[name="${q(0, 'choices.0')}"]`).fill('useState')
+    await recruiterUser.locator(`input[name="${q(0, 'choices.1')}"]`).fill('useEffect')
+    await recruiterUser.locator(`input[name="${q(0, 'choices.2')}"]`).fill('componentDidMount')
+    await recruiterUser.locator(`input[name="${q(0, 'choices.3')}"]`).fill('useContext')
 
-    // Try passing score > 100
-    await recruiterUser.fill('input[name=passingScore]', '150')
+    // Correct answers are entered as comma-separated indexes in a text input.
+    await recruiterUser.locator(`input[name="${q(0, 'correctIndexes')}"]`).fill('0,1,3')
 
-    // Fill a question
-    await recruiterUser.fill('textarea[name="questions.0.text"]', 'Test question')
+    await recruiterUser.getByRole('button', { name: /create assessment/i }).click()
 
-    // Try to submit
-    await recruiterUser.click('button:has-text("Create Assessment")')
+    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/[^/]+\/results/, {
+      timeout: 15000,
+    })
+  })
 
-    // Should show validation error or prevent submission
-    await expect(recruiterUser.locator('text=must be'))
-      .toBeVisible({ timeout: 3000 })
-      .catch(() => {
-        // Error message might be worded differently
-      })
+  test('assessment builder allows editing question points and skill tag', async ({
+    recruiterUser,
+  }) => {
+    await fillBasics(recruiterUser, { name: 'Points Test', durationMin: '45', passingScore: '60' })
+
+    await addQuestion(recruiterUser, 'Long Text')
+    await recruiterUser.locator(`textarea[name="${q(0, 'text')}"]`).fill('Describe your experience')
+    await recruiterUser.locator(`input[name="${q(0, 'points')}"]`).fill('10')
+    await recruiterUser.locator(`input[name="${q(0, 'skillTag')}"]`).fill('Communication')
+
+    await recruiterUser.getByRole('button', { name: /create assessment/i }).click()
+
+    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/[^/]+\/results/, {
+      timeout: 15000,
+    })
+  })
+
+  test('assessment builder rejects an out-of-range duration and passing score', async ({
+    recruiterUser,
+  }) => {
+    // durationMin must be a positive int <= 480; passingScore must be 0..100.
+    await fillBasics(recruiterUser, {
+      name: 'Invalid Test',
+      description: 'Test description',
+      durationMin: '-10',
+      passingScore: '150',
+    })
+
+    await addQuestion(recruiterUser, 'Short Text')
+    await recruiterUser.locator(`textarea[name="${q(0, 'text')}"]`).fill('Test question')
+
+    await recruiterUser.getByRole('button', { name: /create assessment/i }).click()
+
+    // Submission is blocked and we stay on the builder with a field error shown.
+    await expect(recruiterUser).toHaveURL(/\/employer\/assessments\/builder/)
+    await expect(recruiterUser.locator('p.text-destructive').first()).toBeVisible()
   })
 })

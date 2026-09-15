@@ -590,6 +590,24 @@
       "quickPick": "Quick pick (AI matching)",
       "quickPickHint": "Top 30 = your company's entire candidate database"
     },
+    "tasks": {
+      "pageTitle": "Tasks",
+      "pageSubtitle": "Follow-ups you and your team owe someone.",
+      "taskPlaceholder": "Call her back about the offer…",
+      "taskLabel": "Task",
+      "dueDateLabel": "Due date",
+      "adding": "Adding…",
+      "add": "Add",
+      "onlyMine": "Only mine",
+      "empty": "Nothing here.",
+      "due": "Due {date}",
+      "reopen": "Reopen",
+      "done": "Done",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this task?",
+      "loadFailed": "Failed to load tasks",
+      "createFailed": "Failed to create task"
+    },
     "applicantsTable": {
       "empty": "No candidates found. Create a job posting and wait for applications.",
       "createPosition": "Create position",
@@ -1491,5 +1509,22 @@
       "key": "Key",
       "value": "Value"
     }
+  },
+  "notifications": {
+    "label": "Notifications",
+    "labelUnread": "Notifications, {count} unread",
+    "markAllRead": "Mark all read",
+    "empty": "Nothing yet."
+  },
+  "candidateTags": {
+    "title": "Tags",
+    "empty": "No tags yet.",
+    "removeTag": "Remove tag {name}",
+    "newTagPlaceholder": "New tag name",
+    "create": "Create",
+    "cancel": "Cancel",
+    "newTag": "New tag",
+    "addFailed": "Could not add that tag",
+    "createFailed": "Could not create that tag"
   }
 }
