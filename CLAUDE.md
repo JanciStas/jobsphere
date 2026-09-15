@@ -646,7 +646,16 @@ Príkazy projektu: typecheck=`yarn typecheck` · lint=`yarn lint` · test=`yarn 
 
 ## Security posture
 
-skóre: **74/100** (sweep 2026-09-14; 10.7.2026 bolo 91 — rozdiel je celý v zostarnutých závislostiach) | otvorené: **0 Critical · 4 High** (H3 mŕtva results route, H4 Stripe env, SEC-1 Next 14.2.35, H6 E2E) · 8 Medium (M1 OAuth tlačidlá, M2 KV, M3 Sentry, M4 integrácia, M9 Trivy, SEC-2, SEC-3, M5 IMAP/SMTP deferred) · 6 Low | verdikt: **GO s podmienkami** — env kľúče do produkcie + results route pred marketingom | posledný test: **2026-09-14** (7 oblastí, vážené 70 %) | report: `PRODUCTION_TEST_REPORT_2026-09-14.md`
+skóre: **69/100** (findings.json, sweep 2026-09-15) — počítané formulou nižšie len z `bezpecnostny-audit/findings.json` (Critical/High/Medium/Low), nie z celého production-readiness reportu; predošlá hodnota 74 v tejto sekcii omylom miešala security nálezy s QA metrikami (H6 E2E, M4 integrácia), ktoré nie sú vo findings.json. Tie sa teraz merajú a hlásia samostatne (pozri nižšie) — obe sa v tomto kole dramaticky zlepšili.
+
+otvorené: **0 Critical · 2 High** (H4 Stripe env, SEC-1 Next 14.2.35 — už najnovší 14.x patch, ďalšia oprava = major upgrade na Next 15+, mimo rozsahu) · **2 Medium** (M2 KV rate-limit env, M9 Trivy CI gate — zámerne vypnutý, kým SEC-1 nemá patch) · **3 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET) | opravené v tomto kole (2026-09-15): H3 (mŕtva results route), M1 (OAuth tlačidlá), SEC-2 (next-auth → 4.24.15), SEC-3 (xmldom → 0.8.15 cez root `resolutions`), plus M7-i18n a 4 appkové bugy mimo tejto tabuľky (embeddings sa nikdy neukladali, withdraw crash, pagination 500, MULTI_SELECT grading) — pozri `bezpecnostny-audit/findings.json`.
+
+**Integrácia a E2E — namerané znova 2026-09-15** (predošlé čísla boli skreslené: integračná suita bežala s data-collision medzi `packages/db` a `apps/web` testami, E2E bežalo cez `yarn dev` s on-demand kompiláciou spôsobujúcou 10s timeouty na každý login):
+
+- Integrácia (čistá izolovaná test DB): **373/381 (97,9 %)**, hore z 256/371 (69 %). Zvyšných 8 zlyhaní sú testovacie chyby/timing-citlivosti (overené jednotlivo), nie appkové bugy.
+- E2E chromium proti produkčnému buildu (`yarn start`, ako CI): **230/296 passed** na prvom behu (6 failed, 2 flaky-ale-passed-on-retry, 48 skipped, 10 nespustené), hore z 21/300 (7 %). Z tých 6: 2 opravené a jednotlivo overené (OAuth test aktualizovaný na nové M1 správanie; mobilný hamburger touch-target opravený `shrink-0` v `nav-drawer.tsx`), 1 (multi-select assessment redirect) vyšetrený bez jednoznačnej príčiny — appka aj server logujú úspech, problém je klientsky, treba ďalší dedikovaný pass. Zvyšné 3 (candidate-search ×2, cv-upload PDF) padajú na chýbajúcich env kľúčoch v E2E prostredí (OPENAI_API_KEY, storage/ClamAV), nie appkový bug.
+
+Formula skóre (nezmenená): 100 − Critical·20 − High·10 − Medium·4 − Low·1.
 
 > Predošlá baseline (100/100, 2026-06-29): `bezpecnostny-audit/SECURITY_REPORT_2026-06-29.md` · tracking: `bezpecnostny-audit/findings.json`. M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
 
