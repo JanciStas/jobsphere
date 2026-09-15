@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -28,6 +29,7 @@ interface NotificationRow {
 const POLL_MS = 60_000
 
 export function NotificationBell({ locale }: { locale: string }) {
+  const t = useTranslations('notifications')
   const [items, setItems] = useState<NotificationRow[]>([])
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
@@ -67,7 +69,7 @@ export function NotificationBell({ locale }: { locale: string }) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+        aria-label={unread > 0 ? t('labelUnread', { count: unread }) : t('label')}
         onClick={() => setOpen((v) => !v)}
       >
         <Bell className="h-4 w-4" />
@@ -85,21 +87,21 @@ export function NotificationBell({ locale }: { locale: string }) {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
           <div className="absolute right-0 z-50 mt-2 w-80 rounded-lg border bg-background shadow-lg">
             <div className="flex items-center justify-between border-b px-3 py-2">
-              <span className="text-sm font-medium">Notifications</span>
+              <span className="text-sm font-medium">{t('label')}</span>
               {unread > 0 && (
                 <button
                   type="button"
                   onClick={markAllRead}
                   className="text-xs text-muted-foreground hover:underline"
                 >
-                  Mark all read
+                  {t('markAllRead')}
                 </button>
               )}
             </div>
 
             <div className="max-h-80 overflow-y-auto">
               {items.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nothing yet.</p>
+                <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>
               ) : (
                 items.map((item) => {
                   const applicationId = item.data?.applicationId as string | undefined

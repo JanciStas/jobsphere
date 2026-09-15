@@ -519,6 +519,24 @@
       "quickPick": "Schnellauswahl (KI-Matching)",
       "quickPickHint": "Top 30 = die gesamte Kandidatendatenbank Ihres Unternehmens"
     },
+    "tasks": {
+      "pageTitle": "Aufgaben",
+      "pageSubtitle": "Nachfassaktionen, die Sie oder Ihr Team jemandem schulden.",
+      "taskPlaceholder": "Sie wegen des Angebots zurückrufen…",
+      "taskLabel": "Aufgabe",
+      "dueDateLabel": "Fälligkeitsdatum",
+      "adding": "Wird hinzugefügt…",
+      "add": "Hinzufügen",
+      "onlyMine": "Nur meine",
+      "empty": "Hier ist nichts.",
+      "due": "Fällig {date}",
+      "reopen": "Wieder öffnen",
+      "done": "Erledigt",
+      "delete": "Löschen",
+      "deleteConfirm": "Diese Aufgabe löschen?",
+      "loadFailed": "Aufgaben konnten nicht geladen werden",
+      "createFailed": "Aufgabe konnte nicht erstellt werden"
+    },
     "applicantsTable": {
       "empty": "Keine Kandidaten gefunden. Erstellen Sie eine Stellenanzeige und warten Sie auf Bewerbungen.",
       "createPosition": "Position erstellen",
@@ -1491,5 +1509,22 @@
       "key": "Schlüssel",
       "value": "Wert"
     }
+  },
+  "notifications": {
+    "label": "Benachrichtigungen",
+    "labelUnread": "Benachrichtigungen, {count} ungelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "empty": "Noch nichts."
+  },
+  "candidateTags": {
+    "title": "Tags",
+    "empty": "Noch keine Tags.",
+    "removeTag": "Tag {name} entfernen",
+    "newTagPlaceholder": "Name des neuen Tags",
+    "create": "Erstellen",
+    "cancel": "Abbrechen",
+    "newTag": "Neuer Tag",
+    "addFailed": "Tag konnte nicht hinzugefügt werden",
+    "createFailed": "Tag konnte nicht erstellt werden"
   }
 }

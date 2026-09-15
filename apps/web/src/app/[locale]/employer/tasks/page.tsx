@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { TasksClient } from './tasks-client'
 
@@ -18,11 +19,13 @@ export default async function TasksPage({ params }: { params: { locale: string }
     redirect(`/${params.locale}/login`)
   }
 
+  const t = await getTranslations({ locale: params.locale, namespace: 'employer.tasks' })
+
   return (
     <div className="container mx-auto py-10">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Tasks</h1>
-        <p className="mt-1 text-muted-foreground">Follow-ups you and your team owe someone.</p>
+        <h1 className="text-3xl font-bold">{t('pageTitle')}</h1>
+        <p className="mt-1 text-muted-foreground">{t('pageSubtitle')}</p>
       </div>
       <TasksClient locale={params.locale} />
     </div>
