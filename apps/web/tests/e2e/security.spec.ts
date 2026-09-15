@@ -464,6 +464,7 @@ test.describe('OAuth Security', () => {
     // just throw a NextAuth error on click.
     await page.goto('/en/login')
 
+    // Accessible name is "Or continue with Google" (label + provider name).
     const googleButton = page.getByRole('button', { name: /google/i })
     await expect(googleButton).not.toBeVisible()
   })
