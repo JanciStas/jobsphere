@@ -81,15 +81,6 @@ test.describe('Responsive Layout', () => {
 })
 
 test.describe('Touch-Friendly Interface', () => {
-  /**
-   * KNOWN APP BUG — this test fails on purpose, do not relax the threshold.
-   *
-   * At 375px the header's hamburger (`NavDrawer` trigger, `h-10 w-10`) is a flex
-   * item next to the language switcher and the Log in / Sign up buttons. The row
-   * does not fit, so the trigger is squeezed to 20x40 CSS px — half its intended
-   * 40x40 touch target. The fix belongs in the header (`shrink-0` on the trigger
-   * / a narrower action cluster below `md`), not here.
-   */
   test('Buttons should be touch-friendly on mobile', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 })

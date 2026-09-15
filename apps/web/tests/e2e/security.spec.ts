@@ -457,12 +457,15 @@ test.describe('Session Management', () => {
 })
 
 test.describe('OAuth Security', () => {
-  test('should have Google OAuth button', async ({ page }) => {
+  test('hides the Google OAuth button when the provider is not configured', async ({ page }) => {
+    // GOOGLE_CLIENT_ID/SECRET are unset in the E2E env (same as the skipped
+    // tests below), so lib/auth.ts never registers GoogleProvider. The login
+    // page mirrors that server-side and must not render a button that would
+    // just throw a NextAuth error on click.
     await page.goto('/en/login')
 
-    // Accessible name is "Or continue with Google" (label + provider name).
     const googleButton = page.getByRole('button', { name: /google/i })
-    await expect(googleButton).toBeVisible()
+    await expect(googleButton).not.toBeVisible()
   })
 
   test('should redirect to Google OAuth with proper parameters', async () => {
