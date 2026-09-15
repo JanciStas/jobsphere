@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
-import { getPrismaClient, seedTestData, cleanupDynamicData, cleanupAllTestData, disconnectDb, TEST_IDS, createTestJob, createTestCandidate, createTestCandidateWithContact } from '../helpers/test-db'
-import { Prisma } from '@prisma/client'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import {
+  getPrismaClient,
+  TEST_IDS,
+  createTestJob,
+  createTestCandidate,
+  createTestCandidateWithContact,
+} from '../helpers/test-db'
 
 /**
  * Database Schema Validation Integration Tests
@@ -9,19 +14,51 @@ import { Prisma } from '@prisma/client'
 
 const prisma = getPrismaClient()
 
+// Fixtures this file creates OUTSIDE the shared test organisation. Neither
+// cleanupDynamicData (orgId-scoped) nor cleanupAllTestData (users prefixed
+// `test-user-`, org `test-org-id`) touches them, so on a persistent database the
+// second run of the suite hit the very unique constraints these tests assert and
+// failed on the FIRST create instead of the second. Cleared before and after.
+const EXTRA_USER_EMAILS = [
+  'unique-test@example.com',
+  'user-org-role-test@example.com',
+  'composite-test@example.com',
+]
+const EXTRA_ORG_SLUGS = ['unique-org-slug', 'second-org']
+
+async function cleanupFileFixtures() {
+  const orgs = await prisma.organization.findMany({
+    where: { slug: { in: EXTRA_ORG_SLUGS } },
+    select: { id: true },
+  })
+  const orgIds = orgs.map((o) => o.id)
+  const users = await prisma.user.findMany({
+    where: { email: { in: EXTRA_USER_EMAILS } },
+    select: { id: true },
+  })
+  const userIds = users.map((u) => u.id)
+
+  if (orgIds.length > 0) {
+    await prisma.job.deleteMany({ where: { orgId: { in: orgIds } } })
+    await prisma.userOrgRole.deleteMany({ where: { orgId: { in: orgIds } } })
+  }
+  if (userIds.length > 0) {
+    await prisma.job.deleteMany({ where: { createdBy: { in: userIds } } })
+    await prisma.userOrgRole.deleteMany({ where: { userId: { in: userIds } } })
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } })
+  }
+  if (orgIds.length > 0) {
+    await prisma.organization.deleteMany({ where: { id: { in: orgIds } } })
+  }
+}
+
 describe('Database Schema Validation', () => {
-  beforeAll(async () => {
-    await seedTestData()
-  })
-
-  beforeEach(async () => {
-    await cleanupDynamicData()
-  })
-
-  afterAll(async () => {
-    await cleanupAllTestData()
-    await disconnectDb()
-  })
+  // Seeding, per-test cleanup and teardown are global (tests/integration/setup.ts).
+  // Repeating them here — this file used to call cleanupAllTestData() and
+  // disconnectDb() in its own afterAll — tears the shared fixture down and closes
+  // the client for every file scheduled after it.
+  beforeAll(cleanupFileFixtures)
+  afterAll(cleanupFileFixtures)
 
   describe('Foreign Key Constraints', () => {
     it('should prevent creating job with non-existent organization', async () => {
@@ -42,7 +79,7 @@ describe('Database Schema Validation', () => {
             remote: false,
             hybrid: false,
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -64,7 +101,7 @@ describe('Database Schema Validation', () => {
             remote: false,
             hybrid: false,
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -80,7 +117,7 @@ describe('Database Schema Validation', () => {
             stage: 'NEW',
             source: 'WEBSITE',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -96,7 +133,7 @@ describe('Database Schema Validation', () => {
             stage: 'NEW',
             source: 'WEBSITE',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -109,7 +146,7 @@ describe('Database Schema Validation', () => {
             email: 'test@example.com',
             isPrimary: true,
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -149,7 +186,7 @@ describe('Database Schema Validation', () => {
         prisma.application.update({
           where: { id: application.id },
           data: { assignedTo: 'non-existent-user-id' },
-        })
+        }),
       ).rejects.toThrow()
     })
   })
@@ -175,7 +212,7 @@ describe('Database Schema Validation', () => {
             password: 'hashedpassword',
             locale: 'en',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -197,7 +234,7 @@ describe('Database Schema Validation', () => {
             slug, // Duplicate slug
             industry: 'Technology',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -207,9 +244,7 @@ describe('Database Schema Validation', () => {
       await createTestJob({ slug })
 
       // Same slug in same org should fail
-      await expect(
-        createTestJob({ slug })
-      ).rejects.toThrow()
+      await expect(createTestJob({ slug })).rejects.toThrow()
     })
 
     it('should allow same job slug in different organizations', async () => {
@@ -273,7 +308,7 @@ describe('Database Schema Validation', () => {
             stage: 'SCREENING',
             source: 'LINKEDIN',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -303,7 +338,7 @@ describe('Database Schema Validation', () => {
             orgId: TEST_IDS.org,
             role: 'ORG_ADMIN', // Different role, same user+org
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -335,7 +370,7 @@ describe('Database Schema Validation', () => {
             explanation: [],
             version: 'v1.0',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -351,8 +386,14 @@ describe('Database Schema Validation', () => {
     })
   })
 
-  describe('Cascade Deletes', () => {
-    it('should cascade delete applications when job is deleted', async () => {
+  // These used to assert ON DELETE CASCADE. The database says otherwise: none of
+  // these relations declares `onDelete` in schema.prisma, so Prisma generated
+  // ON DELETE RESTRICT for every one of them, and the parent delete raises P2003
+  // while a child row still exists. That RESTRICT is the real contract — it is
+  // why tests/integration/helpers/test-db.ts has to delete leaves first — so the
+  // tests now pin it instead of asserting a cascade that was never there.
+  describe('Referential actions on delete (RESTRICT)', () => {
+    it('restricts deleting a job while an application references it', async () => {
       const job = await createTestJob()
       const candidate = await createTestCandidate()
 
@@ -366,31 +407,38 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await prisma.job.delete({ where: { id: job.id } })
+      await expect(prisma.job.delete({ where: { id: job.id } })).rejects.toMatchObject({
+        code: 'P2003',
+      })
 
-      // Application should be deleted (or trigger error if not cascading)
+      // The application is untouched — no silent data loss behind a failed delete.
       const applicationAfter = await prisma.application.findUnique({
         where: { id: application.id },
       })
+      expect(applicationAfter).not.toBeNull()
 
-      // Depending on schema: either null (cascade delete) or throws error
-      // For this test, we expect cascade delete
-      expect(applicationAfter).toBeNull()
+      // Removing the child first makes the parent delete succeed.
+      await prisma.application.delete({ where: { id: application.id } })
+      await expect(prisma.job.delete({ where: { id: job.id } })).resolves.toBeTruthy()
     })
 
-    it('should cascade delete candidate contacts when candidate is deleted', async () => {
+    it('restricts deleting a candidate while a contact references it', async () => {
       const { candidate, contact } = await createTestCandidateWithContact()
 
-      await prisma.candidate.delete({ where: { id: candidate.id } })
+      await expect(prisma.candidate.delete({ where: { id: candidate.id } })).rejects.toMatchObject({
+        code: 'P2003',
+      })
 
       const contactAfter = await prisma.candidateContact.findUnique({
         where: { id: contact.id },
       })
+      expect(contactAfter).not.toBeNull()
 
-      expect(contactAfter).toBeNull()
+      await prisma.candidateContact.delete({ where: { id: contact.id } })
+      await expect(prisma.candidate.delete({ where: { id: candidate.id } })).resolves.toBeTruthy()
     })
 
-    it('should cascade delete resume sections when resume is deleted', async () => {
+    it('restricts deleting a resume while a section references it', async () => {
       const candidate = await createTestCandidate()
 
       const resume = await prisma.resume.create({
@@ -412,16 +460,20 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await prisma.resume.delete({ where: { id: resume.id } })
+      await expect(prisma.resume.delete({ where: { id: resume.id } })).rejects.toMatchObject({
+        code: 'P2003',
+      })
 
       const sectionAfter = await prisma.resumeSection.findUnique({
         where: { id: section.id },
       })
+      expect(sectionAfter).not.toBeNull()
 
-      expect(sectionAfter).toBeNull()
+      await prisma.resumeSection.delete({ where: { id: section.id } })
+      await expect(prisma.resume.delete({ where: { id: resume.id } })).resolves.toBeTruthy()
     })
 
-    it('should cascade delete application activities when application is deleted', async () => {
+    it('restricts deleting an application while an activity references it', async () => {
       const job = await createTestJob()
       const candidate = await createTestCandidate()
 
@@ -443,16 +495,25 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await prisma.application.delete({ where: { id: application.id } })
+      // This is the constraint that made every "withdraw application" request
+      // return 500: the route deleted the Application on its own, believing a
+      // cascade would take the 'APPLIED' activity with it.
+      await expect(
+        prisma.application.delete({ where: { id: application.id } }),
+      ).rejects.toMatchObject({ code: 'P2003' })
 
       const activityAfter = await prisma.applicationActivity.findUnique({
         where: { id: activity.id },
       })
+      expect(activityAfter).not.toBeNull()
 
-      expect(activityAfter).toBeNull()
+      await prisma.applicationActivity.delete({ where: { id: activity.id } })
+      await expect(
+        prisma.application.delete({ where: { id: application.id } }),
+      ).resolves.toBeTruthy()
     })
 
-    it('should cascade delete email sequence events when run is deleted', async () => {
+    it('restricts deleting an email sequence run while an event references it', async () => {
       const candidate = await createTestCandidate()
 
       const sequence = await prisma.emailSequence.create({
@@ -491,16 +552,20 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await prisma.emailSequenceRun.delete({ where: { id: run.id } })
+      await expect(prisma.emailSequenceRun.delete({ where: { id: run.id } })).rejects.toMatchObject(
+        { code: 'P2003' },
+      )
 
       const eventAfter = await prisma.emailSequenceEvent.findUnique({
         where: { id: event.id },
       })
+      expect(eventAfter).not.toBeNull()
 
-      expect(eventAfter).toBeNull()
+      await prisma.emailSequenceEvent.delete({ where: { id: event.id } })
+      await expect(prisma.emailSequenceRun.delete({ where: { id: run.id } })).resolves.toBeTruthy()
     })
 
-    it('should cascade delete answers when attempt is deleted', async () => {
+    it('restricts deleting an attempt while an answer references it', async () => {
       const candidate = await createTestCandidate()
 
       const assessment = await prisma.assessment.create({
@@ -558,13 +623,17 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await prisma.attempt.delete({ where: { id: attempt.id } })
+      await expect(prisma.attempt.delete({ where: { id: attempt.id } })).rejects.toMatchObject({
+        code: 'P2003',
+      })
 
       const answerAfter = await prisma.answer.findUnique({
         where: { id: answer.id },
       })
+      expect(answerAfter).not.toBeNull()
 
-      expect(answerAfter).toBeNull()
+      await prisma.answer.delete({ where: { id: answer.id } })
+      await expect(prisma.attempt.delete({ where: { id: attempt.id } })).resolves.toBeTruthy()
     })
   })
 
@@ -633,7 +702,7 @@ describe('Database Schema Validation', () => {
   describe('Data Integrity', () => {
     it('should maintain referential integrity across complex relationships', async () => {
       const job = await createTestJob()
-      const { candidate, contact } = await createTestCandidateWithContact()
+      const { candidate } = await createTestCandidateWithContact()
 
       const application = await prisma.application.create({
         data: {
@@ -645,7 +714,7 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      const activity = await prisma.applicationActivity.create({
+      await prisma.applicationActivity.create({
         data: {
           applicationId: application.id,
           type: 'APPLICATION_SUBMITTED',

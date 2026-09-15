@@ -21,8 +21,13 @@ test.describe('Authentication Fixtures Examples', () => {
     // Verify we're on the dashboard
     await expect(candidateUser).toHaveURL(/\/en\/dashboard/)
 
-    // Verify candidate can see their profile
-    await expect(candidateUser.locator('text=Test Candidate')).toBeVisible()
+    // Verify candidate can see their profile. The dashboard greets the user in
+    // its <h1> ("Welcome back, {name}!"), and once the header hydrates the same
+    // name also appears in the account menu button — so a bare
+    // `text=Test Candidate` matches two elements and dies on strict mode.
+    await expect(
+      candidateUser.getByRole('heading', { name: /welcome back, test candidate/i }),
+    ).toBeVisible()
   })
 
   /**
@@ -42,17 +47,22 @@ test.describe('Authentication Fixtures Examples', () => {
   /**
    * Example 3: Using the org admin user fixture
    */
-  test('org admin can access organization settings', async ({
-    orgAdminUser,
-  }) => {
+  test('org admin can access organization settings', async ({ orgAdminUser }) => {
     // Navigate to organization settings
     await orgAdminUser.goto('/en/employer/settings')
 
     // Verify we're on the settings page
     await expect(orgAdminUser).toHaveURL(/\/employer\/settings/)
 
-    // Admin should see organization management options
-    await expect(orgAdminUser.locator('text=Organization')).toBeVisible()
+    // Admin should see organization management options. The page calls them
+    // "Company …", never "Organization" — the only visible match for that word
+    // was the prose subtitle plus the profile tab's card description, i.e. two
+    // elements and a strict-mode failure.
+    await expect(
+      orgAdminUser.getByRole('heading', { name: 'Company Settings', level: 1 }),
+    ).toBeVisible()
+    await expect(orgAdminUser.getByRole('tab', { name: 'Company Profile' })).toBeVisible()
+    await expect(orgAdminUser.getByRole('tab', { name: 'Team Members' })).toBeVisible()
   })
 
   /**
@@ -69,10 +79,7 @@ test.describe('Authentication Fixtures Examples', () => {
   /**
    * Example 5: Using multiple roles in one test
    */
-  test('different roles have different access levels', async ({
-    candidateUser,
-    recruiterUser,
-  }) => {
+  test('different roles have different access levels', async ({ candidateUser, recruiterUser }) => {
     // Candidate cannot access employer routes
     await candidateUser.goto('/en/employer')
     // Should be redirected or see access denied
@@ -86,16 +93,10 @@ test.describe('Authentication Fixtures Examples', () => {
   /**
    * Example 6: Using the context factory for dynamic role testing
    */
-  test('can create multiple authenticated contexts', async ({
-    createAuthenticatedContext,
-  }) => {
+  test('can create multiple authenticated contexts', async ({ createAuthenticatedContext }) => {
     // Create contexts for different roles
-    const { page: recruiterPage } = await createAuthenticatedContext(
-      'recruiter'
-    )
-    const { page: candidatePage } = await createAuthenticatedContext(
-      'candidate'
-    )
+    const { page: recruiterPage } = await createAuthenticatedContext('recruiter')
+    const { page: candidatePage } = await createAuthenticatedContext('candidate')
 
     // Each page has its own authentication
     await recruiterPage.goto('/en/employer')
@@ -112,10 +113,7 @@ test.describe('Test User Data Verification', () => {
   /**
    * Verify test users are properly seeded
    */
-  test('test users have correct roles', async ({
-    recruiterUser,
-    orgAdminUser,
-  }) => {
+  test('test users have correct roles', async ({ recruiterUser, orgAdminUser }) => {
     // Recruiter should be part of "Test Org Inc"
     await recruiterUser.goto('/en/employer')
     await expect(recruiterUser.locator('text=Test Org Inc')).toBeVisible()

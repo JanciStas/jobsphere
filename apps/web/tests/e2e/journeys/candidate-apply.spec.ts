@@ -2,11 +2,15 @@
  * E2E journey — public candidate apply flow (resilient / data-independent)
  *
  * Anonymous `page`: browse `/en/jobs`, open the first job detail, follow the
- * "Apply" CTA to `/jobs/[id]/apply` and confirm the application form renders
- * (cover letter + CV choice). `/apply` is not middleware-protected, so an anon
- * visitor normally reaches the form; the last test still tolerates a login
- * redirect. Every step guards its precondition and `test.skip()`s when the
- * seeded DB has no published jobs.
+ * "Apply Now" CTA to `/jobs/[id]/apply`.
+ *
+ * `/apply` is not middleware-protected, so an anonymous visitor does reach the
+ * route — but `apply-client.tsx` pushes them to `/{locale}/login` from a
+ * `useEffect` as soon as the NextAuth session resolves to `unauthenticated`.
+ * That redirect is client-side and lands a beat AFTER the URL is already
+ * `/apply`, so the last test polls for the settled outcome instead of sampling
+ * `page.url()` once. Every step guards its precondition and `test.skip()`s when
+ * the seeded DB has no published jobs.
  */
 
 import { test, expect } from '@/tests/fixtures/auth'
@@ -27,7 +31,7 @@ test.describe('Candidate apply journey (public)', () => {
 
     // Either job cards or an explicit empty/no-results state must be present.
     const hasJobs = await jobLinks(page).count()
-    const noResults = await page.getByText(/no.*result|žiadne|not found/i).count()
+    const noResults = await page.getByText(/no.*result|no jobs found|žiadne|not found/i).count()
     expect(hasJobs > 0 || noResults > 0).toBeTruthy()
   })
 
@@ -42,9 +46,12 @@ test.describe('Candidate apply journey (public)', () => {
 
     await links.first().click()
     await page.waitForURL(/\/jobs\/[^/]+$/, { timeout: T }).catch(() => {})
-    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: T })
 
-    // Apply CTA (link to /apply, or a fallback Apply button).
+    // The job detail page has NO <h1> and no <h2> of its own — the job title is
+    // a CardTitle, which renders as <h3>. Accept any of the three.
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({ timeout: T })
+
+    // Apply CTA — `<Button asChild><Link href=".../apply">Apply Now</Link>`.
     const applyCta = page.locator('a[href*="/apply"], button:has-text("Apply")').first()
     await expect(applyCta).toBeVisible({ timeout: T })
   })
@@ -68,7 +75,20 @@ test.describe('Candidate apply journey (public)', () => {
     }
 
     await applyCta.click()
-    await page.waitForURL(/\/(apply|login)/, { timeout: T }).catch(() => {})
+
+    // Poll for whichever outcome settles. Sampling `page.url()` once right after
+    // the click always reads `/apply`, because the gate is a client-side
+    // `router.push` that only fires once the session request comes back.
+    await expect
+      .poll(
+        async () => {
+          if (/\/login/.test(page.url())) return 'login'
+          if ((await page.locator('textarea[name="coverLetter"]').count()) > 0) return 'form'
+          return 'pending'
+        },
+        { timeout: T, intervals: [250, 500, 1000] },
+      )
+      .not.toBe('pending')
 
     if (/\/login/.test(page.url())) {
       // Gated: confirm we landed on the login surface.

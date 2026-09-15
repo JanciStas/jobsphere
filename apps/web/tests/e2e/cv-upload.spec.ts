@@ -4,13 +4,45 @@
  * Tests the multi-stage CV parsing pipeline including:
  * - File upload and validation
  * - PDF/DOCX text extraction
- * - OCR fallback for scanned documents
+ * - OCR / metadata fallback for scanned documents
  * - Security checks (file size, MIME type, macros, antivirus)
+ *
+ * Three things about the real endpoint shape this file:
+ *
+ * 1. POST /api/cv/upload is wrapped in `withCsrfProtection`, which accepts a
+ *    request only if it carries a same-origin `Origin`/`Referer` (or a
+ *    `Sec-Fetch-Site` of same-origin/same-site). Playwright's APIRequestContext
+ *    sends none of those by default, so every request here used to come back
+ *    403 `CSRF_TOKEN_INVALID`. The `extraHTTPHeaders` below is what a browser
+ *    would have sent anyway.
+ *
+ * 2. The route is rate limited with the `upload` preset — 10 requests per 5
+ *    minutes — and anonymous callers are bucketed BY CLIENT IP, so every test in
+ *    this file draws on ONE shared budget. The server runs NODE_ENV=production,
+ *    where `DISABLE_RATE_LIMIT` is deliberately ignored (SEC-011), so the budget
+ *    cannot be lifted for tests. This file therefore runs serially and is kept
+ *    to 9 uploads; assertions that used to have their own upload were folded
+ *    into the test that already uploads that fixture. Adding another upload here
+ *    will start costing a different test a 429.
+ *
+ * 3. The e2e environment must run with STORAGE_PROVIDER=local and
+ *    ENABLE_ANTIVIRUS=false. Otherwise `uploadCV` tries Vercel Blob without a
+ *    token (500) and `securityCheck` fails closed on an unreachable ClamAV
+ *    (400 `file_malware_detected` / ANTIVIRUS_UNAVAILABLE) — neither of which
+ *    says anything about the code under test.
  */
 
 import { test, expect } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
+
+const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000'
+
+// Satisfies the route's same-origin CSRF check (see note 1 above).
+test.use({ extraHTTPHeaders: { Origin: BASE_URL } })
+
+// One shared rate-limit bucket means order matters (see note 2 above).
+test.describe.configure({ mode: 'serial' })
 
 // Path to test fixtures
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures', 'files')
@@ -33,55 +65,47 @@ function createLargeFile(): Buffer {
   return Buffer.alloc(size, 'a')
 }
 
-// Helper to create a DOCX with macros
-function createMacroDocx(): Buffer {
-  // Base DOCX content
-  const baseDocx = getFixtureBuffer('sample-cv.docx')
-
-  // For testing purposes, we'll use the base DOCX
-  // In real implementation, this would have vbaProject.bin added
-  return baseDocx
-}
+const PDF_MIME = 'application/pdf'
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 test.describe('CV Upload - File Type Validation', () => {
   test('should successfully upload and parse PDF file', async ({ request }) => {
     const file = getFixtureBuffer('sample-cv.pdf')
 
-    const formData = new FormData()
-    formData.append('file', new Blob([file], { type: 'application/pdf' }), 'sample-cv.pdf')
-
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'sample-cv.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
+        file: { name: 'sample-cv.pdf', mimeType: PDF_MIME, buffer: file },
       },
     })
 
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
 
-    // Verify response structure
-    expect(data).toHaveProperty('blobUrl')
-    expect(data).toHaveProperty('rawText')
-    expect(data).toHaveProperty('filename', 'sample-cv.pdf')
-    expect(data).toHaveProperty('parseMethod')
-    expect(data).toHaveProperty('confidence')
-    expect(data).toHaveProperty('extractedLength')
-    expect(data).toHaveProperty('traceId')
+    // Response shape. `blobUrl` keeps its name for backward compatibility but is
+    // whatever the configured storage provider returned — under
+    // STORAGE_PROVIDER=local that is a site-relative /uploads/... path, not an
+    // absolute https:// URL.
+    expect(data).toMatchObject({
+      blobUrl: expect.any(String),
+      rawText: expect.any(String),
+      filename: 'sample-cv.pdf',
+      size: expect.any(Number),
+      extractedLength: expect.any(Number),
+      parseMethod: 'node_pdf',
+      confidence: expect.any(Number),
+      traceId: expect.stringMatching(/^[a-f0-9-]{36}$/),
+    })
+    expect(data.blobUrl).toMatch(/cvs\/anonymous\//i)
 
-    // Verify parsing method
-    expect(data.parseMethod).toBe('node_pdf')
-
-    // Verify text was extracted
+    // Text actually came out of the PDF.
     expect(data.rawText).toContain('John Doe')
     expect(data.rawText).toContain('john.doe@example.com')
     expect(data.extractedLength).toBeGreaterThan(50)
 
-    // Verify high confidence for standard PDF
+    // Standard PDF -> high confidence.
     expect(data.confidence).toBeGreaterThanOrEqual(0.9)
+    expect(data.confidence).toBeLessThanOrEqual(1)
+    expect(data.size).toBeGreaterThan(0)
   })
 
   test('should successfully upload and parse DOCX file', async ({ request }) => {
@@ -89,31 +113,21 @@ test.describe('CV Upload - File Type Validation', () => {
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'sample-cv.docx',
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          buffer: file,
-        },
+        file: { name: 'sample-cv.docx', mimeType: DOCX_MIME, buffer: file },
       },
     })
 
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
 
-    // Verify response structure
     expect(data).toHaveProperty('blobUrl')
-    expect(data).toHaveProperty('rawText')
     expect(data).toHaveProperty('filename', 'sample-cv.docx')
-
-    // Verify parsing method
     expect(data.parseMethod).toBe('node_docx')
 
-    // Verify text was extracted (DOCX contains Jane Smith CV)
+    // DOCX fixture is the Jane Smith CV.
     expect(data.rawText).toContain('Jane Smith')
     expect(data.rawText).toContain('jane.smith@example.com')
     expect(data.extractedLength).toBeGreaterThan(50)
-
-    // Verify high confidence for standard DOCX
     expect(data.confidence).toBeGreaterThanOrEqual(0.9)
   })
 
@@ -140,10 +154,10 @@ test.describe('CV Upload - File Type Validation', () => {
   })
 
   test('should reject when no file provided', async ({ request }) => {
+    // multipart with a non-"file" field: the route reads formData().get('file'),
+    // so this exercises the missing-file branch with a well-formed body.
     const response = await request.post('/api/cv/upload', {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      multipart: { notAFile: 'x' },
     })
 
     expect(response.status()).toBe(400)
@@ -154,52 +168,36 @@ test.describe('CV Upload - File Type Validation', () => {
 })
 
 test.describe('CV Upload - Security Checks', () => {
-  test('should reject file larger than 10MB', async ({ request }) => {
+  test('should reject file larger than 10MB with a helpful message', async ({ request }) => {
     const largeFile = createLargeFile()
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'large-cv.pdf',
-          mimeType: 'application/pdf',
-          buffer: largeFile,
-        },
+        file: { name: 'large-cv.pdf', mimeType: PDF_MIME, buffer: largeFile },
       },
     })
 
     expect(response.status()).toBe(400)
     const data = await response.json()
 
-    expect(data).toHaveProperty('error')
     expect(data).toHaveProperty('code', 'file_too_large')
-    expect(data.error).toMatch(/file.*too large/i)
+    // The message names both the actual size and the limit, e.g.
+    // "File size 11534336 bytes exceeds maximum 10485760 bytes".
+    expect(data.error).toMatch(/exceeds maximum/i)
+    expect(data.error).toMatch(/10485760/)
+    // Descriptive prose, not a bare code.
+    expect(data.error.length).toBeGreaterThan(10)
   })
 
-  test('should reject DOCX with macros', async ({ request }) => {
-    // Note: This test depends on the macro detection implementation
-    // The actual macro-infected file would need vbaProject.bin
-    const macroFile = createMacroDocx()
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'macro-cv.docx',
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          buffer: macroFile,
-        },
-      },
-    })
-
-    // Should either succeed (if no macros detected) or reject with has_macros
-    const data = await response.json()
-
-    if (!response.ok()) {
-      expect(data).toHaveProperty('code')
-      // If rejected, should be due to macros
-      if (data.code === 'file_has_macros') {
-        expect(data.error).toMatch(/macro/i)
-      }
-    }
+  // The repo has no macro-bearing DOCX. `sample-cv.docx` is a plain document, so
+  // this test uploaded a clean file and asserted nothing unless it happened to be
+  // rejected — it could never detect a macro-detection regression. Restore it by
+  // committing a fixture whose zip contains word/vbaProject.bin.
+  test('should reject DOCX with macros', async () => {
+    test.skip(
+      true,
+      'No macro-bearing DOCX fixture in the repo: sample-cv.docx is a plain document, so this test uploaded a clean file and could never detect a macro-detection regression. Restore by committing a .docx whose zip contains word/vbaProject.bin.',
+    )
   })
 
   test('should detect MIME type spoofing', async ({ request }) => {
@@ -208,11 +206,7 @@ test.describe('CV Upload - Security Checks', () => {
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'fake.pdf',
-          mimeType: 'application/pdf',
-          buffer: textFile,
-        },
+        file: { name: 'fake.pdf', mimeType: PDF_MIME, buffer: textFile },
       },
     })
 
@@ -220,44 +214,45 @@ test.describe('CV Upload - Security Checks', () => {
     const data = await response.json()
 
     if (!response.ok()) {
-      expect(data).toHaveProperty('code')
-      // Could be MIME mismatch or parsing failure
-      expect(['file_mime_mismatch', 'file_corrupted', 'file_no_text']).toContain(data.code)
+      // Real codes raised by securityCheck / the parser pipeline. The route has
+      // no `file_mime_mismatch` — the MIME guard reports `mime_type_mismatch`.
+      expect(['mime_type_mismatch', 'file_corrupted', 'file_empty']).toContain(data.code)
     }
   })
 })
 
-test.describe('CV Upload - OCR Fallback', () => {
-  test('should fallback to OCR for scanned PDF with minimal text', async ({ request }) => {
+test.describe('CV Upload - OCR / metadata fallback', () => {
+  test('should fall back for a scanned PDF with minimal text', async ({ request }) => {
     const file = getFixtureBuffer('scanned-cv.pdf')
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'scanned-cv.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
+        file: { name: 'scanned-cv.pdf', mimeType: PDF_MIME, buffer: file },
       },
     })
 
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
 
-    // Should either use OCR or metadata fallback
+    // With ENABLE_OCR off (the e2e default) the pipeline lands on the metadata
+    // fallback; with a Tesseract service reachable it would land on OCR.
     expect(['ocr_tesseract', 'metadata_fallback']).toContain(data.parseMethod)
 
-    // OCR has lower confidence
     if (data.parseMethod === 'ocr_tesseract') {
       expect(data.confidence).toBeLessThan(0.9)
       expect(data.confidence).toBeGreaterThanOrEqual(0.7)
     }
 
-    // Metadata fallback has zero confidence
     if (data.parseMethod === 'metadata_fallback') {
       expect(data.confidence).toBe(0)
-      expect(data).toHaveProperty('warning')
-      expect(data.warning?.code).toBe('file_no_text')
+      // The pipeline reports the post-OCR code here, not the bare `file_no_text`
+      // the node stage raises.
+      expect(data.warning).toMatchObject({
+        code: 'file_no_text_after_ocr',
+        message: expect.any(String),
+      })
+      // Metadata is still returned so the user gets something to edit.
+      expect(data.rawText).toContain('Filename: scanned-cv')
     }
   })
 
@@ -311,156 +306,21 @@ startxref
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'empty.pdf',
-          mimeType: 'application/pdf',
-          buffer: emptyPdf,
-        },
+        file: { name: 'empty.pdf', mimeType: PDF_MIME, buffer: emptyPdf },
       },
     })
 
     expect(response.ok()).toBeTruthy()
     const data = await response.json()
 
-    // Should fallback to metadata extraction
+    // Should fall back to metadata extraction
     expect(data.parseMethod).toBe('metadata_fallback')
     expect(data.confidence).toBe(0)
     expect(data).toHaveProperty('warning')
-    expect(data.warning?.code).toBe('file_no_text')
+    expect(data.warning?.code).toMatch(/^file_no_text/)
 
     // Should still provide metadata
     expect(data.rawText).toContain('Filename: empty')
-  })
-})
-
-test.describe('CV Upload - Response Format', () => {
-  test('should return complete metadata for successful upload', async ({ request }) => {
-    const file = getFixtureBuffer('sample-cv.pdf')
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'test-cv.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
-      },
-    })
-
-    const data = await response.json()
-
-    // Verify all required fields are present
-    expect(data).toMatchObject({
-      blobUrl: expect.stringMatching(/^https?:\/\//),
-      rawText: expect.any(String),
-      filename: 'test-cv.pdf',
-      size: expect.any(Number),
-      extractedLength: expect.any(Number),
-      parseMethod: expect.stringMatching(/^(node_pdf|node_docx|ocr_tesseract|metadata_fallback)$/),
-      confidence: expect.any(Number),
-      traceId: expect.stringMatching(/^[a-f0-9-]{36}$/), // UUID format
-    })
-
-    // Verify numeric constraints
-    expect(data.size).toBeGreaterThan(0)
-    expect(data.extractedLength).toBeGreaterThan(0)
-    expect(data.confidence).toBeGreaterThanOrEqual(0)
-    expect(data.confidence).toBeLessThanOrEqual(1)
-  })
-
-  test('should include warning for low-confidence extractions', async ({ request }) => {
-    const file = getFixtureBuffer('scanned-cv.pdf')
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'scanned.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
-      },
-    })
-
-    const data = await response.json()
-
-    // If metadata fallback, should have warning
-    if (data.parseMethod === 'metadata_fallback') {
-      expect(data).toHaveProperty('warning')
-      expect(data.warning).toMatchObject({
-        code: expect.any(String),
-        message: expect.any(String),
-      })
-    }
-  })
-})
-
-test.describe('CV Upload - Anonymous vs Authenticated', () => {
-  test('should allow anonymous CV upload', async ({ request }) => {
-    const file = getFixtureBuffer('sample-cv.pdf')
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'anonymous-cv.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
-      },
-    })
-
-    expect(response.ok()).toBeTruthy()
-    const data = await response.json()
-
-    // Should succeed for anonymous users
-    expect(data).toHaveProperty('blobUrl')
-
-    // Blob URL should contain 'anonymous' path for unauthenticated uploads
-    expect(data.blobUrl).toMatch(/cvs\/anonymous\//i)
-  })
-
-  // Note: Authenticated upload test would require auth fixtures
-  // Example with auth fixture (when available):
-  /*
-  test('should upload CV for authenticated user', async ({ candidateUser }) => {
-    // This would use the candidateUser fixture from auth.ts
-    // and make the upload request in authenticated context
-  })
-  */
-})
-
-test.describe('CV Upload - Rate Limiting', () => {
-  test('should enforce rate limits on uploads', async ({ request }) => {
-    const file = getFixtureBuffer('sample-cv.pdf')
-
-    // Make multiple rapid requests to trigger rate limit
-    // Rate limit: 10 uploads per 5 minutes (preset: 'upload')
-    const requests = []
-
-    for (let i = 0; i < 12; i++) {
-      requests.push(
-        request.post('/api/cv/upload', {
-          multipart: {
-            file: {
-              name: `cv-${i}.pdf`,
-              mimeType: 'application/pdf',
-              buffer: file,
-            },
-          },
-        })
-      )
-    }
-
-    const responses = await Promise.all(requests)
-
-    // Some requests should succeed, but eventually hit rate limit
-    const successCount = responses.filter((r) => r.ok()).length
-    const rateLimitedCount = responses.filter((r) => r.status() === 429).length
-
-    // At least one should be rate limited (if rate limiting is enabled)
-    // Note: Rate limiting may be disabled in test environment
-    if (process.env.ENABLE_RATE_LIMIT !== 'false') {
-      expect(rateLimitedCount).toBeGreaterThan(0)
-    }
   })
 })
 
@@ -470,68 +330,36 @@ test.describe('CV Upload - Error Handling', () => {
 
     const response = await request.post('/api/cv/upload', {
       multipart: {
-        file: {
-          name: 'corrupted.pdf',
-          mimeType: 'application/pdf',
-          buffer: corruptedPdf,
-        },
+        file: { name: 'corrupted.pdf', mimeType: PDF_MIME, buffer: corruptedPdf },
       },
     })
 
-    // Should return error or fallback to metadata
+    // Should return error or fall back to metadata
     const data = await response.json()
 
     if (!response.ok()) {
       expect(data).toHaveProperty('error')
-      expect(data).toHaveProperty('code')
-      expect(['file_corrupted', 'file_mime_mismatch', 'file_no_text']).toContain(data.code)
+      expect(['file_corrupted', 'mime_type_mismatch', 'file_empty']).toContain(data.code)
     } else {
-      // If it succeeded, should be via metadata fallback
       expect(data.parseMethod).toBe('metadata_fallback')
       expect(data.confidence).toBe(0)
+      // Every response carries a trace id for debugging.
+      expect(data.traceId).toMatch(/^[a-f0-9-]{36}$/)
     }
   })
+})
 
-  test('should provide helpful error messages', async ({ request }) => {
-    const largeFile = createLargeFile()
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'huge.pdf',
-          mimeType: 'application/pdf',
-          buffer: largeFile,
-        },
-      },
-    })
-
-    expect(response.status()).toBe(400)
-    const data = await response.json()
-
-    // Should have descriptive error
-    expect(data).toHaveProperty('error')
-    expect(data).toHaveProperty('code')
-    expect(data.error).toBeTruthy()
-    expect(data.error.length).toBeGreaterThan(10) // Not just a code
-  })
-
-  test('should include trace ID for debugging', async ({ request }) => {
-    const file = getFixtureBuffer('sample-cv.pdf')
-
-    const response = await request.post('/api/cv/upload', {
-      multipart: {
-        file: {
-          name: 'test.pdf',
-          mimeType: 'application/pdf',
-          buffer: file,
-        },
-      },
-    })
-
-    const data = await response.json()
-
-    // All responses should include trace ID for debugging
-    expect(data).toHaveProperty('traceId')
-    expect(data.traceId).toMatch(/^[a-f0-9-]{36}$/) // UUID format
+test.describe('CV Upload - Rate Limiting', () => {
+  // Verifying the 10-per-5-minutes `upload` budget means deliberately exhausting
+  // it, and because anonymous callers share one bucket per client IP that would
+  // starve every other test in this file (and any other spec that uploads) for
+  // the rest of the window. The endpoint's rate limiting is covered at the unit
+  // level instead; re-enable this only if the e2e run gets its own origin IP or
+  // a per-test bucket.
+  test('should enforce rate limits on uploads', async () => {
+    test.skip(
+      true,
+      'Exhausting the upload budget (10 per 5 min, bucketed per client IP for anonymous callers) starves every other upload test in the run, and NODE_ENV=production deliberately ignores DISABLE_RATE_LIMIT. Needs a per-test bucket or its own origin IP.',
+    )
   })
 })

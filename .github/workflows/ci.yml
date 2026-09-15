@@ -275,6 +275,12 @@ jobs:
           OPENROUTER_API_KEY: 'test-key'
           ANTHROPIC_API_KEY: 'test-key'
           OPENAI_API_KEY: 'test-key'
+          # CV upload needs both of these or /api/cv/upload can never succeed in
+          # CI: without STORAGE_PROVIDER the route tries Vercel Blob with no
+          # token and 500s, and securityCheck fails CLOSED on an unreachable
+          # ClamAV, rejecting every file as file_malware_detected.
+          STORAGE_PROVIDER: 'local'
+          ENABLE_ANTIVIRUS: 'false'
 
   security-scan:
     name: Security Scan

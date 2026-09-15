@@ -33,37 +33,74 @@ describe('External Service Failure Tests', () => {
       vi.restoreAllMocks()
     })
 
-    it('should fail-open when Redis is unavailable', async () => {
-      // Arrange - Mock Redis to throw connection error
-      const originalEnv = process.env.KV_REST_API_URL
-      process.env.KV_REST_API_URL = 'http://invalid-redis-host:6379'
+    it('falls back to the in-memory limiter when Upstash is not configured', async () => {
+      const originalDisable = process.env.DISABLE_RATE_LIMIT
+      const originalUrl = process.env.KV_REST_API_URL
+      const originalToken = process.env.KV_REST_API_TOKEN
+      delete process.env.DISABLE_RATE_LIMIT
+      delete process.env.KV_REST_API_URL
+      delete process.env.KV_REST_API_TOKEN
 
-      // Mock console.error to suppress error output during test
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        // Act
+        const result = await rateLimit({
+          identifier: `no-redis-${Date.now()}`,
+          limit: 10,
+          window: 60,
+        })
 
-      // Act - Attempt rate limiting
-      const result = await rateLimit({
-        identifier: 'test-user',
-        limit: 10,
-        window: 60,
-      })
-
-      // Assert - Should allow request when Redis fails (fail-open)
-      expect(result.success).toBe(true)
-      expect(result.remaining).toBe(10) // Full limit available in fail-open mode
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Rate limit error'),
-        expect.any(Error)
-      )
-
-      // Cleanup
-      process.env.KV_REST_API_URL = originalEnv
+        // Assert — the request is served, but it is still COUNTED: the in-memory
+        // limiter is a real limiter, not a bypass.
+        expect(result.success).toBe(true)
+        expect(result.limit).toBe(10)
+        expect(result.remaining).toBe(9)
+      } finally {
+        if (originalDisable === undefined) delete process.env.DISABLE_RATE_LIMIT
+        else process.env.DISABLE_RATE_LIMIT = originalDisable
+        if (originalUrl === undefined) delete process.env.KV_REST_API_URL
+        else process.env.KV_REST_API_URL = originalUrl
+        if (originalToken === undefined) delete process.env.KV_REST_API_TOKEN
+        else process.env.KV_REST_API_TOKEN = originalToken
+      }
     })
+
+    it('fails CLOSED to half the limit when a configured Redis errors', async () => {
+      const originalDisable = process.env.DISABLE_RATE_LIMIT
+      const originalUrl = process.env.KV_REST_API_URL
+      const originalToken = process.env.KV_REST_API_TOKEN
+      delete process.env.DISABLE_RATE_LIMIT
+      // Configured but unreachable: getRedis() returns a client, the pipeline
+      // rejects, and the catch drops to the conservative in-memory limiter.
+      process.env.KV_REST_API_URL = 'http://127.0.0.1:1'
+      process.env.KV_REST_API_TOKEN = 'invalid-token'
+
+      try {
+        const identifier = `redis-down-${Date.now()}`
+        const first = await rateLimit({ identifier, limit: 10, window: 60 })
+
+        // limit is reported as requested, but only 5 (=10/2) are actually allowed.
+        expect(first.limit).toBe(10)
+        expect(first.success).toBe(true)
+        expect(first.remaining).toBe(4)
+
+        // Exhaust the conservative budget: 5 allowed in total, the 6th is denied.
+        for (let i = 0; i < 4; i++) {
+          await rateLimit({ identifier, limit: 10, window: 60 })
+        }
+        const denied = await rateLimit({ identifier, limit: 10, window: 60 })
+        expect(denied.success).toBe(false)
+      } finally {
+        if (originalDisable === undefined) delete process.env.DISABLE_RATE_LIMIT
+        else process.env.DISABLE_RATE_LIMIT = originalDisable
+        if (originalUrl === undefined) delete process.env.KV_REST_API_URL
+        else process.env.KV_REST_API_URL = originalUrl
+        if (originalToken === undefined) delete process.env.KV_REST_API_TOKEN
+        else process.env.KV_REST_API_TOKEN = originalToken
+      }
+    }, 20000)
 
     it('should handle Redis timeout gracefully', async () => {
       // Arrange - This test validates the timeout behavior
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
       // Mock Redis methods to simulate timeout
       vi.mock('@upstash/redis', () => ({
         Redis: vi.fn().mockImplementation(() => ({
@@ -91,8 +128,6 @@ describe('External Service Failure Tests', () => {
 
     it('should handle Redis authentication failure', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
       // Simulate auth failure
       const originalToken = process.env.KV_REST_API_TOKEN
       process.env.KV_REST_API_TOKEN = 'invalid-token'
@@ -114,8 +149,6 @@ describe('External Service Failure Tests', () => {
 
     it('should handle network partition (connection refused)', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
       // Use completely unreachable host
       const originalUrl = process.env.KV_REST_API_URL
       process.env.KV_REST_API_URL = 'http://192.0.2.1:6379' // TEST-NET-1 (unreachable)
@@ -136,33 +169,36 @@ describe('External Service Failure Tests', () => {
       process.env.KV_REST_API_URL = originalUrl
     })
 
-    it('should log detailed error information on Redis failure', async () => {
-      // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      // Invalid configuration
+    it('never throws out of rateLimit when Redis configuration is broken', async () => {
+      // The previous version spied on console.error and asserted it was called.
+      // With no Upstash configured there is no error path to log — rateLimit goes
+      // straight to the in-memory limiter — so the assertion was testing nothing
+      // that existed. What callers actually depend on is that this never throws.
+      const originalDisable = process.env.DISABLE_RATE_LIMIT
       const originalUrl = process.env.KV_REST_API_URL
-      process.env.KV_REST_API_URL = undefined
+      delete process.env.DISABLE_RATE_LIMIT
+      process.env.KV_REST_API_URL = 'not-a-url'
 
-      // Act
-      await rateLimit({
-        identifier: 'test-logging',
-        limit: 10,
-        window: 60,
-      })
-
-      // Assert - Should log error with context
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      // Cleanup
-      process.env.KV_REST_API_URL = originalUrl
-    })
+      try {
+        const result = await rateLimit({
+          identifier: `broken-config-${Date.now()}`,
+          limit: 10,
+          window: 60,
+        })
+        expect(result).toMatchObject({ limit: 10 })
+        expect(typeof result.success).toBe('boolean')
+      } finally {
+        if (originalDisable === undefined) delete process.env.DISABLE_RATE_LIMIT
+        else process.env.DISABLE_RATE_LIMIT = originalDisable
+        if (originalUrl === undefined) delete process.env.KV_REST_API_URL
+        else process.env.KV_REST_API_URL = originalUrl
+      }
+    }, 20000)
   })
 
   describe('Stripe Webhook Failures', () => {
     it('should handle invalid webhook signature', async () => {
       // Arrange - Mock Stripe SDK
-      const stripe = await import('stripe')
       const mockConstructEvent = vi.fn().mockImplementation(() => {
         throw new Error('Webhook signature verification failed')
       })
@@ -177,8 +213,6 @@ describe('External Service Failure Tests', () => {
 
     it('should handle Stripe API downtime during subscription update', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
       // This test validates error handling for Stripe API failures
       // In production, the webhook should:
       // 1. Return 500 to trigger retry
@@ -261,7 +295,7 @@ describe('External Service Failure Tests', () => {
           to: 'test@example.com',
           subject: 'Test',
           html: '<p>Test email</p>',
-        })
+        }),
       ).rejects.toThrow()
 
       expect(consoleErrorSpy).toHaveBeenCalled()
@@ -274,7 +308,7 @@ describe('External Service Failure Tests', () => {
 
     it('should handle Resend API 429 rate limit', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
@@ -293,7 +327,7 @@ describe('External Service Failure Tests', () => {
           to: 'test@example.com',
           subject: 'Test',
           html: '<p>Test</p>',
-        })
+        }),
       ).rejects.toThrow('Resend API error')
 
       // Cleanup
@@ -302,9 +336,12 @@ describe('External Service Failure Tests', () => {
       vi.restoreAllMocks()
     })
 
-    it('should handle SendGrid API authentication failure', async () => {
-      // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    it('propagates a SendGrid authentication failure instead of reporting success', async () => {
+      // sendSendGridEmail uses the @sendgrid/mail SDK, not fetch, and adds no
+      // 'SendGrid API error' wrapper — the SDK's own error is what reaches the
+      // caller. What matters is that the failure is not swallowed into
+      // { success: true }.
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
@@ -317,47 +354,66 @@ describe('External Service Failure Tests', () => {
       process.env.EMAIL_SERVICE = 'sendgrid'
       process.env.SENDGRID_API_KEY = 'invalid-key'
 
-      // Act & Assert
-      await expect(
-        sendEmail({
+      try {
+        await expect(
+          sendEmail({
+            to: 'test@example.com',
+            subject: 'Test',
+            html: '<p>Test</p>',
+          }),
+        ).rejects.toThrow()
+
+        // ...and with throwOnError disabled the caller gets an explicit failure.
+        const result = await sendEmail({
           to: 'test@example.com',
           subject: 'Test',
           html: '<p>Test</p>',
+          throwOnError: false,
         })
-      ).rejects.toThrow('SendGrid API error')
-
-      // Cleanup
-      process.env.EMAIL_SERVICE = originalService
-      process.env.SENDGRID_API_KEY = originalApiKey
-      vi.restoreAllMocks()
+        expect(result.success).toBe(false)
+        expect(result.error).toBeTruthy()
+      } finally {
+        process.env.EMAIL_SERVICE = originalService
+        if (originalApiKey === undefined) delete process.env.SENDGRID_API_KEY
+        else process.env.SENDGRID_API_KEY = originalApiKey
+        vi.restoreAllMocks()
+      }
     })
 
-    it('should handle missing API key gracefully', async () => {
-      // Arrange
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    it('surfaces a missing RESEND_API_KEY as a failure rather than a silent skip', async () => {
+      // There is no warn-and-skip path: sendResendEmail constructs
+      // `new Resend(process.env.RESEND_API_KEY)` and the SDK throws
+      // "Missing API key" when it is undefined. The old test awaited sendEmail
+      // without catching, so that throw failed the test outright.
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const originalService = process.env.EMAIL_SERVICE
       const originalApiKey = process.env.RESEND_API_KEY
       process.env.EMAIL_SERVICE = 'resend'
       delete process.env.RESEND_API_KEY
 
-      // Act
-      await sendEmail({
-        to: 'test@example.com',
-        subject: 'Test',
-        html: '<p>Test</p>',
-      })
+      try {
+        await expect(
+          sendEmail({
+            to: 'test@example.com',
+            subject: 'Test',
+            html: '<p>Test</p>',
+          }),
+        ).rejects.toThrow(/Missing API key/i)
 
-      // Assert - Should warn and skip sending
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('RESEND_API_KEY not set'),
-        expect.any(String)
-      )
-
-      // Cleanup
-      process.env.EMAIL_SERVICE = originalService
-      process.env.RESEND_API_KEY = originalApiKey
-      vi.restoreAllMocks()
+        const result = await sendEmail({
+          to: 'test@example.com',
+          subject: 'Test',
+          html: '<p>Test</p>',
+          throwOnError: false,
+        })
+        expect(result.success).toBe(false)
+      } finally {
+        process.env.EMAIL_SERVICE = originalService
+        if (originalApiKey === undefined) delete process.env.RESEND_API_KEY
+        else process.env.RESEND_API_KEY = originalApiKey
+        vi.restoreAllMocks()
+      }
     })
 
     it('should handle network failures during email send', async () => {
@@ -377,13 +433,15 @@ describe('External Service Failure Tests', () => {
           to: 'test@example.com',
           subject: 'Test',
           html: '<p>Test</p>',
-        })
+        }),
       ).rejects.toThrow()
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error sending email'),
-        expect.any(Error)
-      )
+      // logger.error hands console.error a single preformatted string, so the
+      // two-argument (message, Error) shape never matched; and the message is
+      // 'Failed to send email', not 'Error sending email'.
+      expect(consoleErrorSpy).toHaveBeenCalled()
+      const logged = consoleErrorSpy.mock.calls.map((c) => String(c[0])).join('\n')
+      expect(logged).toContain('Failed to send email')
 
       // Cleanup
       process.env.EMAIL_SERVICE = originalService
@@ -392,31 +450,32 @@ describe('External Service Failure Tests', () => {
     })
 
     it('should fallback to log mode when service is unavailable', async () => {
-      // Arrange
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      // EMAIL_SERVICE=log routes through logger.info('Email logged', {...}), which
+      // writes ONE formatted string to console.info — not console.log, and not a
+      // (message, object) pair.
+      const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
 
       const originalService = process.env.EMAIL_SERVICE
       process.env.EMAIL_SERVICE = 'log'
 
-      // Act
-      await sendEmail({
-        to: 'test@example.com',
-        subject: 'Test Email',
-        html: '<p>Test content</p>',
-      })
-
-      // Assert - Should log instead of sending
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Email would be sent'),
-        expect.objectContaining({
+      try {
+        // Act
+        const result = await sendEmail({
           to: 'test@example.com',
           subject: 'Test Email',
+          html: '<p>Test content</p>',
         })
-      )
 
-      // Cleanup
-      process.env.EMAIL_SERVICE = originalService
-      vi.restoreAllMocks()
+        // Assert - reports success without contacting a provider, and says so
+        expect(result.success).toBe(true)
+        const logged = consoleInfoSpy.mock.calls.map((c) => String(c[0])).join('\n')
+        expect(logged).toContain('Email logged')
+        expect(logged).toContain('test@example.com')
+        expect(logged).toContain('Test Email')
+      } finally {
+        process.env.EMAIL_SERVICE = originalService
+        vi.restoreAllMocks()
+      }
     })
   })
 
@@ -431,7 +490,7 @@ describe('External Service Failure Tests', () => {
 
     it('should handle Anthropic API rate limit (429)', async () => {
       // Arrange
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const cvText = 'John Doe\nSoftware Engineer\njohn@example.com\n+1234567890'
 
@@ -440,7 +499,7 @@ describe('External Service Failure Tests', () => {
         extractCvFromText(cvText, {
           apiKey: 'invalid-key',
           model: 'claude-opus-4-20250514',
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -453,7 +512,7 @@ describe('External Service Failure Tests', () => {
         extractCvFromText(cvText, {
           apiKey: 'sk-ant-invalid',
           model: 'claude-opus-4-20250514',
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -477,17 +536,17 @@ describe('External Service Failure Tests', () => {
           openRouterApiKey: 'invalid-key',
           apiKey: 'invalid-anthropic-key',
         })
-      } catch (error) {
+      } catch {
         // Assert - Should log OpenRouter attempt
         expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Attempting CV extraction with OpenRouter')
+          expect.stringContaining('Attempting CV extraction with OpenRouter'),
         )
       }
     })
 
     it('should handle malformed JSON response from AI', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // This validates that the parser handles invalid JSON gracefully
       const invalidJson = 'Not a valid JSON response'
@@ -512,13 +571,13 @@ describe('External Service Failure Tests', () => {
       await expect(
         extractCvFromText(cvText, {
           apiKey: 'test-key',
-        })
+        }),
       ).rejects.toThrow()
     })
 
     it('should handle OpenRouter rate limit', async () => {
       // Arrange
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const cvText = 'Test CV content'
 
@@ -534,14 +593,12 @@ describe('External Service Failure Tests', () => {
         extractCvFromText(cvText, {
           openRouterApiKey: 'test-key',
           apiKey: 'fallback-key',
-        })
+        }),
       ).rejects.toThrow()
     })
 
     it('should handle AI service unavailability (503)', async () => {
       // Arrange
-      const cvText = 'Test CV'
-
       // Simulate service unavailable
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
@@ -556,7 +613,7 @@ describe('External Service Failure Tests', () => {
 
     it('should provide meaningful error when all AI providers fail', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const cvText = 'Test CV'
 
@@ -565,7 +622,7 @@ describe('External Service Failure Tests', () => {
         extractCvFromText(cvText, {
           openRouterApiKey: 'invalid-1',
           apiKey: 'invalid-2',
-        })
+        }),
       ).rejects.toThrow(/All AI providers failed/)
     })
   })
@@ -601,7 +658,7 @@ describe('External Service Failure Tests', () => {
       expect(result.clean).toBe(true)
       expect(result.skipped).toBe(true)
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ClamAV unavailable - allowing file (fail-open mode)')
+        expect.stringContaining('ClamAV unavailable - allowing file (fail-open mode)'),
       )
 
       // Cleanup
@@ -632,7 +689,7 @@ describe('External Service Failure Tests', () => {
       expect(result.virus).toBe('ANTIVIRUS_UNAVAILABLE')
       expect(result.skipped).toBe(true)
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ClamAV unavailable - rejecting file (fail-closed mode)')
+        expect.stringContaining('ClamAV unavailable - rejecting file (fail-closed mode)'),
       )
 
       // Cleanup
@@ -647,13 +704,16 @@ describe('External Service Failure Tests', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const testBuffer = Buffer.from('test content')
-      process.env.CLAMAV_HOST = '192.0.2.1' // TEST-NET-1 (unreachable)
+      // Unresolvable host, not a blackholed IP (192.0.2.1): a blackhole hangs the
+      // TCP connect until the OS timeout, which is longer than this test's budget
+      // on some platforms, so this timed out instead of asserting anything.
+      process.env.CLAMAV_HOST = 'clamav-does-not-resolve.invalid'
       process.env.CLAMAV_PORT = '3310'
 
       // Act
       const result = await scanWithClamAV(testBuffer)
 
-      // Assert - Should handle timeout gracefully
+      // Assert - scan is reported as skipped, whichever fail mode is in force
       expect(result.skipped).toBe(true)
       expect(consoleErrorSpy).toHaveBeenCalled()
     }, 10000) // 10 second timeout for network operations
@@ -664,7 +724,7 @@ describe('External Service Failure Tests', () => {
       process.env.NODE_ENV = 'production'
       process.env.ANTIVIRUS_FAIL_MODE = 'open' // Override to fail-open
 
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
       const testBuffer = Buffer.from('test')
 
       process.env.CLAMAV_HOST = 'invalid-host'
@@ -687,7 +747,7 @@ describe('External Service Failure Tests', () => {
       process.env.NODE_ENV = 'development'
       process.env.ANTIVIRUS_FAIL_MODE = 'closed' // Override to fail-closed
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
       const testBuffer = Buffer.from('test')
 
       process.env.CLAMAV_HOST = 'invalid-host'
@@ -724,21 +784,13 @@ describe('External Service Failure Tests', () => {
 
     it('should skip scan when ENABLE_ANTIVIRUS is false', async () => {
       // Arrange
-      const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+      vi.spyOn(console, 'debug').mockImplementation(() => {})
 
       process.env.ENABLE_ANTIVIRUS = 'false'
       const testBuffer = Buffer.from('test')
 
-      // Act - Using the actual function from antivirus.ts
-      // Mock the logger instead
-      const mockLogger = {
-        debug: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-      }
-
-      // Since we can't easily mock the logger import, we test the expected behavior
+      // Act - Using the actual function from antivirus.ts.
+      // Since we can't easily mock the logger import, we test the expected behavior.
       const result = await scanWithClamAV(testBuffer)
 
       // Assert - Should skip scan and return clean
@@ -751,7 +803,7 @@ describe('External Service Failure Tests', () => {
 
     it('should handle security check failure with proper error', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const testBuffer = Buffer.from('test')
       const metadata = {
@@ -766,9 +818,7 @@ describe('External Service Failure Tests', () => {
       process.env.CLAMAV_HOST = 'invalid-clamav-host'
 
       // Act & Assert
-      await expect(
-        securityCheck(testBuffer, metadata)
-      ).rejects.toThrow()
+      await expect(securityCheck(testBuffer, metadata)).rejects.toThrow()
 
       // Cleanup
       delete process.env.NODE_ENV
@@ -776,7 +826,7 @@ describe('External Service Failure Tests', () => {
 
     it('should log scan time even on failure', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const testBuffer = Buffer.from('test')
       process.env.CLAMAV_HOST = 'timeout-host'
@@ -797,7 +847,7 @@ describe('External Service Failure Tests', () => {
   describe('Multiple Service Failures (Cascade)', () => {
     it('should handle Redis and Email failures simultaneously', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Disable both services
       const originalRedisUrl = process.env.KV_REST_API_URL
@@ -815,17 +865,18 @@ describe('External Service Failure Tests', () => {
         window: 60,
       })
 
-      // Email should warn and skip
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      await sendEmail({
+      // Email fails (no API key) — it reports the failure, it does not skip.
+      const emailResult = await sendEmail({
         to: 'test@example.com',
         subject: 'Test',
         html: '<p>Test</p>',
+        throwOnError: false,
       })
 
-      // Assert
+      // Assert — the two services are independent: email is down, rate limiting
+      // still answers.
       expect(rateLimitResult.success).toBe(true)
-      expect(consoleWarnSpy).toHaveBeenCalled()
+      expect(emailResult.success).toBe(false)
 
       // Cleanup
       process.env.KV_REST_API_URL = originalRedisUrl
@@ -862,7 +913,7 @@ describe('External Service Failure Tests', () => {
 
     it('should maintain service isolation - email failure does not affect rate limit', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       // Email fails
@@ -873,21 +924,23 @@ describe('External Service Failure Tests', () => {
 
       // Act - Rate limiting should still work
       const rateLimitResult = await rateLimit({
-        identifier: 'isolation-test',
+        identifier: `isolation-test-${Date.now()}`,
         limit: 100,
         window: 60,
       })
 
-      // Email fails gracefully
-      await sendEmail({
+      // Email fails gracefully (reported, not thrown, with throwOnError: false).
+      const emailResult = await sendEmail({
         to: 'test@example.com',
         subject: 'Test',
         html: '<p>Test</p>',
+        throwOnError: false,
       })
 
       // Assert - Rate limit works despite email failure
       expect(rateLimitResult.success).toBe(true)
-      expect(consoleWarnSpy).toHaveBeenCalled()
+      expect(emailResult.success).toBe(false)
+      expect(consoleWarnSpy).toBeDefined()
 
       // Cleanup
       process.env.RESEND_API_KEY = originalApiKey
@@ -899,7 +952,7 @@ describe('External Service Failure Tests', () => {
   describe('Service Recovery and Retry', () => {
     it('should log retry-able vs non-retry-able errors', async () => {
       // Arrange
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
 
       // Retry-able: Network timeout (should retry)
       const retryableError = new Error('ETIMEDOUT')
@@ -922,7 +975,7 @@ describe('External Service Failure Tests', () => {
       }
 
       // Assert - Each error message is actionable
-      Object.entries(errors).forEach(([service, message]) => {
+      Object.entries(errors).forEach(([, message]) => {
         expect(message).toMatch(/unavailable|failed|rejected/)
         expect(message.length).toBeGreaterThan(20)
       })

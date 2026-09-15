@@ -2,7 +2,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST, GET } from '@/app/api/applications/route'
 import { auth } from '@/lib/auth'
 import { createTestRequest, createCandidateSession, parseResponse } from '../../helpers/api-client'
-import { prisma, TEST_IDS, createTestJob, cleanupDynamicData } from '../../helpers/test-db'
+import {
+  prisma,
+  TEST_IDS,
+  createTestJob,
+  createTestCandidateWithContact,
+  cleanupDynamicData,
+} from '../../helpers/test-db'
+import { getOrCreateCandidateForUser } from '@/lib/identity'
 
 /**
  * Integration tests for POST /api/applications
@@ -27,7 +34,23 @@ vi.mock('@/lib/email', () => ({
 
 describe('POST /api/applications', () => {
   let testJob: any
-  let candidateId: string
+  // A *User* id. It is deliberately not called candidateId any more: this suite
+  // used it as an Application.candidateId, but Candidate is an org-scoped record
+  // with its own id and the route resolves it via getOrCreateCandidateForUser.
+  // Passing the user id straight through produced rows that violated
+  // Application_candidateId_fkey, and the response assertions compared a Candidate
+  // id against a User id.
+  const applicantUserId = TEST_IDS.candidate
+
+  /** The org-scoped Candidate the route resolves for the signed-in applicant. */
+  async function resolvedCandidateId(): Promise<string> {
+    const candidate = await prisma.candidate.findFirst({
+      where: { userId: applicantUserId, orgId: TEST_IDS.org, deletedAt: null },
+      select: { id: true },
+    })
+    expect(candidate).not.toBeNull()
+    return candidate!.id
+  }
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -40,8 +63,6 @@ describe('POST /api/applications', () => {
         'Looking for a talented software engineer with 3+ years of experience in web development.',
       status: 'PUBLISHED',
     })
-
-    candidateId = TEST_IDS.candidate
   })
 
   describe('Authentication', () => {
@@ -73,7 +94,7 @@ describe('POST /api/applications', () => {
       // Arrange
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
           email: 'candidate@test.com',
         }),
       )
@@ -91,7 +112,15 @@ describe('POST /api/applications', () => {
       // Assert
       expect(response.status).toBe(201)
       expect(data.jobId).toBe(testJob.id)
-      expect(data.candidateId).toBe(candidateId)
+
+      // candidateId is a Candidate id scoped to the JOB's organisation, not the
+      // applicant's User id, and the Candidate is linked back to the user.
+      expect(data.candidateId).not.toBe(applicantUserId)
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: data.candidateId },
+      })
+      expect(candidate?.userId).toBe(applicantUserId)
+      expect(candidate?.orgId).toBe(testJob.orgId)
     })
   })
 
@@ -99,7 +128,7 @@ describe('POST /api/applications', () => {
     beforeEach(() => {
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
         }),
       )
     })
@@ -115,9 +144,12 @@ describe('POST /api/applications', () => {
       const response = await POST(request)
       const data = await parseResponse(response)
 
-      // Assert
+      // Assert — the route answers a failed safeParse with a fixed `error` and the
+      // per-field detail in `details` (Zod fieldErrors); it never echoes the field
+      // name into `error`.
       expect(response.status).toBe(400)
-      expect(data.error).toContain('required')
+      expect(data.error).toBe('Invalid application data')
+      expect(data.details.jobId).toBeTruthy()
     })
 
     it('should reject application without cover letter', async () => {
@@ -133,13 +165,32 @@ describe('POST /api/applications', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toContain('required')
+      expect(data.error).toBe('Invalid application data')
+      expect(data.details.coverLetter).toBeTruthy()
+    })
+
+    it('should reject a malformed jobId before touching the database', async () => {
+      // 'non-existent-job-id' is not a cuid, so it never reaches the job lookup:
+      // SEC-009/010 added `jobId: z.string().cuid()` and this is rejected at
+      // validation. Pinned separately from the 404 case below so a regression in
+      // either is visible.
+      const request = createTestRequest('POST', {
+        jobId: 'non-existent-job-id',
+        coverLetter: 'I am interested in this position.',
+      })
+
+      const response = await POST(request)
+      const data = await parseResponse(response)
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid application data')
+      expect(data.details.jobId).toBeTruthy()
     })
 
     it('should reject application to non-existent job', async () => {
-      // Arrange
+      // Well-formed cuid that no row has.
       const request = createTestRequest('POST', {
-        jobId: 'non-existent-job-id',
+        jobId: 'cku0000000000000000nojob',
         coverLetter: 'I am interested in this position.',
       })
 
@@ -176,7 +227,7 @@ describe('POST /api/applications', () => {
       const applications = await prisma.application.findMany({
         where: {
           jobId: testJob.id,
-          candidateId: candidateId,
+          candidateId: await resolvedCandidateId(),
         },
       })
       expect(applications).toHaveLength(1)
@@ -187,7 +238,7 @@ describe('POST /api/applications', () => {
     beforeEach(() => {
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
           email: 'candidate@test.com',
           name: 'Test Candidate',
         }),
@@ -195,12 +246,13 @@ describe('POST /api/applications', () => {
     })
 
     it('should create application with all required fields', async () => {
-      // Arrange
+      // Arrange — expectedSalary is a STRING on the wire (the apply form posts a
+      // text input); the route parses it to the Int column.
       const request = createTestRequest('POST', {
         jobId: testJob.id,
         coverLetter:
           'I am very excited about this opportunity. My background in software development aligns perfectly with your requirements.',
-        expectedSalary: 70000,
+        expectedSalary: '70000',
         availableFrom: '2024-02-01',
       })
 
@@ -212,7 +264,7 @@ describe('POST /api/applications', () => {
       expect(response.status).toBe(201)
       expect(data.id).toBeDefined()
       expect(data.jobId).toBe(testJob.id)
-      expect(data.candidateId).toBe(candidateId)
+      expect(data.candidateId).toBe(await resolvedCandidateId())
       expect(data.orgId).toBe(TEST_IDS.org)
       expect(data.coverLetter).toBeDefined()
       expect(data.stage).toBe('NEW')
@@ -223,6 +275,22 @@ describe('POST /api/applications', () => {
       })
       expect(application).toBeTruthy()
       expect(application?.coverLetter).toContain('excited about this opportunity')
+      expect(application?.expectedSalary).toBe(70000)
+      expect(application?.availableFrom?.toISOString()).toContain('2024-02-01')
+    })
+
+    it('should reject a non-string expectedSalary', async () => {
+      const request = createTestRequest('POST', {
+        jobId: testJob.id,
+        coverLetter: 'I am interested in this position.',
+        expectedSalary: 70000,
+      })
+
+      const response = await POST(request)
+      const data = await parseResponse(response)
+
+      expect(response.status).toBe(400)
+      expect(data.details.expectedSalary).toBeTruthy()
     })
 
     it('should set default stage to NEW', async () => {
@@ -305,7 +373,7 @@ describe('POST /api/applications', () => {
       expect(activity).toBeTruthy()
       expect(activity?.type).toBe('APPLIED')
       expect(activity?.description).toContain('successfully submitted')
-      expect(activity?.performedBy).toBe(candidateId)
+      expect(activity?.performedBy).toBe(applicantUserId)
     })
   })
 
@@ -313,7 +381,7 @@ describe('POST /api/applications', () => {
     beforeEach(() => {
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
           email: 'candidate@test.com',
           name: 'Test Candidate',
         }),
@@ -389,13 +457,21 @@ describe('POST /api/applications', () => {
   describe('GET /api/applications', () => {
     let candidateApp1: any
     let candidateApp2: any
+    let myCandidateId: string
 
     beforeEach(async () => {
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
         }),
       )
+
+      // These rows used to be written with candidateId = the User id, which is
+      // not a Candidate and blew up on Application_candidateId_fkey. Resolve the
+      // same org-scoped Candidate the route would — that also gives it the
+      // primary CandidateContact the GET handler matches the session email on.
+      const myCandidate = await getOrCreateCandidateForUser(applicantUserId, TEST_IDS.org)
+      myCandidateId = myCandidate.id
 
       // Create test applications
       const job1 = await createTestJob({ title: 'Job 1' })
@@ -404,7 +480,7 @@ describe('POST /api/applications', () => {
       candidateApp1 = await prisma.application.create({
         data: {
           jobId: job1.id,
-          candidateId: candidateId,
+          candidateId: myCandidateId,
           orgId: TEST_IDS.org,
           coverLetter: 'Application 1',
           stage: 'NEW',
@@ -414,10 +490,13 @@ describe('POST /api/applications', () => {
       candidateApp2 = await prisma.application.create({
         data: {
           jobId: job2.id,
-          candidateId: candidateId,
+          candidateId: myCandidateId,
           orgId: TEST_IDS.org,
           coverLetter: 'Application 2',
-          stage: 'INTERVIEWING',
+          // 'INTERVIEW', not 'INTERVIEWING': APPLICATION_STAGES is
+          // NEW | SCREENING | INTERVIEW | HIRED | REJECTED, and the route parses
+          // ?stage= against exactly that enum.
+          stage: 'INTERVIEW',
         },
       })
     })
@@ -435,12 +514,16 @@ describe('POST /api/applications', () => {
       const response = await GET(request)
       const data = await parseResponse(response)
 
-      // Assert
+      // Assert — GET returns a page envelope, not a bare array.
       expect(response.status).toBe(200)
-      expect(Array.isArray(data)).toBe(true)
-      expect(data.length).toBeGreaterThanOrEqual(2)
+      expect(Array.isArray(data.data)).toBe(true)
+      expect(data.page).toBe(1)
+      expect(data.pageSize).toBe(20)
+      expect(data.total).toBeGreaterThanOrEqual(2)
+      expect(data.hasMore).toBe(false)
+      expect(data.data.length).toBeGreaterThanOrEqual(2)
 
-      const appIds = data.map((app: any) => app.id)
+      const appIds = data.data.map((app: any) => app.id)
       expect(appIds).toContain(candidateApp1.id)
       expect(appIds).toContain(candidateApp2.id)
     })
@@ -451,7 +534,7 @@ describe('POST /api/applications', () => {
         'GET',
         undefined,
         undefined,
-        'http://localhost:3000/api/applications?stage=INTERVIEWING',
+        'http://localhost:3000/api/applications?stage=INTERVIEW',
       )
 
       // Act
@@ -460,11 +543,26 @@ describe('POST /api/applications', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(Array.isArray(data)).toBe(true)
+      expect(Array.isArray(data.data)).toBe(true)
 
-      const interviewingApps = data.filter((app: any) => app.stage === 'INTERVIEWING')
+      const interviewingApps = data.data.filter((app: any) => app.stage === 'INTERVIEW')
       expect(interviewingApps.length).toBeGreaterThan(0)
-      expect(data.every((app: any) => app.stage === 'INTERVIEWING')).toBe(true)
+      expect(data.data.every((app: any) => app.stage === 'INTERVIEW')).toBe(true)
+    })
+
+    it('rejects an unknown stage with 400, not 500', async () => {
+      const request = createTestRequest(
+        'GET',
+        undefined,
+        undefined,
+        'http://localhost:3000/api/applications?stage=INTERVIEWING',
+      )
+
+      const response = await GET(request)
+      const data = await parseResponse(response)
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid query parameters')
     })
 
     it('should filter applications by jobId', async () => {
@@ -473,7 +571,7 @@ describe('POST /api/applications', () => {
       await prisma.application.create({
         data: {
           jobId: job.id,
-          candidateId: candidateId,
+          candidateId: myCandidateId,
           orgId: TEST_IDS.org,
           coverLetter: 'Specific application',
           stage: 'NEW',
@@ -493,8 +591,9 @@ describe('POST /api/applications', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(Array.isArray(data)).toBe(true)
-      expect(data.every((app: any) => app.jobId === job.id)).toBe(true)
+      expect(Array.isArray(data.data)).toBe(true)
+      expect(data.data.length).toBe(1)
+      expect(data.data.every((app: any) => app.jobId === job.id)).toBe(true)
     })
 
     it('should include job and organization details', async () => {
@@ -512,13 +611,16 @@ describe('POST /api/applications', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data.length).toBeGreaterThan(0)
+      expect(data.data.length).toBeGreaterThan(0)
 
-      const firstApp = data[0]
+      const firstApp = data.data[0]
       expect(firstApp.job).toBeDefined()
       expect(firstApp.job.title).toBeDefined()
       expect(firstApp.job.organization).toBeDefined()
       expect(firstApp.job.organization.name).toBeDefined()
+      // The list view selects explicitly and drops the heavy columns.
+      expect(firstApp.job.description).toBeUndefined()
+      expect(firstApp.coverLetter).toBeUndefined()
     })
 
     it('should order applications by most recent first', async () => {
@@ -536,25 +638,22 @@ describe('POST /api/applications', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      expect(data.length).toBeGreaterThan(1)
+      expect(data.data.length).toBeGreaterThan(1)
 
       // Check that dates are in descending order
-      for (let i = 0; i < data.length - 1; i++) {
-        const current = new Date(data[i].createdAt)
-        const next = new Date(data[i + 1].createdAt)
+      for (let i = 0; i < data.data.length - 1; i++) {
+        const current = new Date(data.data[i].createdAt)
+        const next = new Date(data.data[i + 1].createdAt)
         expect(current.getTime()).toBeGreaterThanOrEqual(next.getTime())
       }
     })
 
     it('should only return applications for authenticated user', async () => {
-      // Arrange - create application for different candidate
-      const otherCandidate = await prisma.user.create({
-        data: {
-          email: 'other-candidate@test.com',
-          name: 'Other Candidate',
-          password: 'hashed',
-          locale: 'en',
-        },
+      // Arrange - another person's candidate record IN THE SAME ORG, with a
+      // different primary contact email (that email is what the handler matches on).
+      const { candidate: otherCandidate } = await createTestCandidateWithContact({
+        email: 'other-candidate@test.com',
+        fullName: 'Other Candidate',
       })
 
       const otherJob = await createTestJob()
@@ -579,10 +678,11 @@ describe('POST /api/applications', () => {
       const response = await GET(request)
       const data = await parseResponse(response)
 
-      // Assert
+      // Assert — tenant/identity boundary: only the caller's own candidate rows.
       expect(response.status).toBe(200)
-      expect(data.every((app: any) => app.candidateId === candidateId)).toBe(true)
-      expect(data.some((app: any) => app.candidateId === otherCandidate.id)).toBe(false)
+      expect(data.data.length).toBeGreaterThan(0)
+      expect(data.data.every((app: any) => app.candidateId === myCandidateId)).toBe(true)
+      expect(data.data.some((app: any) => app.candidateId === otherCandidate.id)).toBe(false)
     })
 
     it('should reject unauthenticated GET requests', async () => {
@@ -610,7 +710,7 @@ describe('POST /api/applications', () => {
     beforeEach(() => {
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
           email: 'candidate@test.com',
         }),
       )
@@ -665,7 +765,7 @@ describe('POST /api/applications', () => {
       // Arrange
       vi.mocked(auth).mockResolvedValue(
         createCandidateSession({
-          id: candidateId,
+          id: applicantUserId,
           email: undefined, // No email
         }),
       )

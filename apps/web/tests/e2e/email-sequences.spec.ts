@@ -1,12 +1,81 @@
 /**
  * E2E Tests - Email Sequence Automation
  *
- * Tests email sequence creation, enrollment, editing, and deletion
- * with BullMQ worker mocking to verify job queueing without actual execution.
+ * Exercised against what `app/[locale]/employer/sequences/sequences-client.tsx`
+ * actually renders: a left-hand list of sequences and, on the right, a single
+ * react-hook-form editor. There is no separate "details" page, no wizard and no
+ * data-testid anywhere on that page.
+ *
+ * Flows this file used to assume but which have NO UI at all — enrolment,
+ * per-sequence statistics, email preview, drag-and-drop reordering, deleting a
+ * sequence, role gating — are skipped with the reason inline instead of being
+ * deleted, so they come back the moment those features land.
  */
 
 import { test, expect } from '@/tests/fixtures/auth'
+import type { Page } from '@playwright/test'
 import { installWorkerMocks, getQueuedJobs, clearQueuedJobs } from '@/tests/mocks/workers'
+
+const SEQUENCES_URL = '/en/employer/sequences'
+
+/**
+ * Sequence names must be unique per run: the assertions locate a sequence by its
+ * name in the list, and the test database is not wiped between specs.
+ */
+function uniqueName(label: string): string {
+  return `${label} ${Date.now()}-${Math.floor(Math.random() * 1000)}`
+}
+
+interface StepInput {
+  name: string
+  dayOffset: number
+  subject: string
+  body: string
+}
+
+/**
+ * Step fields have no id/htmlFor — react-hook-form registers them by name — so
+ * getByLabel() cannot reach them. They are addressed by `steps.<index>.<field>`.
+ */
+async function fillStep(page: Page, index: number, step: StepInput): Promise<void> {
+  await page.locator(`input[name="steps.${index}.name"]`).fill(step.name)
+  await page.locator(`input[name="steps.${index}.dayOffset"]`).fill(String(step.dayOffset))
+  await page.locator(`input[name="steps.${index}.subject"]`).fill(step.subject)
+  await page.locator(`textarea[name="steps.${index}.bodyTemplate"]`).fill(step.body)
+}
+
+/**
+ * Creates a sequence through the UI and waits for the success toast.
+ *
+ * The button that starts a new sequence is "New Sequence" (there is no "Create
+ * Sequence" control) and it seeds the editor with one pre-filled step, so only
+ * steps after the first need an explicit "Add Step" click.
+ */
+async function createSequence(page: Page, name: string, steps: StepInput[]): Promise<void> {
+  await page.getByRole('button', { name: 'New Sequence' }).click()
+  await page.getByLabel(/sequence name/i).fill(name)
+
+  for (const [index, step] of steps.entries()) {
+    if (index > 0) {
+      await page.getByRole('button', { name: 'Add Step' }).click()
+    }
+    await fillStep(page, index, step)
+  }
+
+  await page.getByRole('button', { name: 'Save Sequence' }).click()
+  // Success is a sonner toast whose description is exactly this string.
+  await expect(page.getByText('Email sequence created')).toBeVisible({ timeout: 15000 })
+}
+
+/** A sequence's entry in the left-hand list: a <button> with its name + "<n> steps". */
+function sequenceCard(page: Page, name: string) {
+  return page.getByRole('button').filter({ hasText: name })
+}
+
+/** One heading per step editor, e.g. "Step 1 (Day 0)" (CardTitle renders an <h3>). */
+function stepHeadings(page: Page) {
+  return page.getByRole('heading', { name: /^Step \d+/ })
+}
 
 test.describe('Email Sequences', () => {
   test.beforeEach(async ({ orgAdminUser }) => {
@@ -21,103 +90,66 @@ test.describe('Email Sequences', () => {
   })
 
   test('ORG_ADMIN can create email sequence with multiple steps', async ({ orgAdminUser }) => {
-    // Navigate to email sequences page
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
+    await expect(orgAdminUser.getByRole('heading', { name: 'Email Sequences' })).toBeVisible()
 
-    // Click "Create Sequence" button
-    await orgAdminUser.getByRole('button', { name: /create sequence/i }).click()
+    const name = uniqueName('Welcome Email Series')
+    await createSequence(orgAdminUser, name, [
+      {
+        name: 'Day 0: Welcome',
+        dayOffset: 0,
+        subject: 'Welcome to {{companyName}}!',
+        body: 'Hi {{candidateName}},\n\nWelcome to our hiring process!',
+      },
+      {
+        name: 'Day 3: Check-in',
+        dayOffset: 3,
+        subject: 'Quick check-in from {{companyName}}',
+        body: 'Hi {{candidateName}},\n\nJust checking in on your application progress.',
+      },
+    ])
 
-    // Fill in sequence details
-    await orgAdminUser.getByLabel(/sequence name/i).fill('Welcome Email Series')
-    await orgAdminUser
-      .getByLabel(/description/i)
-      .fill('Automated welcome emails for new candidates')
-
-    // Add first step
-    await orgAdminUser.getByRole('button', { name: /add step/i }).click()
-
-    // Fill first step details
-    await orgAdminUser.getByLabel(/step.*name/i).first().fill('Day 0: Welcome')
-    await orgAdminUser.getByLabel(/day offset/i).first().fill('0')
-    await orgAdminUser.getByLabel(/subject/i).first().fill('Welcome to {{companyName}}!')
-    await orgAdminUser
-      .getByLabel(/body.*template/i)
-      .first()
-      .fill('Hi {{candidateName}},\n\nWelcome to our hiring process!')
-
-    // Add second step
-    await orgAdminUser.getByRole('button', { name: /add step/i }).click()
-
-    // Fill second step details
-    const stepInputs = orgAdminUser.getByLabel(/step.*name/i)
-    await stepInputs.nth(1).fill('Day 3: Check-in')
-
-    const dayOffsetInputs = orgAdminUser.getByLabel(/day offset/i)
-    await dayOffsetInputs.nth(1).fill('3')
-
-    const subjectInputs = orgAdminUser.getByLabel(/subject/i)
-    await subjectInputs.nth(1).fill('Quick check-in from {{companyName}}')
-
-    const bodyInputs = orgAdminUser.getByLabel(/body.*template/i)
-    await bodyInputs
-      .nth(1)
-      .fill('Hi {{candidateName}},\n\nJust checking in on your application progress.')
-
-    // Save the sequence
-    await orgAdminUser.getByRole('button', { name: /save sequence/i }).click()
-
-    // Verify success message
-    await expect(orgAdminUser.getByText(/sequence created successfully/i)).toBeVisible({
-      timeout: 10000,
-    })
-
-    // Verify sequence appears in list
-    await expect(orgAdminUser.getByText('Welcome Email Series')).toBeVisible()
-    await expect(orgAdminUser.getByText(/2 steps/i)).toBeVisible()
+    // Verify sequence appears in list with its step count
+    const card = sequenceCard(orgAdminUser, name)
+    await expect(card).toBeVisible()
+    await expect(card).toContainText('2 steps')
   })
 
   test('ORG_ADMIN can view sequence details with all steps', async ({ orgAdminUser }) => {
-    // Assumes a sequence exists from seed data or previous test
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    // Click on first sequence in the list
-    const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
+    // Nothing is seeded, so the sequence under test is created first.
+    const name = uniqueName('Sequence Details')
+    await createSequence(orgAdminUser, name, [
+      { name: 'Kickoff', dayOffset: 0, subject: 'Kickoff subject', body: 'Kickoff body' },
+      { name: 'Nudge', dayOffset: 4, subject: 'Nudge subject', body: 'Nudge body' },
+    ])
 
-    // If no sequences exist, skip this test
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
+    // There is no details page: selecting a sequence loads it back into the same
+    // editor. Reset the editor first so the assertions cannot pass on leftovers.
+    await orgAdminUser.getByRole('button', { name: 'New Sequence' }).click()
+    await expect(orgAdminUser.getByLabel(/sequence name/i)).toHaveValue('New Email Sequence')
 
-    await firstSequence.click()
+    await sequenceCard(orgAdminUser, name).click()
 
-    // Verify sequence details page loaded
-    await expect(orgAdminUser.getByRole('heading', { name: /sequence details/i })).toBeVisible()
-
-    // Verify steps are displayed
-    await expect(orgAdminUser.getByText(/steps/i)).toBeVisible()
-
-    // Verify at least one step is shown
-    const steps = orgAdminUser.locator('[data-testid="email-step"]')
-    await expect(steps.first()).toBeVisible()
+    await expect(orgAdminUser.getByLabel(/sequence name/i)).toHaveValue(name)
+    await expect(stepHeadings(orgAdminUser)).toHaveCount(2)
+    await expect(orgAdminUser.locator('input[name="steps.1.subject"]')).toHaveValue('Nudge subject')
+    await expect(orgAdminUser.locator('textarea[name="steps.1.bodyTemplate"]')).toHaveValue(
+      'Nudge body',
+    )
   })
 
   test('auto-enrolls candidate on status change and queues job', async ({ orgAdminUser }) => {
-    // This test assumes:
-    // 1. A sequence exists and is active
-    // 2. A job exists
-    // 3. An application exists with a candidate
+    test.skip(
+      true,
+      'No observable auto-enrolment flow: /en/employer/applications does not exist (applications live under /en/employer/applicants) and no UI reports sequence enrolment or queued jobs.',
+    )
 
     await orgAdminUser.goto('/en/employer/applications')
 
     // Find first application
     const firstApplication = orgAdminUser.locator('[data-testid="application-row"]').first()
-
-    // If no applications exist, skip this test
-    if ((await firstApplication.count()) === 0) {
-      test.skip()
-      return
-    }
 
     // Click to view application details
     await firstApplication.click()
@@ -146,19 +178,14 @@ test.describe('Email Sequences', () => {
   })
 
   test('ORG_ADMIN can manually enroll candidate in sequence', async ({ orgAdminUser }) => {
-    // Navigate to candidates page
+    test.skip(
+      true,
+      'No enrolment UI exists: the string "enroll" appears in no component of the app, and there is no /en/employer/candidates route.',
+    )
+
     await orgAdminUser.goto('/en/employer/candidates')
 
-    // Find first candidate
     const firstCandidate = orgAdminUser.locator('[data-testid="candidate-row"]').first()
-
-    // If no candidates exist, skip this test
-    if ((await firstCandidate.count()) === 0) {
-      test.skip()
-      return
-    }
-
-    // Click to view candidate details
     await firstCandidate.click()
 
     // Click "Enroll in Sequence" button
@@ -183,172 +210,111 @@ test.describe('Email Sequences', () => {
   })
 
   test('ORG_ADMIN can edit existing email sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    // Find first sequence
-    const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
+    const name = uniqueName('Editable Sequence')
+    await createSequence(orgAdminUser, name, [
+      { name: 'Intro', dayOffset: 0, subject: 'Original subject', body: 'Original body' },
+    ])
 
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
+    // The editor stays on the sequence that was just saved, so it can be edited
+    // straight away; the same submit button PATCHes an existing sequence.
+    const updatedName = `${name} (updated)`
+    await orgAdminUser.getByLabel(/sequence name/i).fill(updatedName)
+    await orgAdminUser.getByLabel(/description/i).fill('This is an updated description')
+    await orgAdminUser.locator('input[name="steps.0.subject"]').fill('Updated subject line')
 
-    // Click edit button on sequence
-    await firstSequence.locator('[data-testid="edit-sequence"]').click()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
+    await expect(orgAdminUser.getByText('Email sequence updated')).toBeVisible({ timeout: 15000 })
 
-    // Verify edit form is displayed
-    await expect(orgAdminUser.getByRole('heading', { name: /edit sequence/i })).toBeVisible()
-
-    // Update sequence name
-    const nameInput = orgAdminUser.getByLabel(/sequence name/i)
-    await nameInput.clear()
-    await nameInput.fill('Updated Sequence Name')
-
-    // Update description
-    const descInput = orgAdminUser.getByLabel(/description/i)
-    await descInput.clear()
-    await descInput.fill('This is an updated description')
-
-    // Edit first step subject
-    const subjectInputs = orgAdminUser.getByLabel(/subject/i)
-    const firstSubject = subjectInputs.first()
-    await firstSubject.clear()
-    await firstSubject.fill('Updated subject line')
-
-    // Save changes
-    await orgAdminUser.getByRole('button', { name: /save changes/i }).click()
-
-    // Verify success message
-    await expect(orgAdminUser.getByText(/sequence updated successfully/i)).toBeVisible({
-      timeout: 10000,
-    })
-
-    // Verify updated name appears
-    await expect(orgAdminUser.getByText('Updated Sequence Name')).toBeVisible()
+    await expect(sequenceCard(orgAdminUser, updatedName)).toBeVisible()
   })
 
   test('ORG_ADMIN can add new step to existing sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
+    const name = uniqueName('Growing Sequence')
+    await createSequence(orgAdminUser, name, [
+      { name: 'Intro', dayOffset: 0, subject: 'Intro subject', body: 'Intro body' },
+    ])
 
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
+    await expect(stepHeadings(orgAdminUser)).toHaveCount(1)
 
-    // Edit sequence
-    await firstSequence.locator('[data-testid="edit-sequence"]').click()
+    await orgAdminUser.getByRole('button', { name: 'Add Step' }).click()
+    await expect(stepHeadings(orgAdminUser)).toHaveCount(2)
 
-    // Count existing steps
-    const initialSteps = await orgAdminUser.locator('[data-testid="step-editor"]').count()
-
-    // Add new step
-    await orgAdminUser.getByRole('button', { name: /add step/i }).click()
-
-    // Verify new step editor appeared
-    const updatedSteps = await orgAdminUser.locator('[data-testid="step-editor"]').count()
-    expect(updatedSteps).toBe(initialSteps + 1)
-
-    // Fill new step
-    const stepInputs = orgAdminUser.getByLabel(/step.*name/i)
-    await stepInputs.last().fill('New Follow-up Step')
-
-    const dayOffsetInputs = orgAdminUser.getByLabel(/day offset/i)
-    await dayOffsetInputs.last().fill('7')
-
-    const subjectInputs = orgAdminUser.getByLabel(/subject/i)
-    await subjectInputs.last().fill('Following up on your application')
-
-    const bodyInputs = orgAdminUser.getByLabel(/body.*template/i)
-    await bodyInputs.last().fill('Hi {{candidateName}},\n\nWe wanted to follow up.')
-
-    // Save
-    await orgAdminUser.getByRole('button', { name: /save changes/i }).click()
-
-    await expect(orgAdminUser.getByText(/sequence updated successfully/i)).toBeVisible({
-      timeout: 10000,
+    await fillStep(orgAdminUser, 1, {
+      name: 'New Follow-up Step',
+      dayOffset: 7,
+      subject: 'Following up on your application',
+      body: 'Hi {{candidateName}},\n\nWe wanted to follow up.',
     })
+
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
+    await expect(orgAdminUser.getByText('Email sequence updated')).toBeVisible({ timeout: 15000 })
+
+    await expect(sequenceCard(orgAdminUser, name)).toContainText('2 steps')
   })
 
   test('ORG_ADMIN can delete email step from sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
+    const name = uniqueName('Shrinking Sequence')
+    await createSequence(orgAdminUser, name, [
+      { name: 'Intro', dayOffset: 0, subject: 'Intro subject', body: 'Intro body' },
+      { name: 'Doomed', dayOffset: 2, subject: 'Doomed subject', body: 'Doomed body' },
+    ])
 
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
+    await expect(stepHeadings(orgAdminUser)).toHaveCount(2)
 
-    // Edit sequence
-    await firstSequence.locator('[data-testid="edit-sequence"]').click()
+    // The remove control is an icon-only button with no accessible name and no
+    // test id (it would deserve one), so it is reached through its lucide icon
+    // class. There is no confirmation dialog — the step is dropped immediately,
+    // and the button is disabled while only one step is left.
+    await orgAdminUser.locator('form button:has(svg.lucide-trash2)').last().click()
+    await expect(stepHeadings(orgAdminUser)).toHaveCount(1)
 
-    // Count existing steps
-    const initialSteps = await orgAdminUser.locator('[data-testid="step-editor"]').count()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
+    await expect(orgAdminUser.getByText('Email sequence updated')).toBeVisible({ timeout: 15000 })
 
-    // Skip if only one step (can't delete the last step)
-    if (initialSteps <= 1) {
-      test.skip()
-      return
-    }
-
-    // Delete last step
-    const deleteButtons = orgAdminUser.locator('[data-testid="delete-step"]')
-    await deleteButtons.last().click()
-
-    // Confirm deletion in modal
-    await orgAdminUser.getByRole('button', { name: /confirm/i }).click()
-
-    // Verify step was removed
-    const updatedSteps = await orgAdminUser.locator('[data-testid="step-editor"]').count()
-    expect(updatedSteps).toBe(initialSteps - 1)
-
-    // Save
-    await orgAdminUser.getByRole('button', { name: /save changes/i }).click()
-
-    await expect(orgAdminUser.getByText(/sequence updated successfully/i)).toBeVisible({
-      timeout: 10000,
-    })
+    // The list is not pluralised — it really does render "1 steps".
+    await expect(sequenceCard(orgAdminUser, name)).toContainText('1 steps')
   })
 
   test('ORG_ADMIN can activate/deactivate sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
+    const name = uniqueName('Toggleable Sequence')
+    await createSequence(orgAdminUser, name, [
+      { name: 'Intro', dayOffset: 0, subject: 'Intro subject', body: 'Intro body' },
+    ])
 
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
+    // Activation is the "Active" checkbox in the editor, not a control on the
+    // list entry; the list only reflects the state as an "Active" badge.
+    const card = sequenceCard(orgAdminUser, name)
+    const activeCheckbox = orgAdminUser.locator('input#active')
 
-    // Check current status
-    const statusBadge = firstSequence.locator('[data-testid="sequence-status"]')
-    const initialStatus = await statusBadge.textContent()
+    await expect(card).not.toContainText('Active')
 
-    // Toggle activation
-    await firstSequence.locator('[data-testid="toggle-active"]').click()
+    await activeCheckbox.check()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
+    await expect(card).toContainText('Active', { timeout: 15000 })
 
-    // Verify status changed
-    await expect(statusBadge).not.toHaveText(initialStatus || '')
-
-    // Toggle back
-    await firstSequence.locator('[data-testid="toggle-active"]').click()
-
-    // Verify status returned to original
-    await expect(statusBadge).toHaveText(initialStatus || '')
+    await activeCheckbox.uncheck()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
+    await expect(card).not.toContainText('Active', { timeout: 15000 })
   })
 
   test('ORG_ADMIN can delete email sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    test.skip(
+      true,
+      'The sequences page has no delete control — DELETE /api/sequences/[id] exists but nothing in the UI calls it.',
+    )
+
+    await orgAdminUser.goto(SEQUENCES_URL)
 
     // Count initial sequences
     const initialCount = await orgAdminUser.locator('[data-testid="sequence-card"]').count()
-
-    if (initialCount === 0) {
-      test.skip()
-      return
-    }
 
     // Get name of first sequence to verify deletion
     const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
@@ -376,15 +342,14 @@ test.describe('Email Sequences', () => {
   })
 
   test('prevents duplicate enrollment in same sequence', async ({ orgAdminUser }) => {
+    test.skip(
+      true,
+      'No enrolment UI exists (see "manually enroll candidate"), so duplicate enrolment cannot be driven from the browser.',
+    )
+
     await orgAdminUser.goto('/en/employer/candidates')
 
     const firstCandidate = orgAdminUser.locator('[data-testid="candidate-row"]').first()
-
-    if ((await firstCandidate.count()) === 0) {
-      test.skip()
-      return
-    }
-
     await firstCandidate.click()
 
     // First enrollment
@@ -414,33 +379,32 @@ test.describe('Email Sequences', () => {
       await orgAdminUser.getByRole('button', { name: /enroll/i }).click()
 
       // Verify error message about duplicate enrollment
-      await expect(
-        orgAdminUser.getByText(/already enrolled|duplicate enrollment/i)
-      ).toBeVisible({ timeout: 10000 })
+      await expect(orgAdminUser.getByText(/already enrolled|duplicate enrollment/i)).toBeVisible({
+        timeout: 10000,
+      })
     }
   })
 
   test('RECRUITER cannot create or edit sequences', async ({ recruiterUser }) => {
-    // Recruiters should not have access to sequence management
-    await recruiterUser.goto('/en/employer/sequences')
+    test.skip(
+      true,
+      'Sequences are not role-gated: the employer layout only requires org membership and /api/sequences authorises on orgId alone, so a RECRUITER gets the same editor as an ORG_ADMIN. This test asserted a restriction the app does not implement (and passed only because it looked for a "Create Sequence" button that never existed).',
+    )
 
-    // Should either redirect or show "Access Denied"
-    await expect(
-      recruiterUser.getByRole('button', { name: /create sequence/i })
-    ).not.toBeVisible()
+    await recruiterUser.goto(SEQUENCES_URL)
+
+    await expect(recruiterUser.getByRole('button', { name: 'New Sequence' })).not.toBeVisible()
   })
 
   test('displays sequence statistics correctly', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    test.skip(
+      true,
+      'The sequences page shows no statistics at all — no enrolment counts, no completions, no emails-sent figures.',
+    )
+
+    await orgAdminUser.goto(SEQUENCES_URL)
 
     const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
-
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
-
-    // Click to view details
     await firstSequence.click()
 
     // Verify statistics are displayed
@@ -454,15 +418,14 @@ test.describe('Email Sequences', () => {
   })
 
   test('can preview email template with merge tags replaced', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    test.skip(
+      true,
+      'The step editor has no preview control; merge tags are only documented inline ("Available variables"), never rendered with sample data.',
+    )
+
+    await orgAdminUser.goto(SEQUENCES_URL)
 
     const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
-
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
-
     await firstSequence.locator('[data-testid="edit-sequence"]').click()
 
     // Click preview on first step
@@ -483,56 +446,51 @@ test.describe('Email Sequences', () => {
   })
 
   test('validates required fields when creating sequence', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    await orgAdminUser.getByRole('button', { name: /create sequence/i }).click()
+    await orgAdminUser.getByRole('button', { name: 'New Sequence' }).click()
 
-    // Try to save without filling required fields
-    await orgAdminUser.getByRole('button', { name: /save sequence/i }).click()
+    // The editor pre-fills the name and one complete step, so the empty-name
+    // case has to be produced explicitly. ("at least one step" is unreachable
+    // from the UI: removing the last step is disabled.)
+    await orgAdminUser.getByLabel(/sequence name/i).fill('')
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
 
-    // Should show validation errors
-    await expect(orgAdminUser.getByText(/name is required/i)).toBeVisible()
-    await expect(orgAdminUser.getByText(/at least one step/i)).toBeVisible()
+    // The form renders zod's default message verbatim — there is no
+    // "Name is required" copy anywhere in the app.
+    await expect(orgAdminUser.getByText(/at least 1 character/i).first()).toBeVisible()
+    await expect(orgAdminUser.getByText('Email sequence created')).toHaveCount(0)
   })
 
   test('validates step fields when adding step', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    await orgAdminUser.goto(SEQUENCES_URL)
 
-    await orgAdminUser.getByRole('button', { name: /create sequence/i }).click()
-
-    // Fill sequence name
+    await orgAdminUser.getByRole('button', { name: 'New Sequence' }).click()
     await orgAdminUser.getByLabel(/sequence name/i).fill('Test Sequence')
 
-    // Add step but leave fields empty
-    await orgAdminUser.getByRole('button', { name: /add step/i }).click()
+    // A newly added step is pre-filled too, so the required-field check needs
+    // the subject and body cleared by hand.
+    await orgAdminUser.getByRole('button', { name: 'Add Step' }).click()
+    await orgAdminUser.locator('input[name="steps.1.subject"]').fill('')
+    await orgAdminUser.locator('textarea[name="steps.1.bodyTemplate"]').fill('')
 
-    // Try to save
-    await orgAdminUser.getByRole('button', { name: /save sequence/i }).click()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
 
-    // Should show validation errors for step fields
-    await expect(orgAdminUser.getByText(/subject is required/i)).toBeVisible()
-    await expect(orgAdminUser.getByText(/body.*required/i)).toBeVisible()
+    // One zod default message per empty required field (subject + body).
+    await expect(orgAdminUser.getByText(/at least 1 character/i)).toHaveCount(2)
+    await expect(orgAdminUser.getByText('Email sequence created')).toHaveCount(0)
   })
 
   test('reorders steps using drag and drop', async ({ orgAdminUser }) => {
-    await orgAdminUser.goto('/en/employer/sequences')
+    test.skip(
+      true,
+      'Steps cannot be reordered: the editor renders a plain list with no drag handles and no move up/down controls (order is fixed at creation time).',
+    )
+
+    await orgAdminUser.goto(SEQUENCES_URL)
 
     const firstSequence = orgAdminUser.locator('[data-testid="sequence-card"]').first()
-
-    if ((await firstSequence.count()) === 0) {
-      test.skip()
-      return
-    }
-
     await firstSequence.locator('[data-testid="edit-sequence"]').click()
-
-    // Check if we have at least 2 steps
-    const stepCount = await orgAdminUser.locator('[data-testid="step-editor"]').count()
-
-    if (stepCount < 2) {
-      test.skip()
-      return
-    }
 
     // Get text of first step
     const firstStepName = await orgAdminUser
@@ -557,10 +515,8 @@ test.describe('Email Sequences', () => {
     expect(newFirstStepName).not.toBe(firstStepName)
 
     // Save
-    await orgAdminUser.getByRole('button', { name: /save changes/i }).click()
+    await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
 
-    await expect(orgAdminUser.getByText(/sequence updated successfully/i)).toBeVisible({
-      timeout: 10000,
-    })
+    await expect(orgAdminUser.getByText('Email sequence updated')).toBeVisible({ timeout: 15000 })
   })
 })

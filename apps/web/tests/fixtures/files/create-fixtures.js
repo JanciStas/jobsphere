@@ -1,241 +1,146 @@
 /**
- * Create minimal test CV files using base64-encoded data
- * This avoids needing pdfkit/docx dependencies
+ * Regenerates the CV fixtures used by tests/e2e/cv-upload.spec.ts.
+ *
+ *   node apps/web/tests/fixtures/files/create-fixtures.js
+ *
+ * Why this script was rewritten
+ * -----------------------------
+ * The previous version hand-assembled a PDF with hard-coded xref offsets and a
+ * DOCX that was never a real zip. Both committed fixtures were unparseable:
+ *   sample-cv.pdf  -> pdf-parse: "bad XRef entry"
+ *   sample-cv.docx -> mammoth:   "Corrupted zip: can't find end of central directory"
+ * So every cv-upload assertion about extracted text was failing because of the
+ * fixture, not the application. Hand-rolling a PDF that pdf-parse's bundled
+ * pdf.js v1.10.100 accepts turned out to be more trouble than it is worth, so
+ * the PDFs are now printed by Chromium (already installed for Playwright) and
+ * the DOCX is built as a real OOXML zip with jszip. Neither is a new dependency.
+ *
+ * The generated files are committed; re-run this only if you change the content
+ * below.
  */
 
 const fs = require('fs')
 const path = require('path')
+const { chromium } = require('playwright')
+const JSZip = require('jszip')
 
 const outputDir = __dirname
 
-// Minimal valid PDF with text content (John Doe CV)
-// This is a real minimal PDF created with basic PDF structure
-const samplePdfBase64 = Buffer.from(`%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/Resources <<
-/Font <<
-/F1 <<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
->>
->>
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-4 0 obj
-<<
-/Length 445
->>
-stream
-BT
-/F1 18 Tf
-50 750 Td
-(John Doe) Tj
-0 -20 Td
-/F1 12 Tf
-(Email: john.doe@example.com) Tj
-0 -15 Td
-(Phone: +1 555-123-4567) Tj
-0 -15 Td
-(Location: San Francisco, CA) Tj
-0 -25 Td
-/F1 14 Tf
-(Professional Summary) Tj
-0 -18 Td
-/F1 11 Tf
-(Experienced software engineer with 5+ years in full-stack development.) Tj
-0 -15 Td
-(Specializing in React, Node.js, and TypeScript.) Tj
-0 -25 Td
-/F1 14 Tf
-(Skills) Tj
-0 -18 Td
-/F1 11 Tf
-(JavaScript, TypeScript, React, Node.js, PostgreSQL, Docker, AWS) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-0000000115 00000 n
-0000000317 00000 n
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-814
-%%EOF
-`).toString()
-
-// Create sample-cv.pdf
-fs.writeFileSync(
-  path.join(outputDir, 'sample-cv.pdf'),
-  samplePdfBase64
-)
-console.log('✓ Created: sample-cv.pdf')
-
-// Minimal valid DOCX (it's a ZIP file with XML content)
-// This is a base64-encoded minimal DOCX with Jane Smith CV
-const sampleDocxBase64 = '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'
-
-fs.writeFileSync(
-  path.join(outputDir, 'sample-cv.docx'),
-  Buffer.from(sampleDocxBase64, 'base64')
-)
-console.log('✓ Created: sample-cv.docx')
-
-// Create scanned PDF (minimal text for OCR fallback testing)
-const scannedPdfContent = `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/Resources <<
-/Font <<
-/F1 <<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
->>
->>
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-4 0 obj
-<<
-/Length 92
->>
-stream
-BT
-/F1 8 Tf
-50 750 Td
-(Robert Johnson) Tj
-0 -12 Td
-(robert.j@example.com) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-0000000115 00000 n
-0000000317 00000 n
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-461
-%%EOF
+const JOHN_DOE_CV = `
+  <h1>John Doe</h1>
+  <p>Senior Software Engineer</p>
+  <p>john.doe@example.com</p>
+  <p>+421 900 123 456</p>
+  <p>Bratislava, Slovakia</p>
+  <h2>Experience</h2>
+  <p>Senior Software Engineer, Acme Corp (2020 - present).
+     Built and operated distributed services in TypeScript and Go.</p>
+  <p>Software Engineer, Globex (2017 - 2020).
+     Developed customer facing web applications with React.</p>
+  <h2>Education</h2>
+  <p>MSc Computer Science, Slovak University of Technology, 2017</p>
+  <h2>Skills</h2>
+  <p>TypeScript, React, Node.js, PostgreSQL, Docker, Kubernetes</p>
 `
 
-fs.writeFileSync(
-  path.join(outputDir, 'scanned-cv.pdf'),
-  scannedPdfContent
-)
-console.log('✓ Created: scanned-cv.pdf')
-
-// Create README explaining the fixtures
-const readmeContent = `# Test File Fixtures
-
-This directory contains test files for E2E CV upload testing.
-
-## Files
-
-### sample-cv.pdf
-Normal PDF with extractable text content (John Doe CV).
-- Used for testing standard PDF parsing
-- Should be parsed successfully by node pdf-parse
-
-### sample-cv.docx
-Normal DOCX with extractable text content (Jane Smith CV).
-- Used for testing standard DOCX parsing
-- Should be parsed successfully by mammoth
-
-### scanned-cv.pdf
-Minimal PDF simulating a scanned document (Robert Johnson).
-- Used for testing OCR fallback when text extraction yields insufficient content
-- In real scenarios, would trigger Tesseract OCR
-
-## Creating Additional Test Files
-
-To add more test files, you can:
-
-1. Use the base64-encoded approach in create-fixtures.js
-2. Add real PDF/DOCX files manually
-3. Generate programmatically with libraries (requires pdfkit, docx dependencies)
-
-## Notes
-
-- Files are intentionally minimal to keep repository size small
-- File size limits are tested separately with dynamically generated large files
-- Macro detection is tested with specially crafted DOCX files
+// A page whose only text is one short word. pdf-parse reads it fine but returns
+// well under the parser pipeline's 50-character threshold, which is what drives
+// the OCR / metadata-fallback branch. (A genuinely text-free Chromium PDF comes
+// out so small that pdf-parse's bundled pdf.js v1.10 rejects its xref outright,
+// which would exercise the corrupted-file branch instead of the one we want.)
+const SCANNED_PAGE = `
+  <p>Scan</p>
 `
 
-fs.writeFileSync(
-  path.join(outputDir, 'README.md'),
-  readmeContent
-)
-console.log('✓ Created: README.md')
+const JANE_SMITH_CV = [
+  'Jane Smith',
+  'Product Designer',
+  'jane.smith@example.com',
+  '+421 911 654 321',
+  'Kosice, Slovakia',
+  '',
+  'EXPERIENCE',
+  'Lead Product Designer, Initech (2019 - present)',
+  'Owned the end to end design system for a B2B SaaS product.',
+  'Product Designer, Umbrella (2016 - 2019)',
+  'Ran user research and shipped design work for mobile apps.',
+  '',
+  'EDUCATION',
+  'BA Visual Communication, Technical University of Kosice, 2016',
+  '',
+  'SKILLS',
+  'Figma, design systems, user research, prototyping, accessibility',
+]
 
-console.log('\n✓ All test fixtures created successfully!')
-console.log('\nGenerated files:')
-console.log('  - sample-cv.pdf (normal PDF)')
-console.log('  - sample-cv.docx (normal DOCX)')
-console.log('  - scanned-cv.pdf (minimal text for OCR testing)')
-console.log('  - README.md (documentation)')
+/** Print an HTML snippet to a real PDF using headless Chromium. */
+async function buildPdf(browser, html) {
+  const page = await browser.newPage()
+  await page.setContent(`<body style="font-family: Helvetica, Arial, sans-serif">${html}</body>`)
+  const buffer = await page.pdf({ format: 'A4', printBackground: true })
+  await page.close()
+  return buffer
+}
+
+/** Build a real OOXML .docx containing `lines` as paragraphs. */
+async function buildDocx(lines) {
+  const zip = new JSZip()
+
+  zip.file(
+    '[Content_Types].xml',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>',
+  )
+
+  zip.file(
+    '_rels/.rels',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>',
+  )
+
+  const paragraphs = lines
+    .map((line) => {
+      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      return `<w:p><w:r><w:t xml:space="preserve">${escaped}</w:t></w:r></w:p>`
+    })
+    .join('')
+
+  zip.file(
+    'word/document.xml',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      `<w:body>${paragraphs}<w:sectPr/></w:body></w:document>`,
+  )
+
+  return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
+}
+
+async function main() {
+  const browser = await chromium.launch()
+  try {
+    const samplePdf = await buildPdf(browser, JOHN_DOE_CV)
+    fs.writeFileSync(path.join(outputDir, 'sample-cv.pdf'), samplePdf)
+
+    const scannedPdf = await buildPdf(browser, SCANNED_PAGE)
+    fs.writeFileSync(path.join(outputDir, 'scanned-cv.pdf'), scannedPdf)
+
+    const sampleDocx = await buildDocx(JANE_SMITH_CV)
+    fs.writeFileSync(path.join(outputDir, 'sample-cv.docx'), sampleDocx)
+
+    console.log('sample-cv.pdf ', samplePdf.length, 'bytes')
+    console.log('scanned-cv.pdf', scannedPdf.length, 'bytes')
+    console.log('sample-cv.docx', sampleDocx.length, 'bytes')
+  } finally {
+    await browser.close()
+  }
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

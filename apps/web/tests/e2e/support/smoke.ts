@@ -17,6 +17,14 @@ const IGNORED_CONSOLE = [
   /\[next-auth\]/i,
   /net::ERR_/i,
   /Download the React DevTools/i,
+  // `<Analytics />` from @vercel/analytics (apps/web/src/app/[locale]/layout.tsx)
+  // injects <script src="/_vercel/insights/script.js">. That path only exists on
+  // Vercel's edge; locally and in CI it falls through to the Next.js catch-all and
+  // 404s with the app's HTML shell, so Chrome refuses it on strict MIME checking
+  // and EVERY page logs the error below. Third-party analytics noise, not an app
+  // bug — matched narrowly on this one script so a genuine CSP/MIME regression on
+  // any other script still fails the smoke.
+  /Refused to execute script from '[^']*\/_vercel\/insights\/script\.js'/i,
 ]
 
 /** Attach console + pageerror listeners; returns the collected error strings. */
