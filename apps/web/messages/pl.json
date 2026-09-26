@@ -1178,7 +1178,175 @@
     "academy": {
       "title": "Akademia kariery",
       "description": "Porady zawodowe, przygotowanie do rozmów kwalifikacyjnych i umiejętności szukania pracy."
-    }
+    },
+    "about": {
+      "title": "O nas",
+      "description": "O JobSphere — system ATS oparty na AI dla nowoczesnego świata."
+    },
+    "apiDocs": {
+      "title": "Dokumentacja API",
+      "description": "Pełna dokumentacja API platformy JobSphere ATS."
+    },
+    "assessmentAttemptResults": {
+      "title": "Wyniki testu",
+      "description": "Zobacz wyniki swojego testu i opinię."
+    },
+    "takeAssessment": {
+      "title": "Rozwiąż test",
+      "description": "Ukończ swój test umiejętności."
+    },
+    "authError": {
+      "title": "Błąd uwierzytelniania",
+      "description": "Wystąpił błąd uwierzytelniania. Spróbuj ponownie."
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "Aktualności i artykuły ze świata rekrutacji."
+    },
+    "candidateProfile": {
+      "title": "Profil kandydata",
+      "description": "Zobacz profil kandydata, CV i wyniki dopasowania."
+    },
+    "careerAdvice": {
+      "title": "Porady zawodowe",
+      "description": "Praktyczne porady dla osób szukających pracy — od CV po pierwszy dzień w pracy."
+    },
+    "companies": {
+      "title": "Profile firm",
+      "description": "Przeglądaj firmy, które szukają nowych współpracowników na JobSphere."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Dane kontaktowe JobSphere."
+    },
+    "createCv": {
+      "title": "Utwórz CV",
+      "description": "Stwórz profesjonalne CV z pomocą AI."
+    },
+    "applicationDetail": {
+      "title": "Szczegóły aplikacji",
+      "description": "Zobacz szczegóły i status swojej aplikacji."
+    },
+    "myCvs": {
+      "title": "Moje CV"
+    },
+    "uploadCv": {
+      "title": "Prześlij CV",
+      "description": "Prześlij swoje CV, a AI automatycznie odczyta Twoje dane."
+    },
+    "editCv": {
+      "title": "Edytuj CV",
+      "description": "Sprawdź i edytuj dane z CV odczytane przez AI."
+    },
+    "profile": {
+      "title": "Mój profil",
+      "description": "Zarządzaj swoimi danymi osobowymi i preferencjami zawodowymi."
+    },
+    "savedJobs": {
+      "title": "Zapisane oferty",
+      "description": "Przeglądaj i zarządzaj zapisanymi ofertami pracy."
+    },
+    "analytics": {
+      "title": "Panel analityczny",
+      "description": "Zobacz analitykę rekrutacji, trendy aplikacji i wskaźniki zatrudnienia."
+    },
+    "assessmentBuilder": {
+      "title": "Utwórz test",
+      "description": "Twórz testy umiejętności z sekcjami i pytaniami dla kandydatów."
+    },
+    "assessments": {
+      "title": "Testy",
+      "description": "Testy umiejętności dla Twojej organizacji."
+    },
+    "employerAssessmentResults": {
+      "title": "Wyniki testu",
+      "description": "Przeglądaj i analizuj wyniki oraz punktację testów kandydatów."
+    },
+    "employerGigs": {
+      "title": "Zlecenia"
+    },
+    "newJob": {
+      "title": "Dodaj nową ofertę",
+      "description": "Utwórz i opublikuj nową ofertę pracy dla swojej organizacji."
+    },
+    "editJob": {
+      "title": "Edytuj ofertę",
+      "description": "Edytuj szczegóły i wymagania swojej oferty pracy."
+    },
+    "searchCandidates": {
+      "title": "Szukaj kandydatów",
+      "description": "Znajdź pasujących kandydatów do swojej oferty dzięki wyszukiwaniu opartemu na AI."
+    },
+    "sequences": {
+      "title": "Sekwencje e-mail",
+      "description": "Twórz automatyczne kampanie e-mailowe dla kandydatów i zarządzaj nimi."
+    },
+    "companySettings": {
+      "title": "Ustawienia firmy",
+      "description": "Zarządzaj ustawieniami organizacji, członkami zespołu i rozliczeniami."
+    },
+    "teamManagement": {
+      "title": "Zarządzanie zespołem",
+      "description": "Zarządzaj członkami zespołu organizacji i ich rolami."
+    },
+    "tasks": {
+      "title": "Zadania"
+    },
+    "features": {
+      "title": "Funkcje ATS",
+      "description": "Dopasowanie AI, parsowanie CV, pipeline kanban, analityka — przegląd funkcji ATS."
+    },
+    "forgotPassword": {
+      "title": "Nie pamiętasz hasła",
+      "description": "Zresetuj hasło do swojego konta JobSphere."
+    },
+    "freelancers": {
+      "title": "Freelancerzy",
+      "description": "Znajdź freelancerów i ich usługi — grafika, web, marketing i więcej."
+    },
+    "gdpr": {
+      "title": "Zgodność z RODO",
+      "description": "Zgodność z RODO i Twoje prawa jako osoby, której dane dotyczą."
+    },
+    "gigs": {
+      "title": "Zlecenia dla freelancerów",
+      "description": "Otwarte zlecenia od firm — wyślij ofertę i ustal cenę oraz czas realizacji."
+    },
+    "applyJob": {
+      "title": "Aplikuj na ofertę",
+      "description": "Wyślij swoją aplikację na tę ofertę pracy."
+    },
+    "postJob": {
+      "title": "Dodaj ofertę pracy",
+      "description": "Utwórz i opublikuj ofertę pracy, aby znaleźć najlepszych kandydatów."
+    },
+    "privacy": {
+      "title": "Prywatność",
+      "description": "Polityka ochrony danych osobowych platformy JobSphere."
+    },
+    "resetPassword": {
+      "title": "Resetowanie hasła",
+      "description": "Ustaw nowe hasło do swojego konta JobSphere."
+    },
+    "terms": {
+      "title": "Warunki korzystania",
+      "description": "Ogólne warunki korzystania z platformy JobSphere."
+    },
+    "adminAudit": {
+      "title": "Dziennik audytu"
+    },
+    "adminGdpr": {
+      "title": "Wnioski RODO"
+    },
+    "adminDashboard": {
+      "title": "Panel administratora"
+    },
+    "moduleNotFound": "Nie znaleziono modułu",
+    "moduleTitle": "{title} | Akademia kariery",
+    "companyNotFound": "Nie znaleziono firmy",
+    "jobNotFound": "Nie znaleziono oferty",
+    "jobTitle": "{title} w firmie {company}",
+    "jobRemote": "Zdalnie"
   },
   "legal": {
     "lastUpdated": "Last updated: {date}",

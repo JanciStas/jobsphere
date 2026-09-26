@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { requireGlobalAdmin } from '@/lib/auth'
@@ -6,7 +7,16 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DsarActionButton } from './_components/dsar-action-button'
 
-export const metadata: Metadata = { title: 'GDPR žiadosti' }
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
+  return {
+    title: t('adminGdpr.title'),
+  }
+}
 
 /**
  * DSAR queue.

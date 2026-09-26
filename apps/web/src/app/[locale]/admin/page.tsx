@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -5,8 +6,15 @@ import { Badge } from '@/components/ui/badge'
 import { Users, Building2, Briefcase, CreditCard } from 'lucide-react'
 import { SHORT_DATE } from '@/lib/formats'
 
-export const metadata = {
-  title: 'Admin Dashboard',
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
+  return {
+    title: t('adminDashboard.title'),
+  }
 }
 
 export default async function AdminDashboardPage() {

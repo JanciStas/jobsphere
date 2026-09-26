@@ -9,10 +9,15 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText, Plus, BarChart3 } from 'lucide-react'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Assessments',
-    description: 'Skills assessments for your organisation.',
+    title: t('assessments.title'),
+    description: t('assessments.description'),
   }
 }
 

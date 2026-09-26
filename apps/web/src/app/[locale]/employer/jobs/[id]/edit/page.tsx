@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import EditJobClient from './edit-job-client'
 
@@ -5,10 +6,15 @@ type Props = {
   params: { locale: string; id: string }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Edit Job',
-    description: 'Edit your job posting details and requirements.',
+    title: t('editJob.title'),
+    description: t('editJob.description'),
   }
 }
 

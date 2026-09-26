@@ -4,7 +4,16 @@ import { getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { TasksClient } from './tasks-client'
 
-export const metadata: Metadata = { title: 'Tasks' }
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
+  return {
+    title: t('tasks.title'),
+  }
+}
 
 /**
  * Follow-ups for the organisation.

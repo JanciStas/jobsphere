@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { requireGlobalAdmin } from '@/lib/auth'
@@ -6,7 +7,16 @@ import { queryAuditLogs, type AuditResource } from '@/lib/audit-log'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-export const metadata: Metadata = { title: 'Audit log' }
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
+  return {
+    title: t('adminAudit.title'),
+  }
+}
 
 /**
  * The audit log, finally readable.

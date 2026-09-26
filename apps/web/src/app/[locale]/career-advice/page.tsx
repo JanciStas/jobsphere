@@ -1,10 +1,15 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Kariérne rady',
-    description: 'Praktické rady pre uchádzačov o prácu — od CV po nástup.',
+    title: t('careerAdvice.title'),
+    description: t('careerAdvice.description'),
   }
 }
 

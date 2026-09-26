@@ -1178,7 +1178,175 @@
     "academy": {
       "title": "Career Academy",
       "description": "Career tips, interview preparation, and job search skills."
-    }
+    },
+    "about": {
+      "title": "About",
+      "description": "About JobSphere — an AI-powered ATS for the modern world."
+    },
+    "apiDocs": {
+      "title": "API Documentation",
+      "description": "Complete API reference for the JobSphere ATS platform."
+    },
+    "assessmentAttemptResults": {
+      "title": "Assessment Results",
+      "description": "View your assessment results and feedback."
+    },
+    "takeAssessment": {
+      "title": "Take Assessment",
+      "description": "Complete your skills assessment."
+    },
+    "authError": {
+      "title": "Authentication Error",
+      "description": "An authentication error occurred. Please try again."
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "News and articles from the world of recruitment."
+    },
+    "candidateProfile": {
+      "title": "Candidate Profile",
+      "description": "View candidate profile, resume, and match scores."
+    },
+    "careerAdvice": {
+      "title": "Career Advice",
+      "description": "Practical advice for job seekers — from your CV to your first day."
+    },
+    "companies": {
+      "title": "Company Profiles",
+      "description": "Browse companies that are looking for new colleagues on JobSphere."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "JobSphere contact information."
+    },
+    "createCv": {
+      "title": "Create CV",
+      "description": "Build your professional CV with AI assistance."
+    },
+    "applicationDetail": {
+      "title": "Application Detail",
+      "description": "View your job application details and status."
+    },
+    "myCvs": {
+      "title": "My CVs"
+    },
+    "uploadCv": {
+      "title": "Upload CV",
+      "description": "Upload your resume and let AI extract your information automatically."
+    },
+    "editCv": {
+      "title": "Edit CV",
+      "description": "Review and edit your AI-parsed CV data."
+    },
+    "profile": {
+      "title": "My Profile",
+      "description": "Manage your personal information and work preferences."
+    },
+    "savedJobs": {
+      "title": "Saved Jobs",
+      "description": "View and manage your saved job listings."
+    },
+    "analytics": {
+      "title": "Analytics Dashboard",
+      "description": "View recruitment analytics, application trends, and hiring metrics."
+    },
+    "assessmentBuilder": {
+      "title": "Create Assessment",
+      "description": "Build skills assessments with sections and questions for candidates."
+    },
+    "assessments": {
+      "title": "Assessments",
+      "description": "Skills assessments for your organisation."
+    },
+    "employerAssessmentResults": {
+      "title": "Assessment Results",
+      "description": "View and analyze candidate assessment results and scores."
+    },
+    "employerGigs": {
+      "title": "Gigs"
+    },
+    "newJob": {
+      "title": "Post New Job",
+      "description": "Create and publish a new job posting for your organization."
+    },
+    "editJob": {
+      "title": "Edit Job",
+      "description": "Edit your job posting details and requirements."
+    },
+    "searchCandidates": {
+      "title": "Search Candidates",
+      "description": "Find matching candidates for your job posting using AI-powered search."
+    },
+    "sequences": {
+      "title": "Email Sequences",
+      "description": "Create and manage automated email engagement campaigns for candidates."
+    },
+    "companySettings": {
+      "title": "Company Settings",
+      "description": "Manage your organization settings, team members, and billing."
+    },
+    "teamManagement": {
+      "title": "Team Management",
+      "description": "Manage your organization team members and their roles."
+    },
+    "tasks": {
+      "title": "Tasks"
+    },
+    "features": {
+      "title": "ATS Features",
+      "description": "AI matching, CV parsing, pipeline kanban, analytics — an overview of ATS features."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Reset your JobSphere account password."
+    },
+    "freelancers": {
+      "title": "Freelancers",
+      "description": "Find freelancers and their services — graphic design, web, marketing and more."
+    },
+    "gdpr": {
+      "title": "GDPR Compliance",
+      "description": "GDPR compliance and your rights as a data subject."
+    },
+    "gigs": {
+      "title": "Freelance Gigs",
+      "description": "Open gigs from companies — send a proposal and agree on price and duration."
+    },
+    "applyJob": {
+      "title": "Apply for Job",
+      "description": "Submit your application for this job opportunity."
+    },
+    "postJob": {
+      "title": "Post a Job",
+      "description": "Create and publish a job posting to find the best candidates."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "description": "Personal data protection policy of the JobSphere platform."
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Set a new password for your JobSphere account."
+    },
+    "terms": {
+      "title": "Terms of Use",
+      "description": "General terms of use of the JobSphere platform."
+    },
+    "adminAudit": {
+      "title": "Audit Log"
+    },
+    "adminGdpr": {
+      "title": "GDPR Requests"
+    },
+    "adminDashboard": {
+      "title": "Admin Dashboard"
+    },
+    "moduleNotFound": "Module Not Found",
+    "moduleTitle": "{title} | Career Academy",
+    "companyNotFound": "Company not found",
+    "jobNotFound": "Job not found",
+    "jobTitle": "{title} at {company}",
+    "jobRemote": "Remote"
   },
   "legal": {
     "lastUpdated": "Last updated: {date}",

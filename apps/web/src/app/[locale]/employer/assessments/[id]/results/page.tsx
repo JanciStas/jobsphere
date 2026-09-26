@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -8,10 +9,15 @@ import { AlertCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Assessment Results',
-    description: 'View and analyze candidate assessment results and scores.',
+    title: t('employerAssessmentResults.title'),
+    description: t('employerAssessmentResults.description'),
   }
 }
 

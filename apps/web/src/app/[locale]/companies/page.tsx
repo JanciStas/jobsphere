@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,9 +10,16 @@ import { logger } from '@/lib/logger'
 
 export const revalidate = 3600 // Revalidate company directory every hour
 
-export const metadata: Metadata = {
-  title: 'Profily firiem',
-  description: 'Prezrite si firmy, ktoré hľadajú nových kolegov na JobSphere.',
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
+  return {
+    title: t('companies.title'),
+    description: t('companies.description'),
+  }
 }
 
 async function getCompanies() {

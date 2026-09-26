@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import CVEditClient from './cv-edit-client'
 
@@ -5,10 +6,15 @@ type Props = {
   params: { id: string; locale: string }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Edit CV',
-    description: 'Review and edit your AI-parsed CV data.',
+    title: t('editCv.title'),
+    description: t('editCv.description'),
   }
 }
 

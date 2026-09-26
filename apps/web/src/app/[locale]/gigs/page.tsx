@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
@@ -8,10 +9,15 @@ import { GigProposalForm } from './gig-proposal-form'
 
 export const revalidate = 60
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Zákazky pre freelancerov',
-    description: 'Otvorené zákazky od firiem — pošli ponuku a dohodni sa na cene a trvaní.',
+    title: t('gigs.title'),
+    description: t('gigs.description'),
   }
 }
 

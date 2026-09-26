@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -38,10 +39,15 @@ const ApplicationsTrend = dynamic(
   { loading: ChartLoading },
 )
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Analytics Dashboard',
-    description: 'View recruitment analytics, application trends, and hiring metrics.',
+    title: t('analytics.title'),
+    description: t('analytics.description'),
   }
 }
 

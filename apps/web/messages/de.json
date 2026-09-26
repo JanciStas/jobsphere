@@ -1178,7 +1178,175 @@
     "academy": {
       "title": "Karriere-Akademie",
       "description": "Karrieretipps, Interviewvorbereitung und Jobsuche-Fähigkeiten."
-    }
+    },
+    "about": {
+      "title": "Über uns",
+      "description": "Über JobSphere – ein KI-gestütztes Bewerbermanagementsystem für die moderne Arbeitswelt."
+    },
+    "apiDocs": {
+      "title": "API-Dokumentation",
+      "description": "Vollständige API-Referenz für die JobSphere-ATS-Plattform."
+    },
+    "assessmentAttemptResults": {
+      "title": "Testergebnisse",
+      "description": "Sieh dir deine Testergebnisse und das Feedback an."
+    },
+    "takeAssessment": {
+      "title": "Test ablegen",
+      "description": "Schließe deinen Kompetenztest ab."
+    },
+    "authError": {
+      "title": "Authentifizierungsfehler",
+      "description": "Bei der Authentifizierung ist ein Fehler aufgetreten. Bitte versuche es erneut."
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "Neuigkeiten und Artikel rund um das Recruiting."
+    },
+    "candidateProfile": {
+      "title": "Kandidatenprofil",
+      "description": "Kandidatenprofil, Lebenslauf und Matching-Werte ansehen."
+    },
+    "careerAdvice": {
+      "title": "Karrieretipps",
+      "description": "Praktische Tipps für Jobsuchende – vom Lebenslauf bis zum Berufseinstieg."
+    },
+    "companies": {
+      "title": "Firmenprofile",
+      "description": "Entdecke Unternehmen, die auf JobSphere neue Kolleginnen und Kollegen suchen."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Kontaktinformationen von JobSphere."
+    },
+    "createCv": {
+      "title": "Lebenslauf erstellen",
+      "description": "Erstelle deinen professionellen Lebenslauf mit KI-Unterstützung."
+    },
+    "applicationDetail": {
+      "title": "Bewerbungsdetails",
+      "description": "Details und Status deiner Bewerbung ansehen."
+    },
+    "myCvs": {
+      "title": "Meine Lebensläufe"
+    },
+    "uploadCv": {
+      "title": "Lebenslauf hochladen",
+      "description": "Lade deinen Lebenslauf hoch und lass die KI deine Angaben automatisch auslesen."
+    },
+    "editCv": {
+      "title": "Lebenslauf bearbeiten",
+      "description": "Prüfe und bearbeite die von der KI ausgelesenen Lebenslaufdaten."
+    },
+    "profile": {
+      "title": "Mein Profil",
+      "description": "Verwalte deine persönlichen Daten und Arbeitspräferenzen."
+    },
+    "savedJobs": {
+      "title": "Gespeicherte Jobs",
+      "description": "Deine gespeicherten Stellenanzeigen ansehen und verwalten."
+    },
+    "analytics": {
+      "title": "Analyse-Dashboard",
+      "description": "Recruiting-Analysen, Bewerbungstrends und Einstellungskennzahlen ansehen."
+    },
+    "assessmentBuilder": {
+      "title": "Test erstellen",
+      "description": "Erstelle Kompetenztests mit Abschnitten und Fragen für Kandidaten."
+    },
+    "assessments": {
+      "title": "Tests",
+      "description": "Kompetenztests für dein Unternehmen."
+    },
+    "employerAssessmentResults": {
+      "title": "Testergebnisse",
+      "description": "Testergebnisse und Punktzahlen der Kandidaten ansehen und auswerten."
+    },
+    "employerGigs": {
+      "title": "Aufträge"
+    },
+    "newJob": {
+      "title": "Neue Stelle ausschreiben",
+      "description": "Erstelle und veröffentliche eine neue Stellenanzeige für dein Unternehmen."
+    },
+    "editJob": {
+      "title": "Stelle bearbeiten",
+      "description": "Bearbeite die Details und Anforderungen deiner Stellenanzeige."
+    },
+    "searchCandidates": {
+      "title": "Kandidaten suchen",
+      "description": "Finde passende Kandidaten für deine Stelle mit KI-gestützter Suche."
+    },
+    "sequences": {
+      "title": "E-Mail-Sequenzen",
+      "description": "Automatisierte E-Mail-Kampagnen für Kandidaten erstellen und verwalten."
+    },
+    "companySettings": {
+      "title": "Unternehmenseinstellungen",
+      "description": "Verwalte Organisationseinstellungen, Teammitglieder und Abrechnung."
+    },
+    "teamManagement": {
+      "title": "Teamverwaltung",
+      "description": "Teammitglieder deiner Organisation und ihre Rollen verwalten."
+    },
+    "tasks": {
+      "title": "Aufgaben"
+    },
+    "features": {
+      "title": "ATS-Funktionen",
+      "description": "KI-Matching, CV-Parsing, Kanban-Pipeline, Analysen – ein Überblick über die ATS-Funktionen."
+    },
+    "forgotPassword": {
+      "title": "Passwort vergessen",
+      "description": "Setze das Passwort deines JobSphere-Kontos zurück."
+    },
+    "freelancers": {
+      "title": "Freelancer",
+      "description": "Finde Freelancer und ihre Dienstleistungen – Grafik, Web, Marketing und mehr."
+    },
+    "gdpr": {
+      "title": "DSGVO-Konformität",
+      "description": "DSGVO-Konformität und deine Rechte als betroffene Person."
+    },
+    "gigs": {
+      "title": "Aufträge für Freelancer",
+      "description": "Offene Aufträge von Unternehmen – sende ein Angebot und vereinbare Preis und Dauer."
+    },
+    "applyJob": {
+      "title": "Auf Stelle bewerben",
+      "description": "Sende deine Bewerbung für diese Stelle ab."
+    },
+    "postJob": {
+      "title": "Stelle ausschreiben",
+      "description": "Erstelle und veröffentliche eine Stellenanzeige, um die besten Kandidaten zu finden."
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "description": "Datenschutzerklärung der JobSphere-Plattform."
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "description": "Lege ein neues Passwort für dein JobSphere-Konto fest."
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "description": "Allgemeine Nutzungsbedingungen der JobSphere-Plattform."
+    },
+    "adminAudit": {
+      "title": "Audit-Protokoll"
+    },
+    "adminGdpr": {
+      "title": "DSGVO-Anfragen"
+    },
+    "adminDashboard": {
+      "title": "Admin-Dashboard"
+    },
+    "moduleNotFound": "Modul nicht gefunden",
+    "moduleTitle": "{title} | Karriere-Akademie",
+    "companyNotFound": "Unternehmen nicht gefunden",
+    "jobNotFound": "Stelle nicht gefunden",
+    "jobTitle": "{title} bei {company}",
+    "jobRemote": "Remote"
   },
   "legal": {
     "lastUpdated": "Last updated: {date}",

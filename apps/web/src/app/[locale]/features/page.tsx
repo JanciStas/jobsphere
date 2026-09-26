@@ -1,10 +1,15 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'ATS Funkcie',
-    description: 'AI matching, CV parsing, pipeline kanban, analytics — prehľad ATS funkcií.',
+    title: t('features.title'),
+    description: t('features.description'),
   }
 }
 

@@ -1178,7 +1178,175 @@
     "academy": {
       "title": "Kariérní akademie",
       "description": "Kariérní tipy, příprava na pohovory a dovednosti hledání práce."
-    }
+    },
+    "about": {
+      "title": "O nás",
+      "description": "O JobSphere — ATS poháněný umělou inteligencí pro moderní svět."
+    },
+    "apiDocs": {
+      "title": "Dokumentace API",
+      "description": "Kompletní reference API pro platformu JobSphere ATS."
+    },
+    "assessmentAttemptResults": {
+      "title": "Výsledky testu",
+      "description": "Zobrazte si výsledky svého testu a zpětnou vazbu."
+    },
+    "takeAssessment": {
+      "title": "Vyplnit test",
+      "description": "Dokončete svůj test dovedností."
+    },
+    "authError": {
+      "title": "Chyba ověření",
+      "description": "Při ověření došlo k chybě. Zkuste to prosím znovu."
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "Novinky a články ze světa náboru."
+    },
+    "candidateProfile": {
+      "title": "Profil kandidáta",
+      "description": "Zobrazte profil kandidáta, životopis a skóre shody."
+    },
+    "careerAdvice": {
+      "title": "Kariérní rady",
+      "description": "Praktické rady pro uchazeče o práci — od životopisu až po nástup."
+    },
+    "companies": {
+      "title": "Profily firem",
+      "description": "Prohlédněte si firmy, které na JobSphere hledají nové kolegy."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Kontaktní informace JobSphere."
+    },
+    "createCv": {
+      "title": "Vytvořit životopis",
+      "description": "Vytvořte si profesionální životopis s pomocí AI."
+    },
+    "applicationDetail": {
+      "title": "Detail přihlášky",
+      "description": "Zobrazte podrobnosti a stav své přihlášky."
+    },
+    "myCvs": {
+      "title": "Moje životopisy"
+    },
+    "uploadCv": {
+      "title": "Nahrát životopis",
+      "description": "Nahrajte svůj životopis a nechte AI automaticky vyčíst vaše údaje."
+    },
+    "editCv": {
+      "title": "Upravit životopis",
+      "description": "Zkontrolujte a upravte údaje životopisu vyčtené pomocí AI."
+    },
+    "profile": {
+      "title": "Můj profil",
+      "description": "Spravujte své osobní údaje a pracovní preference."
+    },
+    "savedJobs": {
+      "title": "Uložené pozice",
+      "description": "Zobrazte a spravujte své uložené nabídky práce."
+    },
+    "analytics": {
+      "title": "Analytický přehled",
+      "description": "Zobrazte analytiku náboru, trendy přihlášek a metriky obsazování."
+    },
+    "assessmentBuilder": {
+      "title": "Vytvořit test",
+      "description": "Vytvořte testy dovedností se sekcemi a otázkami pro kandidáty."
+    },
+    "assessments": {
+      "title": "Testy",
+      "description": "Testy dovedností pro vaši organizaci."
+    },
+    "employerAssessmentResults": {
+      "title": "Výsledky testu",
+      "description": "Zobrazte a analyzujte výsledky a skóre testů kandidátů."
+    },
+    "employerGigs": {
+      "title": "Zakázky"
+    },
+    "newJob": {
+      "title": "Zveřejnit novou pozici",
+      "description": "Vytvořte a zveřejněte nový inzerát pro svou organizaci."
+    },
+    "editJob": {
+      "title": "Upravit pozici",
+      "description": "Upravte podrobnosti a požadavky svého inzerátu."
+    },
+    "searchCandidates": {
+      "title": "Hledat kandidáty",
+      "description": "Najděte vhodné kandidáty pro svůj inzerát pomocí vyhledávání s AI."
+    },
+    "sequences": {
+      "title": "E-mailové sekvence",
+      "description": "Vytvářejte a spravujte automatizované e-mailové kampaně pro kandidáty."
+    },
+    "companySettings": {
+      "title": "Nastavení firmy",
+      "description": "Spravujte nastavení organizace, členy týmu a fakturaci."
+    },
+    "teamManagement": {
+      "title": "Správa týmu",
+      "description": "Spravujte členy týmu své organizace a jejich role."
+    },
+    "tasks": {
+      "title": "Úkoly"
+    },
+    "features": {
+      "title": "Funkce ATS",
+      "description": "AI matching, parsování životopisů, kanban pipeline, analytika — přehled funkcí ATS."
+    },
+    "forgotPassword": {
+      "title": "Zapomenuté heslo",
+      "description": "Obnovte heslo ke svému účtu JobSphere."
+    },
+    "freelancers": {
+      "title": "Freelanceři",
+      "description": "Najděte freelancery a jejich služby — grafika, web, marketing a další."
+    },
+    "gdpr": {
+      "title": "Soulad s GDPR",
+      "description": "Soulad s GDPR a vaše práva subjektu údajů."
+    },
+    "gigs": {
+      "title": "Zakázky pro freelancery",
+      "description": "Otevřené zakázky od firem — pošlete nabídku a domluvte se na ceně a délce."
+    },
+    "applyJob": {
+      "title": "Přihlásit se na pozici",
+      "description": "Odešlete svou přihlášku na tuto pracovní příležitost."
+    },
+    "postJob": {
+      "title": "Zveřejnit pozici",
+      "description": "Vytvořte a zveřejněte inzerát a najděte nejlepší kandidáty."
+    },
+    "privacy": {
+      "title": "Ochrana soukromí",
+      "description": "Zásady ochrany osobních údajů platformy JobSphere."
+    },
+    "resetPassword": {
+      "title": "Obnovení hesla",
+      "description": "Nastavte nové heslo ke svému účtu JobSphere."
+    },
+    "terms": {
+      "title": "Podmínky používání",
+      "description": "Všeobecné podmínky používání platformy JobSphere."
+    },
+    "adminAudit": {
+      "title": "Auditní log"
+    },
+    "adminGdpr": {
+      "title": "Žádosti dle GDPR"
+    },
+    "adminDashboard": {
+      "title": "Administrátorský přehled"
+    },
+    "moduleNotFound": "Modul nenalezen",
+    "moduleTitle": "{title} | Kariérní akademie",
+    "companyNotFound": "Firma nenalezena",
+    "jobNotFound": "Pozice nenalezena",
+    "jobTitle": "{title} ve firmě {company}",
+    "jobRemote": "Na dálku"
   },
   "legal": {
     "lastUpdated": "Last updated: {date}",

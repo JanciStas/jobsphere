@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -12,10 +13,15 @@ import { Button } from '@/components/ui/button'
 import { CandidateApplications } from '@/components/candidates/candidate-applications'
 import { CandidateTags } from '@/components/candidates/candidate-tags'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Candidate Profile',
-    description: 'View candidate profile, resume, and match scores.',
+    title: t('candidateProfile.title'),
+    description: t('candidateProfile.description'),
   }
 }
 

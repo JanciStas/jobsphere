@@ -1,10 +1,15 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'O nás',
-    description: 'O JobSphere — AI-powered ATS pre moderný svet.',
+    title: t('about.title'),
+    description: t('about.description'),
   }
 }
 

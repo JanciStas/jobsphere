@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
@@ -8,10 +9,15 @@ import { MapPin, Euro, Briefcase } from 'lucide-react'
 
 export const revalidate = 300
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Freelanceri',
-    description: 'Nájdite freelancerov a ich služby — grafika, web, marketing a ďalšie.',
+    title: t('freelancers.title'),
+    description: t('freelancers.description'),
   }
 }
 
