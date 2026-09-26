@@ -16,7 +16,17 @@ export const prisma =
     // See: apps/web/src/lib/CONNECTION_POOLING.md
   })
 
-const MODELS_WITH_SOFT_DELETE = ['Job', 'Organization', 'User', 'Candidate', 'Application']
+// UserOrgRole is soft-deleted when a member is removed from an org. It was missing
+// here, so a removed member kept resolving as a member on every lookup that did
+// not filter `deletedAt` by hand (see requireOrgAuth and the NextAuth jwt callback).
+const MODELS_WITH_SOFT_DELETE = [
+  'Job',
+  'Organization',
+  'User',
+  'Candidate',
+  'Application',
+  'UserOrgRole',
+]
 
 /**
  * Read operations that accept a free-form `where` and therefore can be filtered.

@@ -37,10 +37,25 @@ export async function requireOrgAuth(_request?: NextRequest): Promise<AuthContex
     throw new UnauthorizedError()
   }
 
-  const orgMember = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-    include: { organization: true },
-  })
+  // Honour the org the user is currently acting in. Without this the first
+  // membership row won, so a user in two orgs got a nondeterministic tenant.
+  // `deletedAt: null` is explicit (the soft-delete middleware also adds it) so a
+  // removed member never resolves as a member.
+  const activeOrgId = session.user.activeOrgId ?? null
+  let orgMember = activeOrgId
+    ? await prisma.userOrgRole.findFirst({
+        where: { userId: session.user.id, orgId: activeOrgId, deletedAt: null },
+        include: { organization: true },
+      })
+    : null
+
+  if (!orgMember) {
+    orgMember = await prisma.userOrgRole.findFirst({
+      where: { userId: session.user.id, deletedAt: null },
+      include: { organization: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
 
   if (!orgMember) {
     throw new ForbiddenError('No organization membership found')

@@ -128,8 +128,10 @@ export const PUT = withCsrfProtection(
           include: {
             organization: {
               include: {
+                // Nested includes bypass the soft-delete middleware, so a removed
+                // member must be excluded by hand.
                 users: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, deletedAt: null },
                 },
               },
             },
@@ -158,6 +160,33 @@ export const PUT = withCsrfProtection(
             { error: 'Invalid status transition', from: job.status, to: data.status },
             { status: 400 },
           )
+        }
+
+        // Same cross-tenant guards POST /api/jobs applies: a foreign assessment or an
+        // outside user must never be attached through an edit (IDOR).
+        if (data.assessmentId) {
+          const assessment = await prisma.assessment.findFirst({
+            where: { id: data.assessmentId, orgId: job.orgId },
+            select: { id: true },
+          })
+          if (!assessment) {
+            return NextResponse.json(
+              { error: 'Selected assessment was not found in your organization' },
+              { status: 400 },
+            )
+          }
+        }
+        if (data.assignedRecruiterId) {
+          const recruiter = await prisma.userOrgRole.findFirst({
+            where: { userId: data.assignedRecruiterId, orgId: job.orgId, deletedAt: null },
+            select: { userId: true },
+          })
+          if (!recruiter) {
+            return NextResponse.json(
+              { error: 'Assigned recruiter must be a member of your organization' },
+              { status: 400 },
+            )
+          }
         }
 
         const updated = await prisma.job.update({
@@ -237,7 +266,7 @@ export const DELETE = withCsrfProtection(
             organization: {
               include: {
                 users: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, deletedAt: null },
                 },
               },
             },

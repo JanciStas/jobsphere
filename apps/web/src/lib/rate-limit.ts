@@ -4,6 +4,7 @@
  */
 
 import { Redis } from '@upstash/redis'
+import { getToken } from 'next-auth/jwt'
 import { logger } from './logger'
 
 let redis: Redis | null = null
@@ -355,7 +356,15 @@ export async function strictRateLimit(
  * Get client IP from request
  */
 export function getClientIp(request: Request): string {
-  // Vercel forwards client IP in x-forwarded-for
+  // x-vercel-forwarded-for is set by Vercel's edge and cannot be supplied by the
+  // client, unlike a raw x-forwarded-for on a deployment without a trusted proxy.
+  const vercelForwarded = request.headers.get('x-vercel-forwarded-for')
+  if (vercelForwarded) {
+    return vercelForwarded.split(',')[0].trim()
+  }
+
+  // Vercel also overwrites x-forwarded-for; elsewhere it is only as trustworthy
+  // as the proxy in front of the app.
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
     return forwarded.split(',')[0].trim()
@@ -369,6 +378,23 @@ export function getClientIp(request: Request): string {
 
   // Last resort
   return 'unknown'
+}
+
+/**
+ * User id from the signed NextAuth JWT cookie, or null when the request is not
+ * authenticated. Pure JWT decode — no DB access, no session callbacks.
+ */
+export async function resolveUserIdentifier(request: Request): Promise<string | null> {
+  try {
+    const token = await getToken({
+      req: request as never,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+    const id = token?.id ?? token?.sub
+    return typeof id === 'string' && id ? `user:${id}` : null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -406,19 +432,12 @@ export function withRateLimit<T extends Request = Request>(
       ? RateLimitPresets[options.preset]
       : { limit: options.limit || 100, window: options.window || 60 }
 
-    // Determine identifier
-    let identifier: string
-    if (options.byUser) {
-      // Extract user ID from auth session if available
-      const authHeader = request.headers.get('authorization')
-      if (authHeader?.startsWith('Bearer ')) {
-        identifier = authHeader.substring(7)
-      } else {
-        identifier = getClientIp(request)
-      }
-    } else {
-      identifier = getClientIp(request)
-    }
+    // Determine identifier. `byUser` keys on the user id from the signed session
+    // cookie; it used to read an `Authorization: Bearer` value the app never sends
+    // (so every "per-user" limit was really per-IP) and that a caller could rotate
+    // at will to dodge the limit. Unauthenticated callers fall back to their IP.
+    const identifier =
+      (options.byUser ? await resolveUserIdentifier(request) : null) ?? getClientIp(request)
 
     // Apply rate limit
     const result = options.strict

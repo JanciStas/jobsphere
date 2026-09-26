@@ -20,6 +20,9 @@ const mockPipeline = {
   exec: vi.fn(),
 }
 
+const { getTokenMock } = vi.hoisted(() => ({ getTokenMock: vi.fn() }))
+vi.mock('next-auth/jwt', () => ({ getToken: getTokenMock }))
+
 // Mock Redis
 vi.mock('@upstash/redis', () => ({
   Redis: vi.fn(() => ({
@@ -307,6 +310,17 @@ describe('Rate Limit Library', () => {
   })
 
   describe('getClientIp', () => {
+    it('prefers x-vercel-forwarded-for, which a client cannot spoof on Vercel', () => {
+      const request = new Request('http://localhost', {
+        headers: {
+          'x-vercel-forwarded-for': '203.0.113.9',
+          'x-forwarded-for': '6.6.6.6',
+        },
+      })
+
+      expect(getClientIp(request)).toBe('203.0.113.9')
+    })
+
     it('should extract IP from x-forwarded-for header', () => {
       const request = new Request('http://localhost', {
         headers: { 'x-forwarded-for': '203.0.113.1, 198.51.100.1' },
@@ -378,6 +392,42 @@ describe('Rate Limit Library', () => {
 
     it('should have upload preset with bounded limits', () => {
       expect(RateLimitPresets.upload).toEqual({ limit: 30, window: 300 })
+    })
+  })
+
+  describe('withRateLimit byUser', () => {
+    const run = async (headers: Record<string, string>) => {
+      mockPipeline.exec.mockResolvedValue([null, 1, null, null])
+      const wrapped = withRateLimit(vi.fn().mockResolvedValue(new Response('OK')), {
+        preset: 'api',
+        byUser: true,
+      })
+      await wrapped(new Request('http://localhost', { headers }))
+      return mockPipeline.zremrangebyscore.mock.calls[0][0] as string
+    }
+
+    it('keys on the user id from the signed session cookie', async () => {
+      getTokenMock.mockResolvedValue({ id: 'user-42' })
+
+      expect(await run({ 'x-forwarded-for': '203.0.113.1' })).toBe('ratelimit:user:user:user-42')
+    })
+
+    it('ignores an attacker-supplied Authorization: Bearer value', async () => {
+      getTokenMock.mockResolvedValue(null)
+
+      const key = await run({
+        authorization: 'Bearer rotate-me-1',
+        'x-forwarded-for': '203.0.113.1',
+      })
+
+      expect(key).toBe('ratelimit:user:203.0.113.1')
+      expect(key).not.toContain('rotate-me')
+    })
+
+    it('falls back to the IP when the JWT cannot be decoded', async () => {
+      getTokenMock.mockRejectedValue(new Error('bad token'))
+
+      expect(await run({ 'x-forwarded-for': '203.0.113.7' })).toBe('ratelimit:user:203.0.113.7')
     })
   })
 
