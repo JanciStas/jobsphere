@@ -44,10 +44,11 @@ function toVectorLiteral(embedding: number[]): string {
 /**
  * Deterministic stand-in vector for the Playwright suite, which has no OpenAI key.
  * Only active when E2E_STUB_EMBEDDINGS=1 is set explicitly (by playwright.config.ts)
- * and never on Vercel, so production behaviour is unchanged.
+ * and never on a Vercel production deployment (VERCEL_ENV=production), so production
+ * behaviour is unchanged.
  */
 function e2eStubEnabled(): boolean {
-  return process.env.E2E_STUB_EMBEDDINGS === '1' && !process.env.VERCEL
+  return process.env.E2E_STUB_EMBEDDINGS === '1' && process.env.VERCEL_ENV !== 'production'
 }
 
 export function stubEmbedding(text: string, dimensions = EMBEDDING_DIMENSIONS): number[] {

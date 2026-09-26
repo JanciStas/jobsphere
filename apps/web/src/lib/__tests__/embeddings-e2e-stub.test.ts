@@ -13,7 +13,7 @@ import { generateEmbedding, stubEmbedding } from '../embeddings'
 
 afterEach(() => {
   delete process.env.E2E_STUB_EMBEDDINGS
-  delete process.env.VERCEL
+  delete process.env.VERCEL_ENV
   create.mockClear()
 })
 
@@ -46,9 +46,9 @@ describe('generateEmbedding E2E stub guard', () => {
     expect(result).toHaveLength(1536)
   })
 
-  it('never stubs on Vercel, even if the variable leaks into the environment', async () => {
+  it('never stubs on a Vercel production deployment, even if the variable leaks in', async () => {
     process.env.E2E_STUB_EMBEDDINGS = '1'
-    process.env.VERCEL = '1'
+    process.env.VERCEL_ENV = 'production'
 
     await generateEmbedding('hello')
 

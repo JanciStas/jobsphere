@@ -75,6 +75,9 @@ export default defineConfig({
       STORAGE_PROVIDER: 'local',
       ENABLE_ANTIVIRUS: 'false',
       E2E_STUB_EMBEDDINGS: '1',
+      // A developer .env pulled with `vercel env pull` may carry VERCEL_ENV=production,
+      // which (correctly) disables the embedding stub. The test server is never production.
+      VERCEL_ENV: 'development',
     },
   },
 })
