@@ -166,7 +166,7 @@ export const PUT = withCsrfProtection(
         // outside user must never be attached through an edit (IDOR).
         if (data.assessmentId) {
           const assessment = await prisma.assessment.findFirst({
-            where: { id: data.assessmentId, orgId: job.orgId },
+            where: { id: data.assessmentId, orgId: job.orgId, deletedAt: null },
             select: { id: true },
           })
           if (!assessment) {

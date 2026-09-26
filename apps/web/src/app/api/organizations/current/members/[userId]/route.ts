@@ -50,6 +50,15 @@ async function patchHandler(request: Request, context?: { params?: Record<string
     const body = await request.json()
     const { role } = updateRoleSchema.parse(body)
 
+    // A removed member has no role to change (and bumping their sessionEpoch would
+    // sign them out of every other organisation for nothing).
+    const target = await prisma.userOrgRole.findFirst({
+      where: { userId: params.userId, orgId: userOrgRole.orgId, deletedAt: null },
+    })
+    if (!target) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
+
     // Update the member's role and revoke their active sessions (AUTH-001) so the
     // new role takes effect immediately instead of after the JWT naturally expires.
     const [updated] = await prisma.$transaction([

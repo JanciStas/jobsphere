@@ -98,17 +98,25 @@ export const POST = withCsrfProtection(
         const existing = await prisma.userOrgRole.findUnique({
           where: { userId_orgId: { userId: user.id, orgId: id } },
         })
-        if (existing) {
+        if (existing && !existing.deletedAt) {
           return NextResponse.json(
             { error: 'That user is already a member of this organization' },
             { status: 409 },
           )
         }
 
-        const membership = await prisma.userOrgRole.create({
-          data: { userId: user.id, orgId: id, role },
-          include: { user: { select: { id: true, name: true, email: true } } },
-        })
+        const memberInclude = { user: { select: { id: true, name: true, email: true } } }
+        // (userId, orgId) is the primary key: a removed member is reinstated, not re-created.
+        const membership = existing
+          ? await prisma.userOrgRole.update({
+              where: { userId_orgId: { userId: user.id, orgId: id } },
+              data: { role, deletedAt: null },
+              include: memberInclude,
+            })
+          : await prisma.userOrgRole.create({
+              data: { userId: user.id, orgId: id, role },
+              include: memberInclude,
+            })
 
         logger.info('Admin added org member', { adminId: admin.user.id, orgId: id, role })
 

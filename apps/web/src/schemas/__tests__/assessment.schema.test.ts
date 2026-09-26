@@ -48,3 +48,27 @@ describe('createAssessmentSchema with an edited multi-select question', () => {
     }
   })
 })
+
+describe('correct answers must point at a real choice', () => {
+  const build = (correctIndexes: unknown) =>
+    createAssessmentSchema.safeParse({
+      name: 'A',
+      sections: [
+        {
+          title: 'S',
+          questions: [{ type: 'MCQ', text: 'Q', choices: ['a', 'b'], correctIndexes }],
+        },
+      ],
+    })
+
+  it('rejects an index beyond the choices and negative indexes', () => {
+    expect(build([5]).success).toBe(false)
+    expect(build('0,2').success).toBe(false)
+    expect(build([-1]).success).toBe(false)
+  })
+
+  it('accepts indexes within range', () => {
+    expect(build([0, 1]).success).toBe(true)
+    expect(build('1').success).toBe(true)
+  })
+})

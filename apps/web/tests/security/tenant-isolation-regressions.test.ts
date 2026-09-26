@@ -177,6 +177,7 @@ describe('A3 — PUT /api/jobs/[id] validates cross-org foreign keys', () => {
     expect(asMock(prisma.assessment.findFirst).mock.calls[0][0].where).toEqual({
       id: 'foreign-assessment',
       orgId: 'org1',
+      deletedAt: null,
     })
     expect(prisma.job.update).not.toHaveBeenCalled()
   })
