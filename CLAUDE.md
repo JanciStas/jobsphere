@@ -627,21 +627,38 @@ Po dokončení AKEJKOĽVEK zmeny kódu, pred ohlásením „hotovo" a pred commi
 2. **Quality gate** — spusti typecheck + lint + testy. Ak pre dotknutú cestu existuje security test, musí prejsť;
    ak na novej/zmenenej kritickej ceste chýba, DOPÍŠ ho.
 3. **Posture update** — ak pribudol/zanikol nález, prepočítaj posture skóre
-   (od 100: Critical −20 / High −10 / Medium −4 / Low −1) a aktualizuj sekciu `## Security posture
+   (od 100: Critical −20 / High −10 / Medium −4 / Low −1) a aktualizuj sekciu `## Security posture`
+   aj `bezpecnostny-audit/findings.json`.
+4. **Pravidlá** — žiadne secrets do logov/výstupu (len súbor + typ); nič needituj mimo scope zmeny
+   bez upozornenia; oprav root cause, nie symptóm.
 
-skóre: **68/100** (findings.json, 2026-09-26) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v (deferred sa nepočíta, duplicitné nálezy raz).
+Príkazy projektu: typecheck=`yarn typecheck` · lint=`yarn lint` · test=`yarn test` · audit=`yarn audit`
+
+> Hooky v `.claude/settings.json` toto čiastočne vynucujú (PostToolUse: prettier + secret-scan; Stop-gate: typecheck+lint).
+> Manuálne kedykoľvek: `/po-zmene`.
+
+> **2026-07-29 — brány reálne strážia.** Do tohto dátumu `yarn lint` nekontroloval **nič**: `.eslintrc.json`
+> mal v `ignorePatterns` `apps/**` a `packages/**`, takže ESLint (vrátane `eslint-plugin-security`) preskakoval
+> každý zdrojový súbor — „zelený lint" v CI aj v Stop-gate bol bezobsažný. Po zapnutí: 133 errorov, všetky opravené.
+> Rovnako `coverage.exclude` vo `vitest.config.ts` prepisoval defaulty, takže sa do coverage rátali testy a `.next/`;
+> prah 80 % nebol nikdy dosiahnuteľný. Prah je teraz na **nameranej** hodnote (lines 19 / branches 58 / functions 36)
+> a slúži ako ratchet proti regresii.
+
+## Security posture
+
+skóre: **68/100** (findings.json, 2026-09-26) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v `bezpecnostny-audit/findings.json` (deferred sa nepočíta, duplicitné nálezy raz).
 
 otvorené: **0 Critical · 2 High** (H4 Stripe env; SEC-1 Next 14.2.35 — Critical RCE + High DoS/SSRF, oprava = major upgrade na Next 15.5.x, mimo rozsahu) · **2 Medium** (M2 KV rate-limit env, M9 Trivy gate — vypnutý, kým SEC-1 nemá patch) · **4 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET — env doplnený 15. 9., čaká na deploy, A17 N+1 v email webhooku).
 
-opravené 26. 9. (audit DS V4.1 Flash, overený nezávisle): A1 odobraný člen zachoval prístup (UserOrgRole soft-delete + sessionEpoch + re-invite), A3/A4 cross-tenant FK v PUT jobs / PATCH interviews, A6 rate-limit (teraz user id z JWT), A7 , A5 sanitize-html 2.17.7, N5 assessment builder nešiel uložiť, A20 index , A14 metadata a ~31 komponentov v 5 jazykoch. Pred opravami by ten istý vzorec dal ~27/100 (3 High + 3 Medium navyše).
+opravené 26. 9. (audit DS V4.1 Flash, overený nezávisle): A1 odobraný člen zachoval prístup (UserOrgRole soft-delete + sessionEpoch + re-invite), A3/A4 cross-tenant FK v PUT jobs / PATCH interviews, A6 rate-limit `byUser` (teraz user id z JWT), A7 `activeOrgId`, A5 sanitize-html 2.17.7, N5 assessment builder nešiel uložiť, A20 index `Task.candidateId`, A14 metadata a ~31 komponentov v 5 jazykoch. Pred opravami by ten istý vzorec dal ~27/100 (3 High + 3 Medium navyše).
 
-**Merania 2026-09-26** (proti čistej izolovanej test DB a produkčnému buildu, pozri pamäť ): unit **1144/1144** · integrácia **380/381** (zvyšný PDF mock) · E2E chromium **232 passed / 4 failed / 2 flaky / 48 skipped / 10 nespustených** (296; zlyhania: 2× candidate-search a cv-upload potrebujú OPENAI_API_KEY/storage, 1 opravený test pluralizácie) · typecheck, lint (0 errors), build ✅.
+**Merania 2026-09-26** (proti čistej izolovanej test DB a produkčnému buildu, pozri pamäť `feedback-e2e-against-prod-build`): unit **1144/1144** · integrácia **380/381** (zvyšný `cv-auto-fill` PDF mock) · E2E chromium **232 passed / 4 failed / 2 flaky / 48 skipped / 10 nespustených** (296; zlyhania: 2× candidate-search a cv-upload potrebujú OPENAI_API_KEY/storage, 1 test pluralizácie opravený) · typecheck, lint (0 errors), build ✅.
 
-**Celkové hodnotenie projektu: ~81 %** (14. 9. bolo 70 %) — váhy Kód 15 / Integrácia 15 / E2E 15 / Bezpečnosť 20 / Prevádzka 20 / Dáta 5 / Kvalita+dok. 10; skóre oblastí 94 / 95 / 82 / 68 / 68 / 93 / 82. Prevádzku ťahá dole chýbajúce Stripe/KV, mŕtvy Sentry a to, že PR #22 a #23 nie sú v (na produkcii tieto opravy ešte nie sú).
+**Celkové hodnotenie projektu: ~81 %** (14. 9. bolo 70 %) — váhy Kód 15 / Integrácia 15 / E2E 15 / Bezpečnosť 20 / Prevádzka 20 / Dáta 5 / Kvalita+dok. 10; skóre oblastí 94 / 95 / 82 / 68 / 68 / 93 / 82. Prevádzku ťahá dole chýbajúce Stripe/KV, mŕtvy Sentry a to, že PR #22 a #23 nie sú v `main` (na produkcii tieto opravy ešte nie sú).
 
-> Predošlá baseline (100/100, 2026-06-29): · tracking: . M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
+> Predošlá baseline (100/100, 2026-06-29): `bezpecnostny-audit/SECURITY_REPORT_2026-06-29.md` · tracking: `bezpecnostny-audit/findings.json`. M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
 
-> Re-baseline: · diff-scoped DoD: .
+> Re-baseline: `Read SECURITY_AUDIT_TESTS_REPORT.md and execute it as a prompt.` · diff-scoped DoD: `/po-zmene`.
 
 ## Pointery (detail v agent_docs/)
 
