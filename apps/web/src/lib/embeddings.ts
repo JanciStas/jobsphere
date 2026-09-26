@@ -42,10 +42,35 @@ function toVectorLiteral(embedding: number[]): string {
 }
 
 /**
+ * Deterministic stand-in vector for the Playwright suite, which has no OpenAI key.
+ * Only active when E2E_STUB_EMBEDDINGS=1 is set explicitly (by playwright.config.ts)
+ * and never on Vercel, so production behaviour is unchanged.
+ */
+function e2eStubEnabled(): boolean {
+  return process.env.E2E_STUB_EMBEDDINGS === '1' && !process.env.VERCEL
+}
+
+export function stubEmbedding(text: string, dimensions = EMBEDDING_DIMENSIONS): number[] {
+  let seed = 2166136261
+  for (let i = 0; i < text.length; i++) {
+    seed = Math.imul(seed ^ text.charCodeAt(i), 16777619) >>> 0
+  }
+  const values: number[] = []
+  for (let i = 0; i < dimensions; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    values.push(seed / 0xffffffff - 0.5)
+  }
+  const norm = Math.sqrt(values.reduce((sum, v) => sum + v * v, 0)) || 1
+  return values.map((v) => v / norm)
+}
+
+/**
  * Generate embeddings for a single text
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
+    if (e2eStubEnabled()) return stubEmbedding(text)
+
     if (!text || text.trim().length === 0) {
       throw new Error('Text cannot be empty')
     }
@@ -74,6 +99,8 @@ export async function generateEmbeddingsBatch(texts: string[]): Promise<number[]
     if (texts.length === 0) {
       return []
     }
+
+    if (e2eStubEnabled()) return texts.map((t) => stubEmbedding(t))
 
     // OpenAI allows up to 2048 inputs per batch
     const MAX_BATCH_SIZE = 100

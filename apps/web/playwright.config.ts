@@ -68,5 +68,13 @@ export default defineConfig({
     timeout: 300 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
+    // Merged over process.env. The specs that upload CVs and search candidates need
+    // local file storage (no Vercel Blob token) and a deterministic embedding
+    // (no OpenAI key) — without these they failed for environment reasons.
+    env: {
+      STORAGE_PROVIDER: 'local',
+      ENABLE_ANTIVIRUS: 'false',
+      E2E_STUB_EMBEDDINGS: '1',
+    },
   },
 })

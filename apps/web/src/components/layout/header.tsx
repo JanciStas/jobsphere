@@ -53,11 +53,11 @@ export function Header() {
       aria-label="Site header"
     >
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-3 md:gap-8">
+        <div className="flex items-center gap-3 lg:gap-8">
           {/* Below md the desktop <nav> is display:none, so this drawer is the
               ONLY way to reach the main navigation. It renders the very same
               `navItems` array — the list is defined once, above. */}
-          <NavDrawer label="Open main menu" title="Main navigation" triggerClassName="md:hidden">
+          <NavDrawer label="Open main menu" title="Main navigation" triggerClassName="lg:hidden">
             {(close) => (
               <nav
                 className="flex flex-col gap-1 px-3 pb-6 pt-16"
@@ -91,7 +91,7 @@ export function Header() {
           </Link>
 
           <nav
-            className="hidden items-center gap-6 md:flex"
+            className="hidden items-center gap-6 lg:flex"
             role="navigation"
             aria-label="Main navigation"
           >
@@ -109,7 +109,7 @@ export function Header() {
         </div>
 
         <div
-          className="flex items-center gap-2 md:gap-4"
+          className="flex items-center gap-2 lg:gap-4"
           role="navigation"
           aria-label="User actions"
         >
