@@ -293,17 +293,14 @@ yarn test:watch
 yarn test:ui
 ```
 
-**Coverage Requirements:**
-
-- Lines: 80%
-- Functions: 80%
-- Branches: 75%
-- Statements: 80%
+**Coverage gate:** a ratchet on measured values in `apps/web/vitest.config.ts` (currently
+statements 22 / branches 61 / functions 39 / lines 22 — an honest floor, not a target of 80 %).
+It only ever moves up.
 
 ### Type Safety
 
 - **Strict TypeScript** mode enabled
-- Zero `any` types in production code
+- Strict TypeScript; remaining `any` usages are reported as lint warnings and are being reduced
 - Zod runtime validation for all inputs
 - Prisma-generated types for database
 
@@ -323,7 +320,7 @@ yarn test:ui
 
 - Node.js 18+
 - PostgreSQL database (or Vercel Postgres)
-- pnpm (recommended) or npm
+- yarn 1.x (pinned via `packageManager`; do not use npm or pnpm — the lockfile is `yarn.lock`)
 
 ### 1. Clone the Repository
 
@@ -335,7 +332,7 @@ cd jobsphere
 ### 2. Install Dependencies
 
 ```bash
-pnpm install
+yarn install
 # or
 npm install
 ```
@@ -407,19 +404,19 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 cd apps/web
 
 # Generate Prisma Client
-pnpm prisma generate
+yarn prisma generate
 
 # Run migrations
-pnpm prisma migrate dev
+yarn prisma migrate dev
 
 # (Optional) Seed database
-pnpm prisma db seed
+yarn prisma db seed
 ```
 
 ### 5. Run Development Server
 
 ```bash
-pnpm dev
+yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -502,7 +499,7 @@ jobsphere/
 - **EmailSequenceStep** - Steps in email sequences with scheduling
 - **Invite** - Assessment invitations sent to candidates
 
-See `packages/database/prisma/schema.prisma` for complete schema.
+See `packages/db/prisma/schema.prisma` for complete schema.
 
 ---
 
@@ -565,7 +562,7 @@ Currently uses local file storage in `public/uploads/cvs/`.
 **Vercel Blob:**
 
 ```bash
-pnpm add @vercel/blob
+yarn add @vercel/blob
 
 # Update apps/web/src/app/api/upload/route.ts
 import { put } from '@vercel/blob'
@@ -575,7 +572,7 @@ const blob = await put(filename, file, { access: 'public' })
 **AWS S3:**
 
 ```bash
-pnpm add @aws-sdk/client-s3
+yarn add @aws-sdk/client-s3
 
 # Configure S3 client and upload
 ```
@@ -686,16 +683,16 @@ NEXT_PUBLIC_API_URL=https://yourdomain.com/api
 
 ```bash
 # Run type checking
-pnpm type-check
+yarn typecheck
 
 # Run linting
-pnpm lint
+yarn lint
 
 # Format code
-pnpm format
+yarn format
 
 # Build for production
-pnpm build
+yarn build
 ```
 
 ---
