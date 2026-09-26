@@ -422,6 +422,7 @@ export class ApplicationService {
         where: {
           orgId: application.job?.orgId,
           role: 'ORG_ADMIN',
+          deletedAt: null,
         },
         include: {
           user: { select: { email: true, name: true } },

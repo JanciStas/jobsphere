@@ -104,7 +104,7 @@ export const DELETE = withCsrfProtection(
         const membership = await prisma.userOrgRole.findUnique({
           where: { userId_orgId: { userId, orgId } },
         })
-        if (!membership) {
+        if (!membership || membership.deletedAt) {
           return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
         }
 

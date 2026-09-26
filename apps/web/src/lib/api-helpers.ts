@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { auth, UnauthorizedError } from './auth'
 import { prisma } from './prisma'
 
@@ -26,6 +27,35 @@ export interface AuthContext {
 }
 
 /**
+ * Resolve the caller's live membership: the org they are currently acting in
+ * (`activeOrgId`) first, otherwise their first live membership (oldest first).
+ * `deletedAt: null` is explicit (the soft-delete middleware skips nested include
+ * and findUnique) so a removed member never resolves. Returns null when none.
+ */
+export async function resolveActiveMembership<
+  I extends Prisma.UserOrgRoleInclude | undefined = undefined,
+>(userId: string, activeOrgId?: string | null, include?: I) {
+  type Row = Prisma.UserOrgRoleGetPayload<{ include: NonNullable<I> }>
+  const extra = include ? { include } : {}
+  let member: unknown = activeOrgId
+    ? await prisma.userOrgRole.findFirst({
+        where: { userId, orgId: activeOrgId, deletedAt: null },
+        ...extra,
+      } as Prisma.UserOrgRoleFindFirstArgs)
+    : null
+
+  if (!member) {
+    member = await prisma.userOrgRole.findFirst({
+      where: { userId, deletedAt: null },
+      ...extra,
+      orderBy: { createdAt: 'asc' },
+    } as Prisma.UserOrgRoleFindFirstArgs)
+  }
+
+  return member as Row | null
+}
+
+/**
  * Require authentication and organization membership.
  * The request argument is accepted for call-site ergonomics but unused — auth
  * comes from the NextAuth session — so it is optional.
@@ -37,25 +67,11 @@ export async function requireOrgAuth(_request?: NextRequest): Promise<AuthContex
     throw new UnauthorizedError()
   }
 
-  // Honour the org the user is currently acting in. Without this the first
-  // membership row won, so a user in two orgs got a nondeterministic tenant.
-  // `deletedAt: null` is explicit (the soft-delete middleware also adds it) so a
-  // removed member never resolves as a member.
-  const activeOrgId = session.user.activeOrgId ?? null
-  let orgMember = activeOrgId
-    ? await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id, orgId: activeOrgId, deletedAt: null },
-        include: { organization: true },
-      })
-    : null
-
-  if (!orgMember) {
-    orgMember = await prisma.userOrgRole.findFirst({
-      where: { userId: session.user.id, deletedAt: null },
-      include: { organization: true },
-      orderBy: { createdAt: 'asc' },
-    })
-  }
+  const orgMember = await resolveActiveMembership(
+    session.user.id,
+    session.user.activeOrgId ?? null,
+    { organization: true },
+  )
 
   if (!orgMember) {
     throw new ForbiddenError('No organization membership found')

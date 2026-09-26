@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { auth } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
@@ -46,10 +47,7 @@ export const POST = withCsrfProtection(
         const rawBody = await req.json()
         const payload = bulkSchema.parse(rawBody)
 
-        const membership = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-          select: { orgId: true },
-        })
+        const membership = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
         if (!membership) {
           return NextResponse.json({ error: 'No organization found' }, { status: 403 })

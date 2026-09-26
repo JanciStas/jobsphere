@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -28,9 +29,7 @@ export const GET = withRateLimit(
       }
 
       // Org is derived from the caller's membership — never from the request.
-      const userOrgRole = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
-      })
+      const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
       if (!userOrgRole) {
         return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
       }
@@ -61,9 +60,7 @@ export const POST = withCsrfProtection(
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const userOrgRole = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-        })
+        const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
         if (!userOrgRole) {
           return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
         }

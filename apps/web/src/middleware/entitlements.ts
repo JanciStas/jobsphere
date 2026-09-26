@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { prisma } from '../lib/db'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { hasFeature, canCreateJob, canAddCandidate, Feature } from '../lib/entitlements'
 
 /**
@@ -23,9 +23,7 @@ export async function requireFeatureMiddleware(
   }
 
   // Get organization
-  const orgMember = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-  })
+  const orgMember = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
   if (!orgMember) {
     return { allowed: false, error: 'No organization found' }
@@ -57,9 +55,7 @@ export async function canCreateJobMiddleware(
     return { allowed: false, error: 'Unauthorized' }
   }
 
-  const orgMember = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-  })
+  const orgMember = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
   if (!orgMember) {
     return { allowed: false, error: 'No organization' }
@@ -89,9 +85,7 @@ export async function canAddCandidateMiddleware(
     return { allowed: false, error: 'Unauthorized' }
   }
 
-  const orgMember = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-  })
+  const orgMember = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
   if (!orgMember) {
     return { allowed: false, error: 'No organization' }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { withRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 
@@ -15,21 +15,18 @@ export const GET = withRateLimit(
       }
 
       // Get user's organization
-      const userOrgRole = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
-        include: {
-          organization: {
-            select: {
-              id: true,
-              name: true,
-              logo: true,
-              videoUrl: true,
-              website: true,
-              description: true,
-              industry: true,
-              size: true,
-              slug: true,
-            },
+      const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId, {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+            videoUrl: true,
+            website: true,
+            description: true,
+            industry: true,
+            size: true,
+            slug: true,
           },
         },
       })

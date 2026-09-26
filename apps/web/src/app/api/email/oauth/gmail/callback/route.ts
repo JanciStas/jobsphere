@@ -102,7 +102,8 @@ async function handleGmailCallback(request: NextRequest) {
 
     // Find organization
     const orgMember = await prisma.userOrgRole.findFirst({
-      where: { userId },
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: 'asc' },
     })
 
     if (!orgMember) {

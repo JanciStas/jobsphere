@@ -9,7 +9,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -36,10 +36,7 @@ export const POST = withCsrfProtection<Request>(
         }
 
         // Recruiter-level org membership required (same gate as creating one).
-        const userOrg = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-          select: { role: true },
-        })
+        const userOrg = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
         if (!userOrg || !GENERATE_ROLES.includes(userOrg.role)) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }

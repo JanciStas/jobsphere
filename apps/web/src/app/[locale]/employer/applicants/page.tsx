@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -25,11 +26,14 @@ interface ApplicantsFilters {
   search?: string
 }
 
-async function getApplicants(userId: string, page: number, filters: ApplicantsFilters) {
+async function getApplicants(
+  userId: string,
+  activeOrgId: string | null | undefined,
+  page: number,
+  filters: ApplicantsFilters,
+) {
   // Get user's organization
-  const userOrgRole = await prisma.userOrgRole.findFirst({
-    where: { userId },
-  })
+  const userOrgRole = await resolveActiveMembership(userId, activeOrgId)
 
   if (!userOrgRole) {
     return null
@@ -160,7 +164,7 @@ export default async function ApplicantsPage({
 
   const currentSearch = searchParams?.search?.trim() || undefined
 
-  const result = await getApplicants(session.user.id, page, {
+  const result = await getApplicants(session.user.id, session.user.activeOrgId, page, {
     jobId: currentJobId,
     stage: currentStage,
     sort: currentSort,

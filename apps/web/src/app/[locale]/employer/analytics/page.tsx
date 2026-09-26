@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -59,9 +60,8 @@ export default async function AnalyticsPage() {
   }
 
   // Get user's organization
-  const membership = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-    include: { organization: true },
+  const membership = await resolveActiveMembership(session.user.id, session.user.activeOrgId, {
+    organization: true,
   })
 
   if (!membership) {

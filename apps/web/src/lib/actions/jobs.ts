@@ -29,6 +29,7 @@ export async function createJob(formData: {
     where: {
       userId: session.user.id,
       orgId: formData.orgId,
+      deletedAt: null,
     },
   })
 
@@ -109,6 +110,7 @@ async function requireJobWriteAccess(jobId: string, userId: string): Promise<Job
     where: {
       userId,
       orgId: job.orgId,
+      deletedAt: null,
     },
   })
 

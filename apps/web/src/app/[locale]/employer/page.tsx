@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,13 +34,10 @@ export async function generateMetadata({
   return { title: t('employer.title'), description: t('employer.description') }
 }
 
-async function getEmployerData(userId: string) {
+async function getEmployerData(userId: string, activeOrgId?: string | null) {
   // Get user's organization
-  const userOrgRole = await prisma.userOrgRole.findFirst({
-    where: { userId },
-    include: {
-      organization: true,
-    },
+  const userOrgRole = await resolveActiveMembership(userId, activeOrgId, {
+    organization: true,
   })
 
   if (!userOrgRole) {
@@ -115,7 +113,7 @@ export default async function EmployerDashboardPage({ params }: { params: { loca
     redirect(`/${params.locale}/login`)
   }
 
-  const data = await getEmployerData(session.user.id)
+  const data = await getEmployerData(session.user.id, session.user.activeOrgId)
 
   if (!data) {
     // User is not an employer

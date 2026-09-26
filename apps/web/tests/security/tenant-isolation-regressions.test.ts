@@ -21,7 +21,12 @@ vi.mock('@/lib/logger', () => ({
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }))
+const { authMock, portalCreate } = vi.hoisted(() => ({ authMock: vi.fn(), portalCreate: vi.fn() }))
+vi.mock('stripe', () => ({
+  default: class {
+    billingPortal = { sessions: { create: portalCreate } }
+  },
+}))
 vi.mock('@/lib/auth', () => ({
   auth: authMock,
   requireAuth: authMock,
@@ -41,13 +46,18 @@ vi.mock('@/lib/prisma', () => ({
     assessment: { findFirst: vi.fn() },
     interview: { findFirst: vi.fn(), update: vi.fn() },
     branch: { findUnique: vi.fn() },
+    subscription: { findFirst: vi.fn() },
+    invoice: { findMany: vi.fn() },
+    orgCustomer: { findUnique: vi.fn() },
     applicationActivity: { create: vi.fn() },
     $transaction: vi.fn().mockResolvedValue([]),
   },
 }))
 
 import { prisma } from '@/lib/prisma'
-import { requireOrgAuth } from '@/lib/api-helpers'
+import { requireOrgAuth, resolveActiveMembership } from '@/lib/api-helpers'
+import { GET as getBilling } from '@/app/api/organizations/current/billing/route'
+import { POST as postPortal } from '@/app/api/stripe/portal/route'
 import { PUT as putJob } from '@/app/api/jobs/[id]/route'
 import { PATCH as patchInterview } from '@/app/api/applications/[id]/interviews/[interviewId]/route'
 import { DELETE as removeMember } from '@/app/api/organizations/current/members/[userId]/route'
@@ -258,5 +268,119 @@ describe('A4 — PATCH interview validates branch ownership', () => {
 
     expect(res.status).toBe(404)
     expect(asMock(prisma.userOrgRole.findFirst).mock.calls[0][0].where.deletedAt).toBeNull()
+  })
+})
+
+// Multi-org caller: helpers/routes must act in session.user.activeOrgId, and a
+// removed (soft-deleted) member must never resolve.
+type Row = {
+  userId: string
+  orgId: string
+  role: string
+  deletedAt: Date | null
+  createdAt: number
+}
+function seedMemberships(rows: Row[]) {
+  asMock(prisma.userOrgRole.findFirst).mockImplementation(async (args: any) => {
+    const w = args.where
+    const hits = rows
+      .filter(
+        (r) =>
+          r.userId === w.userId &&
+          (w.orgId === undefined || r.orgId === w.orgId) &&
+          (w.deletedAt === undefined || r.deletedAt === w.deletedAt),
+      )
+      .sort((a, b) => a.createdAt - b.createdAt)
+    return hits[0] ?? null
+  })
+}
+const liveRows = (): Row[] => [
+  { userId: 'u1', orgId: 'org1', role: 'ORG_ADMIN', deletedAt: null, createdAt: 1 },
+  { userId: 'u1', orgId: 'org2', role: 'ORG_ADMIN', deletedAt: null, createdAt: 2 },
+]
+const asActive = (activeOrgId: string | null) =>
+  authMock.mockResolvedValue({ user: { id: 'u1', email: 'u1@example.com', activeOrgId } })
+
+describe('resolveActiveMembership', () => {
+  it('honours the active org over the oldest membership', async () => {
+    seedMemberships(liveRows())
+    const m = await resolveActiveMembership('u1', 'org2')
+    expect(m?.orgId).toBe('org2')
+    expect(asMock(prisma.userOrgRole.findFirst).mock.calls[0][0].where).toEqual({
+      userId: 'u1',
+      orgId: 'org2',
+      deletedAt: null,
+    })
+  })
+
+  it('falls back to the first live membership when the active org is stale', async () => {
+    const rows = liveRows()
+    rows[1].deletedAt = new Date()
+    seedMemberships(rows)
+    const m = await resolveActiveMembership('u1', 'org2')
+    expect(m?.orgId).toBe('org1')
+    const fallback = asMock(prisma.userOrgRole.findFirst).mock.calls[1][0]
+    expect(fallback.where).toEqual({ userId: 'u1', deletedAt: null })
+    expect(fallback.orderBy).toEqual({ createdAt: 'asc' })
+  })
+
+  it('uses the oldest live membership when there is no active org', async () => {
+    seedMemberships(liveRows())
+    expect((await resolveActiveMembership('u1', null))?.orgId).toBe('org1')
+    expect(asMock(prisma.userOrgRole.findFirst)).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns null for a removed member', async () => {
+    seedMemberships(liveRows().map((r) => ({ ...r, deletedAt: new Date() })))
+    expect(await resolveActiveMembership('u1', 'org2')).toBeNull()
+  })
+})
+
+describe('multi-org callers — converted routes', () => {
+  it('GET /organizations/current/billing serves the active org', async () => {
+    asActive('org2')
+    seedMemberships(liveRows())
+    asMock(prisma.subscription.findFirst).mockResolvedValue({ id: 'sub2' })
+    asMock(prisma.invoice.findMany).mockResolvedValue([])
+
+    const res = await (getBilling as any)(new Request('http://x/api'))
+
+    expect(res.status).toBe(200)
+    expect(asMock(prisma.subscription.findFirst).mock.calls[0][0].where.orgId).toBe('org2')
+    expect(asMock(prisma.invoice.findMany).mock.calls[0][0].where.orgId).toBe('org2')
+  })
+
+  it('GET /organizations/current/billing rejects a removed member', async () => {
+    asActive('org2')
+    seedMemberships(liveRows().map((r) => ({ ...r, deletedAt: new Date() })))
+
+    const res = await (getBilling as any)(new Request('http://x/api'))
+
+    expect(res.status).toBe(404)
+    expect(asMock(prisma.subscription.findFirst)).not.toHaveBeenCalled()
+  })
+
+  it('POST /stripe/portal opens the active org customer', async () => {
+    asActive('org2')
+    seedMemberships(liveRows())
+    asMock(prisma.orgCustomer.findUnique).mockResolvedValue({ providerCustomerId: 'cus_org2' })
+    portalCreate.mockResolvedValue({ url: 'https://portal/x' })
+
+    const res = await (postPortal as any)(new Request('http://x/api', { method: 'POST' }))
+
+    expect(res.status).toBe(200)
+    expect(asMock(prisma.orgCustomer.findUnique).mock.calls[0][0].where.orgId).toBe('org2')
+    expect(portalCreate.mock.calls[0][0].customer).toBe('cus_org2')
+  })
+
+  it('POST /stripe/portal refuses a removed member', async () => {
+    asActive('org2')
+    seedMemberships(liveRows().map((r) => ({ ...r, deletedAt: new Date() })))
+
+    const res = await (postPortal as any)(new Request('http://x/api', { method: 'POST' }))
+
+    expect(res.status).toBe(400)
+    expect(asMock(prisma.orgCustomer.findUnique)).not.toHaveBeenCalled()
+    expect(portalCreate).not.toHaveBeenCalled()
   })
 })

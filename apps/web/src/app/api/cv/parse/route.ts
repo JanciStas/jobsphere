@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { extractCvFromText } from '@jobsphere/ai'
 import { addEmbeddingJob } from '@/lib/queue'
 import { logger } from '@/lib/logger'
@@ -105,10 +106,7 @@ export const POST = withCsrfProtection(
           // their org candidate; a plain job-seeker (no org membership) gets their
           // PERSONAL candidate so the uploaded CV lands in their own profile
           // instead of failing — the "my CV in my profile" model.
-          const userOrg = await prisma.userOrgRole.findFirst({
-            where: { userId: session.user.id },
-            select: { orgId: true },
-          })
+          const userOrg = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
           const candidate = userOrg
             ? await getOrCreateCandidateForUser(session.user.id, userOrg.orgId)

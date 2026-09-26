@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { errorResponse } from '@/lib/errors'
 import { withRateLimit } from '@/lib/rate-limit'
@@ -18,10 +19,7 @@ export const GET = withRateLimit(
       }
 
       // Get user's organization
-      const membership = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
-        select: { orgId: true, role: true },
-      })
+      const membership = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
       if (!membership) {
         return NextResponse.json({ error: 'No organization found' }, { status: 403 })
