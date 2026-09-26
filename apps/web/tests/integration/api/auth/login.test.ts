@@ -25,8 +25,20 @@ describe('Authentication Login Flow', () => {
       await prisma.userOrgRole.deleteMany({ where: { userId: { in: userIds } } })
       await prisma.auditLog.deleteMany({ where: { userId: { in: userIds } } })
     }
+    // `slug: 'first-org'` is created by the multi-org test further down but was
+    // missing from this list, so a second run of this file against a persistent
+    // database died on `Unique constraint failed on the fields: (slug)`. The first
+    // run always passed because the row did not exist yet — which is why CI (fresh
+    // container per run) never saw it. Same trap schema-validation.test.ts already
+    // documents in EXTRA_ORG_SLUGS. The prefix rule below means a new fixture
+    // cannot fall out of sync with a hand-maintained list again.
     await prisma.organization.deleteMany({
-      where: { slug: { in: ['login-test-org', 'login-org-1', 'login-org-2'] } },
+      where: {
+        OR: [
+          { slug: { in: ['login-test-org', 'login-org-1', 'login-org-2'] } },
+          { slug: { startsWith: 'login-test-' } },
+        ],
+      },
     })
     await prisma.user.deleteMany({ where: { email: { contains: 'login-test' } } })
   }
@@ -397,7 +409,9 @@ describe('Authentication Login Flow', () => {
       )
 
       const org = await prisma.organization.create({
-        data: { name: 'First Org', slug: 'first-org' },
+        // Prefixed so purgeLoginFixtures() picks it up. It used to be `first-org`,
+        // which nothing cleaned, so the second run hit a unique-slug violation.
+        data: { name: 'First Org', slug: 'login-test-first-org' },
       })
 
       await prisma.userOrgRole.create({

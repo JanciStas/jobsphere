@@ -165,9 +165,7 @@ describe('CV Auto-Fill Integration', () => {
           },
         ],
         skills: ['TypeScript', 'React', 'Node.js', 'Python', 'Docker', 'AWS'],
-        languages: [
-          { name: 'English', level: 'NATIVE' },
-        ],
+        languages: [{ name: 'English', level: 'NATIVE' }],
         certifications: [],
         projects: [],
       }
@@ -320,9 +318,7 @@ describe('CV Auto-Fill Integration', () => {
           },
         ],
         skills: ['Java', 'Spring', 'PostgreSQL', 'Docker', 'Kubernetes'],
-        languages: [
-          { name: 'Deutsch', level: 'NATIVE' },
-        ],
+        languages: [{ name: 'Deutsch', level: 'NATIVE' }],
         certifications: [],
         projects: [],
       }
@@ -432,7 +428,7 @@ describe('CV Auto-Fill Integration', () => {
         yearsOfExperience: 3, // Calculated from experiences
 
         // Languages
-        languages: mockExtractedCV.languages.map(l => `${l.name} (${l.level})`).join(', '),
+        languages: mockExtractedCV.languages.map((l) => `${l.name} (${l.level})`).join(', '),
       }
 
       // Verify form can be auto-filled
@@ -501,16 +497,41 @@ describe('CV Auto-Fill Integration', () => {
         projects: [],
       }
 
-      // Calculate total years of experience
-      const calculateYearsOfExperience = (experiences: ExtractedCV['experiences']) => {
+      // Calculate total years of experience.
+      //
+      // ⚠️ The reference "now" is an explicit input, not the wall clock.
+      //
+      // This used to call `new Date()` for the `current: true` role and then assert
+      // a 7–9 year band. That band was true when the test was written and drifts by
+      // one year every January: measured on 2026-09-26 the three roles sum to
+      // 126 months → 10 years, and `expect(10).toBeLessThanOrEqual(9)` failed with
+      // no product change. See skill `clock-independent-tests`.
+      //
+      // The parse below reads the fixture's `YYYY-MM` strings as UTC noon and
+      // compares with UTC accessors, so the result is identical on any machine
+      // regardless of its timezone — a local `getMonth()` would shift a month for
+      // runners west of UTC.
+      //
+      // Note: nothing in `src/` computes years of experience from work history —
+      // `Resume.yearsOfExperience` is only ever read back. This test exercises a
+      // local reimplementation, so it documents the arithmetic but guards no
+      // production code.
+      const monthOf = (value: string, fallback: Date) => {
+        if (value === 'present') return fallback
+        const [year, month] = value.split('-').map(Number)
+        return new Date(Date.UTC(year, month - 1, 1, 12))
+      }
+
+      const calculateYearsOfExperience = (experiences: ExtractedCV['experiences'], now: Date) => {
         let totalMonths = 0
 
-        experiences.forEach(exp => {
-          const start = new Date(exp.startDate)
-          const end = exp.current ? new Date() : new Date(exp.endDate)
+        experiences.forEach((exp) => {
+          const start = monthOf(exp.startDate, now)
+          const end = exp.current ? now : monthOf(exp.endDate, now)
 
-          const months = (end.getFullYear() - start.getFullYear()) * 12 +
-                        (end.getMonth() - start.getMonth())
+          const months =
+            (end.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+            (end.getUTCMonth() - start.getUTCMonth())
 
           totalMonths += months
         })
@@ -518,11 +539,22 @@ describe('CV Auto-Fill Integration', () => {
         return Math.floor(totalMonths / 12)
       }
 
-      const yearsOfExperience = calculateYearsOfExperience(mockExtractedCV.experiences)
+      const NOW = new Date(Date.UTC(2026, 0, 15, 12))
 
-      // Should be approximately 8 years total
-      expect(yearsOfExperience).toBeGreaterThanOrEqual(7)
-      expect(yearsOfExperience).toBeLessThanOrEqual(9)
+      // 2020-01 → 2026-01 = 72 months
+      // 2018-06 → 2019-12 = 18 months
+      // 2016-01 → 2018-05 = 28 months
+      // total 118 months → 9 years
+      expect(calculateYearsOfExperience(mockExtractedCV.experiences, NOW)).toBe(9)
+
+      // The same history measured a year earlier is a year shorter. This is what
+      // makes the assertion above a contract rather than a snapshot of today.
+      expect(
+        calculateYearsOfExperience(
+          mockExtractedCV.experiences,
+          new Date(Date.UTC(2025, 0, 15, 12)),
+        ),
+      ).toBe(8)
     })
 
     it('should handle missing optional fields gracefully', async () => {
@@ -586,15 +618,13 @@ describe('CV Auto-Fill Integration', () => {
       })
 
       // Mock AI extraction failure
-      vi.mocked(extractCvFromText).mockRejectedValueOnce(
-        new Error('AI service unavailable')
-      )
+      vi.mocked(extractCvFromText).mockRejectedValueOnce(new Error('AI service unavailable'))
 
       await expect(
         extractCvFromText(parseResult.text, {
           apiKey: 'test-key',
           locale: 'en',
-        })
+        }),
       ).rejects.toThrow('AI service unavailable')
     })
 
@@ -680,9 +710,7 @@ describe('CV Auto-Fill Integration', () => {
           },
         ],
         skills: ['Machine Learning', 'Python', 'TensorFlow', 'PyTorch', 'NLP'],
-        languages: [
-          { name: 'English', level: 'NATIVE' },
-        ],
+        languages: [{ name: 'English', level: 'NATIVE' }],
         certifications: [],
         projects: [],
       }
@@ -730,9 +758,7 @@ describe('CV Auto-Fill Integration', () => {
           },
         ],
         skills: ['React', 'Node.js', 'MongoDB', 'AWS', 'Docker', 'Kubernetes'],
-        languages: [
-          { name: 'English', level: 'NATIVE' },
-        ],
+        languages: [{ name: 'English', level: 'NATIVE' }],
         certifications: [
           {
             name: 'AWS Solutions Architect',

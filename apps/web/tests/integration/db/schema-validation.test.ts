@@ -388,10 +388,43 @@ describe('Database Schema Validation', () => {
 
   // These used to assert ON DELETE CASCADE. The database says otherwise: none of
   // these relations declares `onDelete` in schema.prisma, so Prisma generated
-  // ON DELETE RESTRICT for every one of them, and the parent delete raises P2003
+  // ON DELETE RESTRICT for every one of them, and the parent delete is refused
   // while a child row still exists. That RESTRICT is the real contract — it is
   // why tests/integration/helpers/test-db.ts has to delete leaves first — so the
   // tests now pin it instead of asserting a cascade that was never there.
+  //
+  // ⚠️ The refusal is NOT a P2003. Measured against PostgreSQL 18 + Prisma 5.22.0:
+  //
+  //   constructor : PrismaClientUnknownRequestError
+  //   .code       : undefined          ← the property does not exist at all
+  //   message     : code: "23001", update or delete on table "Job" violates
+  //                 RESTRICT setting of foreign key constraint
+  //                 "Application_jobId_fkey" on table "Application"
+  //
+  // Postgres raises 23001 (`restrict_violation`) for ON DELETE RESTRICT; Prisma
+  // maps only 23503 (`foreign_key_violation`) to P2003. So the previous
+  // `.rejects.toMatchObject({ code: 'P2003' })` could never match — these six
+  // tests were red from the day they were written. Assert the contract (the
+  // delete is refused by referential integrity) rather than one spelling of it.
+  async function expectReferentialIntegrityRefusal(operation: Promise<unknown>) {
+    let error: unknown
+    try {
+      await operation
+    } catch (caught) {
+      error = caught
+    }
+
+    expect(error, 'the delete should have been refused by referential integrity').toBeDefined()
+
+    const code = (error as { code?: string }).code
+    const message = error instanceof Error ? error.message : String(error)
+
+    expect(
+      code === 'P2003' || /23001|23503|RESTRICT setting of foreign key constraint/.test(message),
+      `expected a referential-integrity refusal, got: ${message}`,
+    ).toBe(true)
+  }
+
   describe('Referential actions on delete (RESTRICT)', () => {
     it('restricts deleting a job while an application references it', async () => {
       const job = await createTestJob()
@@ -407,9 +440,7 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await expect(prisma.job.delete({ where: { id: job.id } })).rejects.toMatchObject({
-        code: 'P2003',
-      })
+      await expectReferentialIntegrityRefusal(prisma.job.delete({ where: { id: job.id } }))
 
       // The application is untouched — no silent data loss behind a failed delete.
       const applicationAfter = await prisma.application.findUnique({
@@ -425,9 +456,9 @@ describe('Database Schema Validation', () => {
     it('restricts deleting a candidate while a contact references it', async () => {
       const { candidate, contact } = await createTestCandidateWithContact()
 
-      await expect(prisma.candidate.delete({ where: { id: candidate.id } })).rejects.toMatchObject({
-        code: 'P2003',
-      })
+      await expectReferentialIntegrityRefusal(
+        prisma.candidate.delete({ where: { id: candidate.id } }),
+      )
 
       const contactAfter = await prisma.candidateContact.findUnique({
         where: { id: contact.id },
@@ -460,9 +491,7 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await expect(prisma.resume.delete({ where: { id: resume.id } })).rejects.toMatchObject({
-        code: 'P2003',
-      })
+      await expectReferentialIntegrityRefusal(prisma.resume.delete({ where: { id: resume.id } }))
 
       const sectionAfter = await prisma.resumeSection.findUnique({
         where: { id: section.id },
@@ -498,9 +527,9 @@ describe('Database Schema Validation', () => {
       // This is the constraint that made every "withdraw application" request
       // return 500: the route deleted the Application on its own, believing a
       // cascade would take the 'APPLIED' activity with it.
-      await expect(
+      await expectReferentialIntegrityRefusal(
         prisma.application.delete({ where: { id: application.id } }),
-      ).rejects.toMatchObject({ code: 'P2003' })
+      )
 
       const activityAfter = await prisma.applicationActivity.findUnique({
         where: { id: activity.id },
@@ -552,8 +581,8 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await expect(prisma.emailSequenceRun.delete({ where: { id: run.id } })).rejects.toMatchObject(
-        { code: 'P2003' },
+      await expectReferentialIntegrityRefusal(
+        prisma.emailSequenceRun.delete({ where: { id: run.id } }),
       )
 
       const eventAfter = await prisma.emailSequenceEvent.findUnique({
@@ -623,9 +652,7 @@ describe('Database Schema Validation', () => {
         },
       })
 
-      await expect(prisma.attempt.delete({ where: { id: attempt.id } })).rejects.toMatchObject({
-        code: 'P2003',
-      })
+      await expectReferentialIntegrityRefusal(prisma.attempt.delete({ where: { id: attempt.id } }))
 
       const answerAfter = await prisma.answer.findUnique({
         where: { id: answer.id },
