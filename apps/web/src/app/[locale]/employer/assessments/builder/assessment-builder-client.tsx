@@ -93,6 +93,22 @@ export default function AssessmentBuilderClient() {
     setExpandedSections((prev) => new Set(prev).add(newIndex))
   }
 
+  // Validation used to fail silently: errors on a question inside a collapsed
+  // section were never rendered, so the submit button just did nothing.
+  const onInvalid = (formErrors: Record<string, unknown>) => {
+    const sectionErrors = formErrors.sections
+    if (Array.isArray(sectionErrors)) {
+      const withErrors: number[] = []
+      sectionErrors.forEach((entry, index) => {
+        if (entry) withErrors.push(index)
+      })
+      if (withErrors.length > 0) {
+        setExpandedSections((prev) => new Set([...prev, ...withErrors]))
+      }
+    }
+    toast.error('Please fix the highlighted fields')
+  }
+
   const onSubmit = async (data: CreateAssessmentInput) => {
     try {
       setIsSubmitting(true)
@@ -257,7 +273,7 @@ export default function AssessmentBuilderClient() {
           </CardContent>
         </Card>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-5xl space-y-6">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mx-auto max-w-5xl space-y-6">
           {/* Basic Info Card */}
           <Card>
             <CardHeader>
@@ -467,33 +483,35 @@ function SectionEditor({
 
   return (
     <Card>
-      <CardHeader className="cursor-pointer" onClick={toggleExpanded}>
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center gap-3">
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-lg">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          {/* A real button so the section can be toggled from the keyboard; the old
+              clickable div had no role, tabindex or key handler. */}
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            onClick={toggleExpanded}
+            className="flex flex-1 items-center gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <GripVertical className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <span className="text-lg font-semibold leading-none tracking-tight">
               Section {sectionIndex + 1} - {questions.length} questions
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`Delete section ${sectionIndex + 1}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                removeSection(sectionIndex)
-              }}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            </span>
             {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              <ChevronUp className="ml-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
             ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <ChevronDown className="ml-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
             )}
-          </div>
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={`Delete section ${sectionIndex + 1}`}
+            onClick={() => removeSection(sectionIndex)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
       </CardHeader>
 
@@ -640,12 +658,13 @@ function QuestionEditor({
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
-            <Label>Question {questionIndex + 1}</Label>
+            <Label htmlFor={`${questionPath}-text`}>Question {questionIndex + 1}</Label>
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {questionType.replace('_', ' ')}
+              {(questionType ?? '').replace('_', ' ')}
             </span>
           </div>
           <textarea
+            id={`${questionPath}-text`}
             {...register(`${questionPath}.text`)}
             placeholder="Enter your question..."
             className="mt-1 min-h-[80px] w-full rounded-md border bg-background px-3 py-2"
@@ -670,16 +689,22 @@ function QuestionEditor({
 
       <div className="mb-3 grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs">Points</Label>
+          <Label htmlFor={`${questionPath}-points`} className="text-xs">
+            Points
+          </Label>
           <Input
+            id={`${questionPath}-points`}
             type="number"
             {...register(`${questionPath}.points`, { valueAsNumber: true })}
             className="h-8"
           />
         </div>
         <div>
-          <Label className="text-xs">Skill Tag (Optional)</Label>
+          <Label htmlFor={`${questionPath}-skillTag`} className="text-xs">
+            Skill Tag (Optional)
+          </Label>
           <Input
+            id={`${questionPath}-skillTag`}
             {...register(`${questionPath}.skillTag`)}
             placeholder="e.g., JavaScript"
             className="h-8"
@@ -724,15 +749,22 @@ function QuestionEditor({
             </div>
           ))}
           <div className="mt-2">
-            <Label className="text-xs">
+            <Label htmlFor={`${questionPath}-correctIndexes`} className="text-xs">
               Correct Answer{questionType === 'MULTI_SELECT' ? 's' : ''} (comma-separated indexes,
               e.g., 0,2)
             </Label>
             <Input
+              id={`${questionPath}-correctIndexes`}
               {...register(`${questionPath}.correctIndexes`)}
               className="h-8 text-sm"
               placeholder="0"
+              aria-invalid={questionErrors?.correctIndexes ? true : undefined}
             />
+            {questionErrors?.correctIndexes && (
+              <p className="mt-1 text-sm text-destructive">
+                {questionErrors.correctIndexes.message ?? 'Enter valid choice numbers, e.g. 0,2'}
+              </p>
+            )}
           </div>
         </div>
       )}

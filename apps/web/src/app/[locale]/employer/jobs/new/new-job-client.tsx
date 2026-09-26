@@ -224,6 +224,9 @@ export default function NewJobClient({ params }: { params: { locale: string } })
 
       toast.success(t('employer.newJob.jobPostedSuccess'))
       router.push(`/${params.locale}/employer`)
+      // The API revalidates the server cache, but the client Router Cache can still
+      // serve the previous /employer list for up to 30s — refresh so the new job shows.
+      router.refresh()
     } catch (error) {
       logger.error('Failed to create job', error)
       toast.error(error instanceof Error ? error.message : 'Failed to create job')
