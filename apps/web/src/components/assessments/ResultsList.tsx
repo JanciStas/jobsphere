@@ -21,6 +21,7 @@ import { ScoreBadge } from './ScoreBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Attempt {
   id: string
@@ -42,6 +43,7 @@ interface ResultsListProps {
 }
 
 export function ResultsList({ attempts, passingScore }: ResultsListProps) {
+  const t = useTranslations('assessmentResults')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [passFilter, setPassFilter] = useState<string>('all')
@@ -70,7 +72,7 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Assessment Results</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Filters */}
@@ -81,32 +83,32 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
               aria-hidden="true"
             />
             <Input
-              aria-label="Search by candidate name or email"
-              placeholder="Search by candidate name or email..."
+              aria-label={t('searchAria')}
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="w-full sm:w-[180px]" aria-label={t('filterStatusAria')}>
+              <SelectValue placeholder={t('status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="GRADED">Graded</SelectItem>
-              <SelectItem value="SUBMITTED">Pending</SelectItem>
-              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+              <SelectItem value="all">{t('allStatus')}</SelectItem>
+              <SelectItem value="GRADED">{t('graded')}</SelectItem>
+              <SelectItem value="SUBMITTED">{t('pending')}</SelectItem>
+              <SelectItem value="IN_PROGRESS">{t('inProgress')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={passFilter} onValueChange={setPassFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by result">
-              <SelectValue placeholder="Result" />
+            <SelectTrigger className="w-full sm:w-[180px]" aria-label={t('filterResultAria')}>
+              <SelectValue placeholder={t('result')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Results</SelectItem>
-              <SelectItem value="passed">Passed</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="all">{t('allResults')}</SelectItem>
+              <SelectItem value="passed">{t('passed')}</SelectItem>
+              <SelectItem value="failed">{t('failed')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -115,23 +117,24 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Candidate</TableHead>
-              <TableHead>Submitted</TableHead>
-              <TableHead>Score</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t('candidate')}</TableHead>
+              <TableHead>{t('submitted')}</TableHead>
+              <TableHead>{t('score')}</TableHead>
+              <TableHead>{t('status')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAttempts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                  No results found
+                  {t('noResults')}
                 </TableCell>
               </TableRow>
             ) : (
               filteredAttempts.map((attempt) => {
                 const primaryContact = attempt.candidate.contacts.find((c) => c.fullName || c.email)
-                const candidateName = primaryContact?.fullName || primaryContact?.email || 'Unknown'
+                const candidateName =
+                  primaryContact?.fullName || primaryContact?.email || t('unknown')
                 const candidateEmail = primaryContact?.email
 
                 return (
@@ -165,10 +168,10 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
                         }
                       >
                         {attempt.status === 'GRADED'
-                          ? 'Graded'
+                          ? t('graded')
                           : attempt.status === 'SUBMITTED'
-                            ? 'Pending'
-                            : 'In Progress'}
+                            ? t('pending')
+                            : t('inProgress')}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -183,7 +186,7 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
           <div className="grid grid-cols-4 gap-4 text-center">
             <div>
               <p className="text-2xl font-bold">{attempts.length}</p>
-              <p className="text-sm text-muted-foreground">Total Attempts</p>
+              <p className="text-sm text-muted-foreground">{t('totalAttempts')}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-green-600">
@@ -192,7 +195,7 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
                     .length
                 }
               </p>
-              <p className="text-sm text-muted-foreground">Passed</p>
+              <p className="text-sm text-muted-foreground">{t('passed')}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-red-600">
@@ -201,13 +204,13 @@ export function ResultsList({ attempts, passingScore }: ResultsListProps) {
                     .length
                 }
               </p>
-              <p className="text-sm text-muted-foreground">Failed</p>
+              <p className="text-sm text-muted-foreground">{t('failed')}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-yellow-600">
                 {attempts.filter((a) => a.status === 'SUBMITTED').length}
               </p>
-              <p className="text-sm text-muted-foreground">Pending Review</p>
+              <p className="text-sm text-muted-foreground">{t('pendingReview')}</p>
             </div>
           </div>
         </div>

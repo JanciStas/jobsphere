@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,7 @@ interface MatchScoreSectionProps {
 }
 
 export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProps) {
+  const t = useTranslations('miscMatchScores')
   const [scores, setScores] = useState<MatchScore[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
       setScores(data.scores || [])
     } catch (err) {
       logger.error('Error fetching match scores', err)
-      setError(err instanceof Error ? err.message : 'Failed to load match scores')
+      setError(err instanceof Error ? err.message : t('loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -80,9 +82,9 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
   }
 
   const getWorkModeLabel = (remote: boolean, hybrid: boolean) => {
-    if (remote) return 'Remote'
-    if (hybrid) return 'Hybrid'
-    return 'On-site'
+    if (remote) return t('remote')
+    if (hybrid) return t('hybrid')
+    return t('onsite')
   }
 
   if (loading) {
@@ -90,7 +92,7 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
       <div className="mb-6">
         <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold">
           <TrendingUp className="h-6 w-6" />
-          Job Match Scores
+          {t('title')}
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, idx) => (
@@ -115,14 +117,14 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
       <div className="mb-6">
         <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold">
           <TrendingUp className="h-6 w-6" />
-          Job Match Scores
+          {t('title')}
         </h2>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             {error}
             <Button variant="outline" size="sm" onClick={() => fetchScores()}>
-              Retry
+              {t('retry')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -135,12 +137,12 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
       <div className="mb-6">
         <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold">
           <TrendingUp className="h-6 w-6" />
-          Job Match Scores
+          {t('title')}
         </h2>
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
             <Briefcase className="mx-auto mb-3 h-12 w-12 opacity-50" />
-            <p>No open positions available to match against</p>
+            <p>{t('noPositions')}</p>
           </CardContent>
         </Card>
       </div>
@@ -151,12 +153,10 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
     <div className="mb-6">
       <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold">
         <TrendingUp className="h-6 w-6 text-primary" />
-        Job Match Scores
+        {t('title')}
       </h2>
 
-      <p className="mb-6 text-muted-foreground">
-        AI-powered matching scores showing how well this candidate fits with open positions
-      </p>
+      <p className="mb-6 text-muted-foreground">{t('subtitle')}</p>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {scores.map((score) => {
@@ -193,7 +193,7 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
                     className="px-3 py-1 text-base"
                   >
                     <span className={getMatchColor(score.matchScore)}>
-                      {Math.round(score.matchScore)}% Match
+                      {t('matchPercent', { percent: Math.round(score.matchScore) })}
                     </span>
                   </Badge>
                 </div>
@@ -203,19 +203,19 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
                 {/* Match Score Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">BM25 (Keywords)</span>
+                    <span className="text-muted-foreground">{t('bm25')}</span>
                     <span className="font-medium">{Math.round(score.bm25Score)}%</span>
                   </div>
                   <Progress value={score.bm25Score} className="h-1" />
 
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Vector (Semantic)</span>
+                    <span className="text-muted-foreground">{t('vector')}</span>
                     <span className="font-medium">{Math.round(score.vectorScore)}%</span>
                   </div>
                   <Progress value={score.vectorScore} className="h-1" />
 
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">LLM (AI Analysis)</span>
+                    <span className="text-muted-foreground">{t('llm')}</span>
                     <span className="font-medium">{Math.round(score.llmScore)}%</span>
                   </div>
                   <Progress value={score.llmScore} className="h-1" />
@@ -244,14 +244,16 @@ export function MatchScoreSection({ candidateId, locale }: MatchScoreSectionProp
                       ? `${score.job.salaryMin.toLocaleString()} - ${score.job.salaryMax.toLocaleString()}`
                       : score.job.salaryMin
                         ? `${score.job.salaryMin.toLocaleString()}+`
-                        : `až ${score.job.salaryMax?.toLocaleString()}`}{' '}
-                    € / month
+                        : t('salaryUpTo', {
+                            amount: score.job.salaryMax?.toLocaleString() ?? '',
+                          })}{' '}
+                    {t('eurPerMonth')}
                   </div>
                 )}
 
                 {/* Action Button */}
                 <Button variant="outline" size="sm" className="w-full" asChild>
-                  <Link href={`/${locale}/jobs/${score.job.id}`}>View Job Details</Link>
+                  <Link href={`/${locale}/jobs/${score.job.id}`}>{t('viewJob')}</Link>
                 </Button>
               </CardContent>
             </Card>

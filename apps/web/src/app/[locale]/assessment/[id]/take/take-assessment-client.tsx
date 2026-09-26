@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Clock, ChevronLeft, ChevronRight, AlertCircle, ShieldAlert } from 'lucide-react'
 import { logger } from '@/lib/logger'
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
@@ -53,6 +54,7 @@ const VIOLATION_WARN_THRESHOLD = 3
 const VIOLATION_AUTOSUBMIT_THRESHOLD = 5
 
 export default function TakeAssessmentClient({ params }: { params: { id: string } }) {
+  const t = useTranslations('assessmentTake')
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [answers, setAnswers] = useState<Map<string, AnswerValue>>(new Map())
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -120,15 +122,15 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
       } else {
         submittingRef.current = false
         setSubmitting(false)
-        alert('Failed to submit assessment')
+        alert(t('submitFailed'))
       }
     } catch (error) {
       logger.error('Submit error', error)
       submittingRef.current = false
       setSubmitting(false)
-      alert('Failed to submit assessment')
+      alert(t('submitFailed'))
     }
-  }, [answers, draftKey, params.id, token])
+  }, [answers, draftKey, params.id, token, t])
 
   useEffect(() => {
     async function loadAssessment() {
@@ -181,16 +183,17 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
           }
           restoredRef.current = true
         } else {
-          alert('Failed to load assessment')
+          alert(t('loadFailed'))
         }
       } catch (error) {
         logger.error('Load error', error)
-        alert('Failed to load assessment')
+        alert(t('loadFailed'))
       } finally {
         setLoading(false)
       }
     }
     loadAssessment()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is only used for error alerts; refetching on its identity would reload the test
   }, [params.id, token, draftKey])
 
   // Autosave — every answer change is mirrored to localStorage so a refresh,
@@ -299,7 +302,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-600">Loading assessment...</p>
+        <p className="text-gray-600">{t('loading')}</p>
       </div>
     )
   }
@@ -307,7 +310,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
   if (!assessment || assessment.questions.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-600">Assessment not found</p>
+        <p className="text-gray-600">{t('notFound')}</p>
       </div>
     )
   }
@@ -334,14 +337,17 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
             <div>
               <h1 className="text-xl font-bold text-gray-900">{assessment.name}</h1>
               <p className="text-sm text-gray-600">
-                Question {currentQuestionIndex + 1} of {assessment.questions.length}
+                {t('questionOf', {
+                  current: currentQuestionIndex + 1,
+                  total: assessment.questions.length,
+                })}
               </p>
             </div>
 
             {assessment.durationMin ? (
               <div
                 role="timer"
-                aria-label={`Time remaining: ${formatTime(timeRemaining)}`}
+                aria-label={t('timeRemaining', { time: formatTime(timeRemaining) })}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 font-mono font-bold ${
                   timeRemaining < 300 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-900'
                 }`}
@@ -350,7 +356,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
                 <span aria-hidden="true">{formatTime(timeRemaining)}</span>
                 <span className="sr-only" aria-live="polite" aria-atomic="true">
                   {announcedMinute !== null
-                    ? `${announcedMinute} minute${announcedMinute !== 1 ? 's' : ''} remaining`
+                    ? t('minutesRemaining', { count: announcedMinute })
                     : ''}
                 </span>
               </div>
@@ -376,10 +382,9 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
           >
             <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-600" aria-hidden="true" />
             <div>
-              <p className="font-medium text-amber-800">Leaving the assessment is being recorded</p>
+              <p className="font-medium text-amber-800">{t('violationTitle')}</p>
               <p className="text-sm text-amber-700">
-                We detected that you switched away from the test ({violationCount} times). Repeated
-                switching may auto-submit your assessment.
+                {t('violationBody', { count: violationCount })}
               </p>
             </div>
           </div>
@@ -392,7 +397,9 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
           <div className="mb-6">
             <h2 className="mb-2 text-2xl font-bold text-gray-900">{currentQuestion.text}</h2>
             {currentQuestion.hint && <p className="text-gray-600">{currentQuestion.hint}</p>}
-            <p className="mt-2 text-sm text-gray-500">{currentQuestion.points} points</p>
+            <p className="mt-2 text-sm text-gray-500">
+              {t('points', { count: currentQuestion.points })}
+            </p>
           </div>
 
           {/* MCQ — single choice (value is the choice text) */}
@@ -441,7 +448,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  Language: {currentQuestion.language ?? 'n/a'}
+                  {t('language', { language: currentQuestion.language ?? 'n/a' })}
                 </span>
               </div>
               <textarea
@@ -449,7 +456,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
                 onChange={(e) => setAnswer(currentQuestion.id, e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm"
                 rows={20}
-                placeholder="Write your code here..."
+                placeholder={t('codePlaceholder')}
               />
             </div>
           )}
@@ -461,7 +468,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
               value={textValue}
               onChange={(e) => setAnswer(currentQuestion.id, e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-3"
-              placeholder="Type your answer here..."
+              placeholder={t('answerPlaceholder')}
             />
           )}
 
@@ -472,7 +479,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
               onChange={(e) => setAnswer(currentQuestion.id, e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-3"
               rows={12}
-              placeholder="Type your answer here..."
+              placeholder={t('answerPlaceholder')}
             />
           )}
         </div>
@@ -485,7 +492,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
             className="flex items-center gap-2 rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ChevronLeft className="h-4 w-4" />
-            Previous
+            {t('previous')}
           </button>
 
           {currentQuestionIndex === assessment.questions.length - 1 ? (
@@ -494,7 +501,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
               disabled={submitting}
               className="rounded-lg bg-green-600 px-8 py-3 font-medium text-white hover:bg-green-700 disabled:bg-gray-300"
             >
-              {submitting ? 'Submitting...' : 'Submit Assessment'}
+              {submitting ? t('submitting') : t('submit')}
             </button>
           ) : (
             <button
@@ -505,7 +512,7 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
               }
               className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary/90"
             >
-              Next
+              {t('next')}
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
@@ -519,10 +526,8 @@ export default function TakeAssessmentClient({ params }: { params: { id: string 
           >
             <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" aria-hidden="true" />
             <div>
-              <p className="font-medium text-red-800">Time is running out!</p>
-              <p className="text-sm text-red-700">
-                Your assessment will auto-submit when the timer reaches 0:00
-              </p>
+              <p className="font-medium text-red-800">{t('timeWarningTitle')}</p>
+              <p className="text-sm text-red-700">{t('timeWarningBody')}</p>
             </div>
           </div>
         )}

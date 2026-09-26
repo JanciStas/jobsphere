@@ -60,6 +60,7 @@ export default async function AdminAuditPage({
     redirect(`/${params.locale}/login?error=forbidden`)
   }
 
+  const t = await getTranslations('adminAudit')
   const days = Math.min(365, Math.max(1, Number(searchParams.days ?? '30') || 30))
   const startDate = new Date(Date.now() - days * 86_400_000)
 
@@ -91,10 +92,9 @@ export default async function AdminAuditPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Audit log</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Posledných {PAGE_SIZE} záznamov za {days} dní. Zoznam nie je stránkovaný — staršie záznamy
-          sú v databáze, len sa sem nezmestia.
+          {t('intro', { count: PAGE_SIZE, days })}
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default async function AdminAuditPage({
             !isResource(searchParams.resource) ? 'bg-muted font-medium' : ''
           }`}
         >
-          Všetko
+          {t('all')}
         </a>
         {RESOURCES.map((resource) => (
           <a
@@ -122,24 +122,21 @@ export default async function AdminAuditPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{logs.length} záznamov</CardTitle>
+          <CardTitle className="text-base">{t('recordCount', { count: logs.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Za zvolené obdobie nič. Admin akcie sa zaznamenávajú až od zavedenia audit trailu —
-              staršie zásahy v databáze nie sú.
-            </p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b text-left text-xs uppercase text-muted-foreground">
                   <tr>
-                    <th className="py-2 pr-4">Kedy</th>
-                    <th className="py-2 pr-4">Kto</th>
-                    <th className="py-2 pr-4">Akcia</th>
-                    <th className="py-2 pr-4">Čoho</th>
-                    <th className="py-2 pr-4">Predtým → potom</th>
+                    <th className="py-2 pr-4">{t('colWhen')}</th>
+                    <th className="py-2 pr-4">{t('colWho')}</th>
+                    <th className="py-2 pr-4">{t('colAction')}</th>
+                    <th className="py-2 pr-4">{t('colWhat')}</th>
+                    <th className="py-2 pr-4">{t('colChange')}</th>
                     <th className="py-2">IP</th>
                   </tr>
                 </thead>

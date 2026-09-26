@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ interface InviteMemberDialogProps {
 }
 
 export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemberDialogProps) {
+  const t = useTranslations('settingsTabs.inviteMember')
+  const tRoles = useTranslations('settingsTabs.roles')
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -50,18 +53,15 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to invite member')
+        throw new Error(error.message || t('failed'))
       }
 
       const data = await response.json()
 
       if (data.emailSent === false) {
-        toast.warning(
-          data.message ||
-            'Člen pridaný, ale pozvánkový e-mail sa nepodarilo odoslať — skontrolujte nastavenie e-mailu.',
-        )
+        toast.warning(data.message || t('emailFailed'))
       } else {
-        toast.success(`Invitation sent to ${formData.email}`)
+        toast.success(t('sent', { email: formData.email }))
       }
 
       // Reset form
@@ -70,7 +70,7 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
       // Call success callback
       onSuccess(data.member)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to invite member')
+      toast.error(error instanceof Error ? error.message : t('failed'))
     } finally {
       setLoading(false)
     }
@@ -80,16 +80,13 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
-          <DialogDescription>
-            Send an invitation to join your organization. They will receive an email with
-            instructions.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
+            <Label htmlFor="email">{t('emailLabel')}</Label>
             <Input
               id="email"
               type="email"
@@ -102,7 +99,7 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Role *</Label>
+            <Label htmlFor="role">{t('roleLabel')}</Label>
             <Select
               value={formData.role}
               onValueChange={(value) => setFormData({ ...formData, role: value })}
@@ -113,43 +110,32 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
               <SelectContent>
                 <SelectItem value="ORG_ADMIN">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Admin</div>
-                    <div className="text-xs text-muted-foreground">
-                      Full access to all settings and data
-                    </div>
+                    <div className="font-medium">{tRoles('ORG_ADMIN')}</div>
+                    <div className="text-xs text-muted-foreground">{t('desc.ORG_ADMIN')}</div>
                   </div>
                 </SelectItem>
                 <SelectItem value="RECRUITER">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Recruiter</div>
-                    <div className="text-xs text-muted-foreground">
-                      Manage jobs, candidates, and applications
-                    </div>
+                    <div className="font-medium">{tRoles('RECRUITER')}</div>
+                    <div className="text-xs text-muted-foreground">{t('desc.RECRUITER')}</div>
                   </div>
                 </SelectItem>
                 <SelectItem value="SUB_HR">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Sub-HR</div>
-                    <div className="text-xs text-muted-foreground">
-                      Pomocný HR: kandidáti, prihlášky a pipeline — bez fakturácie, členov a
-                      nastavení
-                    </div>
+                    <div className="font-medium">{tRoles('SUB_HR')}</div>
+                    <div className="text-xs text-muted-foreground">{t('desc.SUB_HR')}</div>
                   </div>
                 </SelectItem>
                 <SelectItem value="HIRING_MANAGER">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Hiring Manager</div>
-                    <div className="text-xs text-muted-foreground">
-                      View and review applications for assigned jobs
-                    </div>
+                    <div className="font-medium">{tRoles('HIRING_MANAGER')}</div>
+                    <div className="text-xs text-muted-foreground">{t('desc.HIRING_MANAGER')}</div>
                   </div>
                 </SelectItem>
                 <SelectItem value="AGENCY">
                   <div className="space-y-0.5">
-                    <div className="font-medium">Agency</div>
-                    <div className="text-xs text-muted-foreground">
-                      Limited access to specific jobs and candidates
-                    </div>
+                    <div className="font-medium">{tRoles('AGENCY')}</div>
+                    <div className="text-xs text-muted-foreground">{t('desc.AGENCY')}</div>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -163,11 +149,11 @@ export function InviteMemberDialog({ open, onOpenChange, onSuccess }: InviteMemb
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send Invitation
+              {t('submit')}
             </Button>
           </DialogFooter>
         </form>

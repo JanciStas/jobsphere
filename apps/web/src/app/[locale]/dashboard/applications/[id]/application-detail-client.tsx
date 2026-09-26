@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useFormatter } from 'next-intl'
+import { useFormatter, useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,7 @@ export default function ApplicationDetailClient({
   const locale = params.locale
   const applicationId = params.id
   const format = useFormatter()
+  const t = useTranslations('applicationDetail')
   const [application, setApplication] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,15 +55,15 @@ export default function ApplicationDetailClient({
   const getStatusBadge = (stage: string) => {
     switch (stage) {
       case 'NEW':
-        return <Badge variant="secondary">Nová</Badge>
+        return <Badge variant="secondary">{t('stageNew')}</Badge>
       case 'SCREENING':
-        return <Badge>Preveruje sa</Badge>
+        return <Badge>{t('stageScreening')}</Badge>
       case 'INTERVIEW':
-        return <Badge className="bg-blue-600">Interview</Badge>
+        return <Badge className="bg-blue-600">{t('stageInterview')}</Badge>
       case 'HIRED':
-        return <Badge className="bg-green-600">Prijaté</Badge>
+        return <Badge className="bg-green-600">{t('stageHired')}</Badge>
       case 'REJECTED':
-        return <Badge variant="destructive">Zamietnuté</Badge>
+        return <Badge variant="destructive">{t('stageRejected')}</Badge>
       default:
         return <Badge>{stage}</Badge>
     }
@@ -81,14 +82,14 @@ export default function ApplicationDetailClient({
       <div className="flex min-h-screen items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Chyba</CardTitle>
-            <CardDescription>{error || 'Prihláška sa nenašla'}</CardDescription>
+            <CardTitle>{t('errorTitle')}</CardTitle>
+            <CardDescription>{error || t('notFound')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild>
               <Link href={`/${locale}/dashboard`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Späť na dashboard
+                {t('backToDashboard')}
               </Link>
             </Button>
           </CardContent>
@@ -104,7 +105,7 @@ export default function ApplicationDetailClient({
         <Button variant="ghost" asChild className="mb-6">
           <Link href={`/${locale}/dashboard`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Späť na dashboard
+            {t('backToDashboard')}
           </Link>
         </Button>
 
@@ -142,15 +143,15 @@ export default function ApplicationDetailClient({
                         {application.job.salaryMin && application.job.salaryMax
                           ? `${application.job.salaryMin} - ${application.job.salaryMax} €`
                           : application.job.salaryMin
-                            ? `Od ${application.job.salaryMin} €`
-                            : `Do ${application.job.salaryMax} €`}
+                            ? t('salaryFrom', { amount: application.job.salaryMin })
+                            : t('salaryTo', { amount: application.job.salaryMax })}
                       </span>
                     </div>
                   )}
                   {(application.job.remote || application.job.hybrid) && (
                     <div className="flex items-center gap-2 text-sm">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{application.job.remote ? 'Remote' : 'Hybrid'}</span>
+                      <span>{application.job.remote ? t('remote') : t('hybrid')}</span>
                     </div>
                   )}
                   {application.job.employmentType && (
@@ -162,7 +163,9 @@ export default function ApplicationDetailClient({
                 </div>
                 <Separator />
                 <div className="text-sm text-muted-foreground">
-                  Prihlásené {format.dateTime(new Date(application.createdAt), SHORT_DATE)}
+                  {t('appliedOn', {
+                    date: format.dateTime(new Date(application.createdAt), SHORT_DATE),
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -171,7 +174,7 @@ export default function ApplicationDetailClient({
             {application.coverLetter && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Motivačný list</CardTitle>
+                  <CardTitle>{t('coverLetter')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="whitespace-pre-wrap text-sm">{application.coverLetter}</div>
@@ -183,8 +186,8 @@ export default function ApplicationDetailClient({
             {application.activities && application.activities.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Časová os prihlášky</CardTitle>
-                  <CardDescription>História vašej prihlášky</CardDescription>
+                  <CardTitle>{t('timelineTitle')}</CardTitle>
+                  <CardDescription>{t('timelineDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -216,7 +219,7 @@ export default function ApplicationDetailClient({
             {/* Contact Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Kontaktné údaje</CardTitle>
+                <CardTitle>{t('contactDetails')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {application.candidate.email && (
@@ -245,7 +248,7 @@ export default function ApplicationDetailClient({
             {application.candidate.documents?.[0]?.id && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Priložené dokumenty</CardTitle>
+                  <CardTitle>{t('attachedDocuments')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button variant="outline" className="w-full justify-start" asChild>
@@ -255,7 +258,7 @@ export default function ApplicationDetailClient({
                       rel="noopener noreferrer"
                     >
                       <Download className="mr-2 h-4 w-4" />
-                      {application.candidate.documents[0].filename || 'Stiahnuť CV'}
+                      {application.candidate.documents[0].filename || t('downloadCv')}
                     </a>
                   </Button>
                 </CardContent>
@@ -265,14 +268,14 @@ export default function ApplicationDetailClient({
             {/* Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Akcie</CardTitle>
+                <CardTitle>{t('actions')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button className="w-full" variant="outline">
-                  Stiahnuť všetko
+                  {t('downloadAll')}
                 </Button>
                 <Button className="w-full" variant="destructive">
-                  Zrušiť prihlášku
+                  {t('withdraw')}
                 </Button>
               </CardContent>
             </Card>
@@ -281,8 +284,7 @@ export default function ApplicationDetailClient({
             <Card className="bg-muted/50">
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> Prihlášky sú zvyčajne spracované do 5 pracovných dní.
-                  Môžete očakávať odpoveď emailom.
+                  💡 <strong>{t('tipLabel')}</strong> {t('tipText')}
                 </p>
               </CardContent>
             </Card>

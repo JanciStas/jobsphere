@@ -42,6 +42,7 @@ export default async function AdminGdprPage({ params }: { params: { locale: stri
     redirect(`/${params.locale}/login?error=forbidden`)
   }
 
+  const t = await getTranslations('adminGdpr')
   const requests = await prisma.dSARRequest.findMany({
     orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
     take: 200,
@@ -56,30 +57,32 @@ export default async function AdminGdprPage({ params }: { params: { locale: stri
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">GDPR žiadosti</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Žiadosti podľa čl. 15 a 17. Zákonná lehota je {DEADLINE_DAYS} dní od podania.
-        </p>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('intro', { days: DEADLINE_DAYS })}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-normal text-muted-foreground">Čakajúce</CardTitle>
+            <CardTitle className="text-sm font-normal text-muted-foreground">
+              {t('pending')}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold">{pending.length}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-normal text-muted-foreground">
-              Blíži sa lehota
+              {t('dueSoon')}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold text-amber-600">{dueSoon.length}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-normal text-muted-foreground">Po lehote</CardTitle>
+            <CardTitle className="text-sm font-normal text-muted-foreground">
+              {t('overdue')}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold text-red-600">{overdue.length}</CardContent>
         </Card>
@@ -87,22 +90,22 @@ export default async function AdminGdprPage({ params }: { params: { locale: stri
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Žiadosti</CardTitle>
+          <CardTitle className="text-base">{t('requests')}</CardTitle>
         </CardHeader>
         <CardContent>
           {requests.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Žiadne žiadosti.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{t('none')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b text-left text-xs uppercase text-muted-foreground">
                   <tr>
-                    <th className="py-2 pr-4">Podaná</th>
-                    <th className="py-2 pr-4">Vek</th>
-                    <th className="py-2 pr-4">Typ</th>
-                    <th className="py-2 pr-4">E-mail</th>
-                    <th className="py-2 pr-4">Stav</th>
-                    <th className="py-2">Akcie</th>
+                    <th className="py-2 pr-4">{t('colSubmitted')}</th>
+                    <th className="py-2 pr-4">{t('colAge')}</th>
+                    <th className="py-2 pr-4">{t('colType')}</th>
+                    <th className="py-2 pr-4">{t('colEmail')}</th>
+                    <th className="py-2 pr-4">{t('colStatus')}</th>
+                    <th className="py-2">{t('colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -121,7 +124,9 @@ export default async function AdminGdprPage({ params }: { params: { locale: stri
                         <td className="whitespace-nowrap py-2 pr-4 text-muted-foreground">
                           {request.createdAt.toISOString().slice(0, 10)}
                         </td>
-                        <td className={`whitespace-nowrap py-2 pr-4 ${ageClass}`}>{age} dní</td>
+                        <td className={`whitespace-nowrap py-2 pr-4 ${ageClass}`}>
+                          {t('ageDays', { count: age })}
+                        </td>
                         <td className="py-2 pr-4">
                           <Badge variant="outline">{request.requestType}</Badge>
                         </td>
@@ -138,19 +143,19 @@ export default async function AdminGdprPage({ params }: { params: { locale: stri
                                 <DsarActionButton
                                   requestId={request.id}
                                   action="EXECUTE_DELETE"
-                                  label="Vymazať údaje"
+                                  label={t('deleteData')}
                                   variant="destructive"
                                 />
                               )}
                               <DsarActionButton
                                 requestId={request.id}
                                 action="MARK_COMPLETED"
-                                label="Vybavené"
+                                label={t('markCompleted')}
                               />
                               <DsarActionButton
                                 requestId={request.id}
                                 action="REJECT"
-                                label="Zamietnuť"
+                                label={t('reject')}
                               />
                             </div>
                           ) : (

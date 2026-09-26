@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/ui/use-toast'
 import { Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Member {
   userId: string
@@ -52,18 +53,16 @@ const roleBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'de
   AGENCY: 'destructive',
 }
 
-const roleLabels: Record<string, string> = {
-  ORG_ADMIN: 'Organization Admin',
-  RECRUITER: 'Recruiter',
-  SUB_HR: 'Sub-HR',
-  HIRING_MANAGER: 'Hiring Manager',
-  AGENCY: 'Agency',
-}
+const KNOWN_ROLES = ['ORG_ADMIN', 'RECRUITER', 'SUB_HR', 'HIRING_MANAGER', 'AGENCY'] as const
+type KnownRole = (typeof KNOWN_ROLES)[number]
 
 export function MemberRow({ member, currentUserId, currentUserRole, onUpdate }: MemberRowProps) {
   const [isChangingRole, setIsChangingRole] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations('teamMembers')
+  const roleLabel = (role: string) =>
+    (KNOWN_ROLES as readonly string[]).includes(role) ? t(`roles.${role as KnownRole}`) : role
 
   const isCurrentUser = member.userId === currentUserId
   const canEdit = currentUserRole === 'ORG_ADMIN' && !isCurrentUser
@@ -80,14 +79,14 @@ export function MemberRow({ member, currentUserId, currentUserRole, onUpdate }: 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to change role')
+        throw new Error(result.error || t('roleChangeFailed'))
       }
 
-      toast.success('Member role updated successfully')
+      toast.success(t('roleUpdated'))
 
       onUpdate()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update role')
+      toast.error(error.message || t('roleUpdateFailed'))
     } finally {
       setIsChangingRole(false)
     }
@@ -103,14 +102,14 @@ export function MemberRow({ member, currentUserId, currentUserRole, onUpdate }: 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to remove member')
+        throw new Error(result.error || t('removeFailed'))
       }
 
-      toast.success('Member removed successfully')
+      toast.success(t('removed'))
 
       onUpdate()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to remove member')
+      toast.error(error.message || t('removeFailed'))
     } finally {
       setIsRemoving(false)
     }
@@ -148,16 +147,16 @@ export function MemberRow({ member, currentUserId, currentUserRole, onUpdate }: 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ORG_ADMIN">Organization Admin</SelectItem>
-              <SelectItem value="RECRUITER">Recruiter</SelectItem>
-              <SelectItem value="SUB_HR">Sub-HR</SelectItem>
-              <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
-              <SelectItem value="AGENCY">Agency</SelectItem>
+              <SelectItem value="ORG_ADMIN">{t('roles.ORG_ADMIN')}</SelectItem>
+              <SelectItem value="RECRUITER">{t('roles.RECRUITER')}</SelectItem>
+              <SelectItem value="SUB_HR">{t('roles.SUB_HR')}</SelectItem>
+              <SelectItem value="HIRING_MANAGER">{t('roles.HIRING_MANAGER')}</SelectItem>
+              <SelectItem value="AGENCY">{t('roles.AGENCY')}</SelectItem>
             </SelectContent>
           </Select>
         ) : (
           <Badge variant={roleBadgeVariant[member.role] || 'secondary'}>
-            {roleLabels[member.role] || member.role}
+            {roleLabel(member.role)}
           </Badge>
         )}
       </TableCell>
@@ -172,25 +171,24 @@ export function MemberRow({ member, currentUserId, currentUserRole, onUpdate }: 
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Remove team member</AlertDialogTitle>
+                <AlertDialogTitle>{t('removeTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to remove {member.user.name || member.user.email} from your
-                  organization? This action cannot be undone.
+                  {t('removeConfirm', { name: member.user.name || member.user.email })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleRemove}
                   className="bg-destructive text-destructive-foreground"
                 >
-                  Remove
+                  {t('remove')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         ) : isCurrentUser ? (
-          <span className="text-sm text-muted-foreground">(You)</span>
+          <span className="text-sm text-muted-foreground">{t('you')}</span>
         ) : (
           <span className="text-sm text-muted-foreground">—</span>
         )}

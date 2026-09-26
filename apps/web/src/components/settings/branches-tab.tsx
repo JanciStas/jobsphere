@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,6 +81,7 @@ function formatAddress(branch: Branch): string {
 }
 
 export function BranchesTab() {
+  const t = useTranslations('settingsTabs.branches')
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -98,7 +100,7 @@ export function BranchesTab() {
         setBranches(data.branches || [])
       } catch (error) {
         logger.error('Error loading branches', error)
-        toast.error('Nepodarilo sa načítať pobočky')
+        toast.error(t('loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -120,7 +122,7 @@ export function BranchesTab() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      toast.error('Názov pobočky je povinný')
+      toast.error(t('nameRequired'))
       return
     }
 
@@ -157,11 +159,11 @@ export function BranchesTab() {
         return [...next, saved]
       })
 
-      toast.success(editingId ? 'Pobočka bola upravená' : 'Pobočka bola pridaná')
+      toast.success(editingId ? t('updated') : t('added'))
       setDialogOpen(false)
     } catch (error) {
       logger.error('Error saving branch', error)
-      toast.error('Nepodarilo sa uložiť pobočku')
+      toast.error(t('saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -175,10 +177,10 @@ export function BranchesTab() {
       })
       if (!res.ok) throw new Error('Failed to delete branch')
       setBranches((prev) => prev.filter((b) => b.id !== branchToDelete.id))
-      toast.success('Pobočka bola zmazaná')
+      toast.success(t('deleted'))
     } catch (error) {
       logger.error('Error deleting branch', error)
-      toast.error('Nepodarilo sa zmazať pobočku')
+      toast.error(t('deleteFailed'))
     } finally {
       setBranchToDelete(null)
     }
@@ -202,13 +204,13 @@ export function BranchesTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Pobočky
+                {t('title')}
               </CardTitle>
-              <CardDescription>Spravujte pobočky/kancelárie pre osobné pohovory</CardDescription>
+              <CardDescription>{t('description')}</CardDescription>
             </div>
             <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Pridať pobočku
+              {t('add')}
             </Button>
           </div>
         </CardHeader>
@@ -216,7 +218,7 @@ export function BranchesTab() {
           {branches.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               <Building2 className="mx-auto mb-3 h-12 w-12" />
-              <p>Zatiaľ nemáte žiadne pobočky</p>
+              <p>{t('empty')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -230,7 +232,7 @@ export function BranchesTab() {
                       <p className="font-medium">{branch.name}</p>
                       {branch.isPrimary && (
                         <Badge variant="secondary" className="text-xs">
-                          Hlavná
+                          {t('primary')}
                         </Badge>
                       )}
                     </div>
@@ -262,22 +264,22 @@ export function BranchesTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Upraviť pobočku' : 'Pridať pobočku'}</DialogTitle>
-            <DialogDescription>Zadajte údaje o pobočke</DialogDescription>
+            <DialogTitle>{editingId ? t('editTitle') : t('add')}</DialogTitle>
+            <DialogDescription>{t('dialogDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="branch-name">Názov *</Label>
+              <Label htmlFor="branch-name">{t('name')}</Label>
               <Input
                 id="branch-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Napr. Bratislava HQ"
+                placeholder={t('namePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="branch-street">Ulica</Label>
+              <Label htmlFor="branch-street">{t('street')}</Label>
               <Input
                 id="branch-street"
                 value={form.street}
@@ -286,7 +288,7 @@ export function BranchesTab() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="branch-city">Mesto</Label>
+                <Label htmlFor="branch-city">{t('city')}</Label>
                 <Input
                   id="branch-city"
                   value={form.city}
@@ -294,7 +296,7 @@ export function BranchesTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="branch-postal">PSČ</Label>
+                <Label htmlFor="branch-postal">{t('postalCode')}</Label>
                 <Input
                   id="branch-postal"
                   value={form.postalCode}
@@ -304,7 +306,7 @@ export function BranchesTab() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="branch-region">Región</Label>
+                <Label htmlFor="branch-region">{t('region')}</Label>
                 <Input
                   id="branch-region"
                   value={form.region}
@@ -312,7 +314,7 @@ export function BranchesTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="branch-country">Krajina</Label>
+                <Label htmlFor="branch-country">{t('country')}</Label>
                 <Input
                   id="branch-country"
                   value={form.country}
@@ -327,18 +329,18 @@ export function BranchesTab() {
                 onCheckedChange={(checked) => setForm({ ...form, isPrimary: checked === true })}
               />
               <Label htmlFor="branch-primary" className="cursor-pointer">
-                Nastaviť ako hlavnú pobočku
+                {t('setPrimary')}
               </Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Zrušiť
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Uložiť
+              {t('save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -348,19 +350,21 @@ export function BranchesTab() {
       <AlertDialog open={!!branchToDelete} onOpenChange={() => setBranchToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Zmazať pobočku?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Naozaj chcete zmazať pobočku <strong>{branchToDelete?.name}</strong>? Túto akciu nie
-              je možné vrátiť späť.
+              {t.rich('deleteConfirm', {
+                name: branchToDelete?.name ?? '',
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Zmazať
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

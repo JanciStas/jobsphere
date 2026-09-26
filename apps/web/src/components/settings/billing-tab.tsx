@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,9 @@ interface InvoiceData {
   createdAt: string
 }
 
+const STATUS_KEYS = ['active', 'trialing', 'past_due', 'canceled', 'unpaid']
+const INVOICE_STATUS_KEYS = ['paid', 'open', 'draft', 'void', 'uncollectible']
+
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   trialing: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -57,6 +61,7 @@ const INVOICE_STATUS_COLORS = {
 }
 
 export function BillingTab() {
+  const t = useTranslations('settingsTabs.billing')
   const { data: session } = useSession()
   const params = useParams()
   const locale = (params?.locale as string) || 'sk'
@@ -76,7 +81,7 @@ export function BillingTab() {
         setSubscription(data.subscription)
         setInvoices(data.invoices || [])
       } catch {
-        toast.error('Failed to load billing information')
+        toast.error(t('loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -102,7 +107,7 @@ export function BillingTab() {
       const data = await response.json()
       window.location.href = data.url
     } catch {
-      toast.error('Failed to open billing portal')
+      toast.error(t('portalFailed'))
       setLoadingPortal(false)
     }
   }
@@ -131,9 +136,9 @@ export function BillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Current Subscription
+            {t('currentSubscription')}
           </CardTitle>
-          <CardDescription>Manage your subscription and billing details</CardDescription>
+          <CardDescription>{t('subscriptionDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {subscription ? (
@@ -141,13 +146,18 @@ export function BillingTab() {
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold">{subscription.product.name} Plan</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t('planName', { name: subscription.product.name })}
+                    </h3>
                     <Badge
                       className={
                         STATUS_COLORS[subscription.status as keyof typeof STATUS_COLORS] || ''
                       }
                     >
-                      {subscription.status.replace('_', ' ').toUpperCase()}
+                      {(STATUS_KEYS.includes(subscription.status)
+                        ? t(`status.${subscription.status}`)
+                        : subscription.status.replace('_', ' ')
+                      ).toUpperCase()}
                     </Badge>
                   </div>
                   {subscription.product.description && (
@@ -157,9 +167,10 @@ export function BillingTab() {
                   )}
                   <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                     <span>
-                      Current period:{' '}
-                      {new Date(subscription.currentPeriodStart).toLocaleDateString()} -{' '}
-                      {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                      {t('currentPeriod', {
+                        start: new Date(subscription.currentPeriodStart).toLocaleDateString(),
+                        end: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+                      })}
                     </span>
                   </div>
                 </div>
@@ -169,7 +180,7 @@ export function BillingTab() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>
-                        Manage Subscription
+                        {t('manageSubscription')}
                         <ExternalLink className="ml-2 h-4 w-4" />
                       </>
                     )}
@@ -180,7 +191,7 @@ export function BillingTab() {
               <Separator />
 
               <div className="space-y-3">
-                <h4 className="font-medium">Billing Information</h4>
+                <h4 className="font-medium">{t('billingInformation')}</h4>
                 <Button
                   variant="outline"
                   className="w-full"
@@ -188,21 +199,16 @@ export function BillingTab() {
                   disabled={loadingPortal}
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Update Payment Method
+                  {t('updatePayment')}
                 </Button>
-                <p className="text-xs text-muted-foreground">
-                  Manage your payment methods, billing address, and tax information through the
-                  Stripe portal
-                </p>
+                <p className="text-xs text-muted-foreground">{t('portalHint')}</p>
               </div>
             </>
           ) : (
             <div className="py-8 text-center">
-              <p className="mb-4 text-muted-foreground">
-                You don&apos;t have an active subscription
-              </p>
+              <p className="mb-4 text-muted-foreground">{t('noSubscription')}</p>
               <Button asChild>
-                <a href={`/${locale}/pricing`}>View Plans</a>
+                <a href={`/${locale}/pricing`}>{t('viewPlans')}</a>
               </Button>
             </div>
           )}
@@ -214,22 +220,22 @@ export function BillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Billing History
+            {t('history')}
           </CardTitle>
-          <CardDescription>View and download your invoices</CardDescription>
+          <CardDescription>{t('historyDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           {invoices.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">No invoices found</div>
+            <div className="py-8 text-center text-muted-foreground">{t('noInvoices')}</div>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('colDate')}</TableHead>
+                    <TableHead>{t('colAmount')}</TableHead>
+                    <TableHead>{t('colStatus')}</TableHead>
+                    <TableHead className="text-right">{t('colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -253,7 +259,10 @@ export function BillingTab() {
                             ] || ''
                           }
                         >
-                          {invoice.status.toUpperCase()}
+                          {(INVOICE_STATUS_KEYS.includes(invoice.status)
+                            ? t(`invoiceStatus.${invoice.status}`)
+                            : invoice.status
+                          ).toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,13 +57,7 @@ interface TeamMember {
   }
 }
 
-const ROLE_LABELS = {
-  ORG_ADMIN: 'Admin',
-  RECRUITER: 'Recruiter',
-  SUB_HR: 'Sub-HR',
-  HIRING_MANAGER: 'Hiring Manager',
-  AGENCY: 'Agency',
-}
+const ROLE_KEYS = ['ORG_ADMIN', 'RECRUITER', 'SUB_HR', 'HIRING_MANAGER', 'AGENCY']
 
 const ROLE_COLORS = {
   ORG_ADMIN: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
@@ -73,6 +68,8 @@ const ROLE_COLORS = {
 }
 
 export function TeamTab() {
+  const t = useTranslations('settingsTabs.team')
+  const tRoles = useTranslations('settingsTabs.roles')
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<TeamMember[]>([])
@@ -93,7 +90,7 @@ export function TeamTab() {
         setMembers(data.members || [])
         setCurrentUserRole(data.currentUserRole || '')
       } catch {
-        toast.error('Failed to load team members')
+        toast.error(t('loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -116,15 +113,15 @@ export function TeamTab() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to update role')
+        throw new Error(error.message || t('roleUpdateFailed'))
       }
 
       // Update local state
       setMembers(members.map((m) => (m.userId === member.userId ? { ...m, role: newRole } : m)))
 
-      toast.success('Team member role updated')
+      toast.success(t('roleUpdated'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update role')
+      toast.error(error instanceof Error ? error.message : t('roleUpdateFailed'))
     }
   }
 
@@ -138,15 +135,15 @@ export function TeamTab() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to remove member')
+        throw new Error(error.message || t('removeFailed'))
       }
 
       // Update local state
       setMembers(members.filter((m) => m.userId !== memberToDelete.userId))
 
-      toast.success('Team member removed')
+      toast.success(t('removed'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to remove member')
+      toast.error(error instanceof Error ? error.message : t('removeFailed'))
     } finally {
       setMemberToDelete(null)
     }
@@ -186,14 +183,14 @@ export function TeamTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Team Members
+                {t('title')}
               </CardTitle>
-              <CardDescription>Manage your organization team and their permissions</CardDescription>
+              <CardDescription>{t('description')}</CardDescription>
             </div>
             {isAdmin && (
               <Button onClick={() => setInviteDialogOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Invite Member
+                {t('invite')}
               </Button>
             )}
           </div>
@@ -203,22 +200,22 @@ export function TeamTab() {
           <div className="mb-6 flex items-center gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search by name or email..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder={t('filterByRole')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="ORG_ADMIN">Admin</SelectItem>
-                <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                <SelectItem value="SUB_HR">Sub-HR</SelectItem>
-                <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
-                <SelectItem value="AGENCY">Agency</SelectItem>
+                <SelectItem value="all">{t('allRoles')}</SelectItem>
+                <SelectItem value="ORG_ADMIN">{tRoles('ORG_ADMIN')}</SelectItem>
+                <SelectItem value="RECRUITER">{tRoles('RECRUITER')}</SelectItem>
+                <SelectItem value="SUB_HR">{tRoles('SUB_HR')}</SelectItem>
+                <SelectItem value="HIRING_MANAGER">{tRoles('HIRING_MANAGER')}</SelectItem>
+                <SelectItem value="AGENCY">{tRoles('AGENCY')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -228,11 +225,11 @@ export function TeamTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  <TableHead>{t('colName')}</TableHead>
+                  <TableHead>{t('colEmail')}</TableHead>
+                  <TableHead>{t('colRole')}</TableHead>
+                  <TableHead>{t('colJoined')}</TableHead>
+                  {isAdmin && <TableHead className="text-right">{t('colActions')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -242,7 +239,7 @@ export function TeamTab() {
                       colSpan={isAdmin ? 5 : 4}
                       className="py-8 text-center text-muted-foreground"
                     >
-                      No team members found
+                      {t('empty')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -253,7 +250,7 @@ export function TeamTab() {
                           {member.user.avatar ? (
                             <img
                               src={member.user.avatar}
-                              alt={member.user.name || 'User'}
+                              alt={member.user.name || t('user')}
                               className="h-8 w-8 rounded-full"
                             />
                           ) : (
@@ -263,10 +260,10 @@ export function TeamTab() {
                               </span>
                             </div>
                           )}
-                          <span>{member.user.name || 'No name'}</span>
+                          <span>{member.user.name || t('noName')}</span>
                           {member.userId === session?.user?.id && (
                             <Badge variant="outline" className="text-xs">
-                              You
+                              {t('you')}
                             </Badge>
                           )}
                         </div>
@@ -282,17 +279,19 @@ export function TeamTab() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="ORG_ADMIN">Admin</SelectItem>
-                              <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                              <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
-                              <SelectItem value="AGENCY">Agency</SelectItem>
+                              <SelectItem value="ORG_ADMIN">{tRoles('ORG_ADMIN')}</SelectItem>
+                              <SelectItem value="RECRUITER">{tRoles('RECRUITER')}</SelectItem>
+                              <SelectItem value="HIRING_MANAGER">
+                                {tRoles('HIRING_MANAGER')}
+                              </SelectItem>
+                              <SelectItem value="AGENCY">{tRoles('AGENCY')}</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
                           <Badge
                             className={ROLE_COLORS[member.role as keyof typeof ROLE_COLORS] || ''}
                           >
-                            {ROLE_LABELS[member.role as keyof typeof ROLE_LABELS] || member.role}
+                            {ROLE_KEYS.includes(member.role) ? tRoles(member.role) : member.role}
                           </Badge>
                         )}
                       </TableCell>
@@ -307,14 +306,14 @@ export function TeamTab() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
                                   onClick={() => setMemberToDelete(member)}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Remove Member
+                                  {t('removeMember')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -330,7 +329,7 @@ export function TeamTab() {
 
           {/* Stats */}
           <div className="mt-4 text-sm text-muted-foreground">
-            Showing {filteredMembers.length} of {members.length} team members
+            {t('showing', { shown: filteredMembers.length, total: members.length })}
           </div>
         </CardContent>
       </Card>
@@ -346,20 +345,21 @@ export function TeamTab() {
       <AlertDialog open={!!memberToDelete} onOpenChange={() => setMemberToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Team Member?</AlertDialogTitle>
+            <AlertDialogTitle>{t('removeTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove{' '}
-              <strong>{memberToDelete?.user.name || memberToDelete?.user.email}</strong> from your
-              organization? This action cannot be undone.
+              {t.rich('removeConfirm', {
+                name: memberToDelete?.user.name || memberToDelete?.user.email || '',
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteMember}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove
+              {t('remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -54,6 +55,7 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 }
 
 export function NotificationsTab() {
+  const t = useTranslations('settingsTabs.notifications')
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -71,7 +73,7 @@ export function NotificationsTab() {
           setPreferences(data.preferences)
         }
       } catch {
-        toast.error('Failed to load notification preferences')
+        toast.error(t('loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -96,12 +98,12 @@ export function NotificationsTab() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to save preferences')
+        throw new Error(error.message || t('saveFailed'))
       }
 
-      toast.success('Notification preferences saved successfully')
+      toast.success(t('saved'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to save preferences')
+      toast.error(error instanceof Error ? error.message : t('saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -150,18 +152,16 @@ export function NotificationsTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Email Notifications
+            {t('emailTitle')}
           </CardTitle>
-          <CardDescription>Choose what email notifications you want to receive</CardDescription>
+          <CardDescription>{t('emailDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-new-app">New Application Received</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when a candidate applies to one of your jobs
-                </p>
+                <Label htmlFor="email-new-app">{t('newApplication')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailNewApplicationDesc')}</p>
               </div>
               <Switch
                 id="email-new-app"
@@ -174,10 +174,8 @@ export function NotificationsTab() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-status-change">Application Status Changed</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when an application moves to a different stage
-                </p>
+                <Label htmlFor="email-status-change">{t('statusChanged')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailStatusDesc')}</p>
               </div>
               <Switch
                 id="email-status-change"
@@ -190,10 +188,8 @@ export function NotificationsTab() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-team">New Team Member Added</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when someone joins your organization
-                </p>
+                <Label htmlFor="email-team">{t('newTeamMemberAdded')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailTeamDesc')}</p>
               </div>
               <Switch
                 id="email-team"
@@ -206,10 +202,8 @@ export function NotificationsTab() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-billing">Billing Updates</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about invoices, payment failures, and subscription changes
-                </p>
+                <Label htmlFor="email-billing">{t('billingUpdates')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailBillingDesc')}</p>
               </div>
               <Switch
                 id="email-billing"
@@ -222,10 +216,8 @@ export function NotificationsTab() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-weekly">Weekly Activity Digest</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive a summary of your recruitment activity every Monday
-                </p>
+                <Label htmlFor="email-weekly">{t('weeklyDigest')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailWeeklyDesc')}</p>
               </div>
               <Switch
                 id="email-weekly"
@@ -238,10 +230,8 @@ export function NotificationsTab() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-marketing">Marketing Emails</Label>
-                <p className="text-sm text-muted-foreground">
-                  Tips, feature updates, and product news from JobSphere
-                </p>
+                <Label htmlFor="email-marketing">{t('marketingEmails')}</Label>
+                <p className="text-sm text-muted-foreground">{t('emailMarketingDesc')}</p>
               </div>
               <Switch
                 id="email-marketing"
@@ -254,7 +244,7 @@ export function NotificationsTab() {
           <Separator />
 
           <div className="space-y-2">
-            <Label htmlFor="digest-freq">Email Digest Frequency</Label>
+            <Label htmlFor="digest-freq">{t('digestFrequency')}</Label>
             <Select
               value={preferences.digestFrequency}
               onValueChange={(value: 'immediate' | 'daily' | 'weekly') =>
@@ -265,14 +255,12 @@ export function NotificationsTab() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="immediate">Immediate</SelectItem>
-                <SelectItem value="daily">Daily Digest</SelectItem>
-                <SelectItem value="weekly">Weekly Digest</SelectItem>
+                <SelectItem value="immediate">{t('immediate')}</SelectItem>
+                <SelectItem value="daily">{t('dailyDigest')}</SelectItem>
+                <SelectItem value="weekly">{t('weeklyDigestOption')}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              How often you want to receive grouped notifications
-            </p>
+            <p className="text-xs text-muted-foreground">{t('digestFrequencyDesc')}</p>
           </div>
         </CardContent>
       </Card>
@@ -282,17 +270,15 @@ export function NotificationsTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            In-App Notifications
+            {t('inAppTitle')}
           </CardTitle>
-          <CardDescription>Manage notifications shown within the application</CardDescription>
+          <CardDescription>{t('inAppDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="app-new-app">New Application Received</Label>
-              <p className="text-sm text-muted-foreground">
-                Show notification badge for new applications
-              </p>
+              <Label htmlFor="app-new-app">{t('newApplication')}</Label>
+              <p className="text-sm text-muted-foreground">{t('appNewApplicationDesc')}</p>
             </div>
             <Switch
               id="app-new-app"
@@ -305,10 +291,8 @@ export function NotificationsTab() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="app-status">Application Status Changed</Label>
-              <p className="text-sm text-muted-foreground">
-                Show notification when applications are updated
-              </p>
+              <Label htmlFor="app-status">{t('statusChanged')}</Label>
+              <p className="text-sm text-muted-foreground">{t('appStatusDesc')}</p>
             </div>
             <Switch
               id="app-status"
@@ -321,10 +305,8 @@ export function NotificationsTab() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="app-team">New Team Member</Label>
-              <p className="text-sm text-muted-foreground">
-                Show notification when someone joins your team
-              </p>
+              <Label htmlFor="app-team">{t('newTeamMember')}</Label>
+              <p className="text-sm text-muted-foreground">{t('appTeamDesc')}</p>
             </div>
             <Switch
               id="app-team"
@@ -337,10 +319,8 @@ export function NotificationsTab() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="app-mentions">Mentions</Label>
-              <p className="text-sm text-muted-foreground">
-                Show notification when someone mentions you in a comment
-              </p>
+              <Label htmlFor="app-mentions">{t('mentions')}</Label>
+              <p className="text-sm text-muted-foreground">{t('appMentionsDesc')}</p>
             </div>
             <Switch
               id="app-mentions"
@@ -355,10 +335,10 @@ export function NotificationsTab() {
       <div className="flex items-center gap-4">
         <Button onClick={handleSave} disabled={saving}>
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Preferences
+          {t('save')}
         </Button>
         <Button variant="outline" onClick={() => setPreferences(DEFAULT_PREFERENCES)}>
-          Reset to Defaults
+          {t('reset')}
         </Button>
       </div>
     </div>

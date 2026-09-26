@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ interface EditOrgDialogProps {
  */
 export function EditOrgDialog({ orgId, slug, name, industry, size, website }: EditOrgDialogProps) {
   const router = useRouter()
+  const t = useTranslations('miscEditOrg')
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,7 +76,7 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error ?? 'Uloženie zlyhalo')
+        setError(data.error ?? t('saveFailed'))
         return
       }
       setOpen(false)
@@ -88,23 +90,21 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Upraviť
+          {t('edit')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upraviť organizáciu</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <Label>Slug</Label>
             <p className="mt-0.5 font-mono text-sm text-muted-foreground">{slug}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Slug sa nedá meniť — je vo verejnej adrese firemného profilu.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('slugLocked')}</p>
           </div>
           <div>
-            <Label htmlFor="org-name">Názov</Label>
+            <Label htmlFor="org-name">{t('name')}</Label>
             <Input
               id="org-name"
               autoFocus
@@ -113,7 +113,7 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
             />
           </div>
           <div>
-            <Label htmlFor="org-industry">Odvetvie</Label>
+            <Label htmlFor="org-industry">{t('industry')}</Label>
             <Input
               id="org-industry"
               value={form.industry}
@@ -121,7 +121,7 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
             />
           </div>
           <div>
-            <Label htmlFor="org-size">Veľkosť</Label>
+            <Label htmlFor="org-size">{t('size')}</Label>
             <Input
               id="org-size"
               value={form.size}
@@ -129,7 +129,7 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
             />
           </div>
           <div>
-            <Label htmlFor="org-website">Web</Label>
+            <Label htmlFor="org-website">{t('website')}</Label>
             <Input
               id="org-website"
               type="url"
@@ -148,10 +148,10 @@ export function EditOrgDialog({ orgId, slug, name, industry, size, website }: Ed
               disabled={loading}
               onClick={() => setOpen(false)}
             >
-              Zrušiť
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={loading || !form.name.trim()}>
-              {loading ? 'Ukladám…' : 'Uložiť'}
+              {loading ? t('saving') : t('save')}
             </Button>
           </DialogFooter>
         </form>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -32,15 +32,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { UserPlus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
-const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  role: z.enum(['ORG_ADMIN', 'RECRUITER', 'SUB_HR', 'HIRING_MANAGER', 'AGENCY'], {
-    required_error: 'Please select a role',
-  }),
-})
+const buildInviteSchema = (t: (key: 'invalidEmail' | 'selectRoleError') => string) =>
+  z.object({
+    email: z.string().email(t('invalidEmail')),
+    role: z.enum(['ORG_ADMIN', 'RECRUITER', 'SUB_HR', 'HIRING_MANAGER', 'AGENCY'], {
+      required_error: t('selectRoleError'),
+    }),
+  })
 
-type InviteFormData = z.infer<typeof inviteSchema>
+type InviteFormData = z.infer<ReturnType<typeof buildInviteSchema>>
 
 interface InviteMemberDialogProps {
   onSuccess: () => void
@@ -50,6 +52,8 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations('teamMembers')
+  const inviteSchema = useMemo(() => buildInviteSchema((k) => t(k)), [t])
 
   const form = useForm<InviteFormData>({
     resolver: zodResolver(inviteSchema),
@@ -71,23 +75,20 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to invite member')
+        throw new Error(result.error || t('inviteFailed'))
       }
 
       if (result.emailSent === false) {
-        toast.warning(
-          result.message ||
-            'Member added, but the invitation e-mail could not be sent — check the e-mail settings.',
-        )
+        toast.warning(result.message || t('inviteEmailNotSent'))
       } else {
-        toast.success('Member invited successfully')
+        toast.success(t('inviteSuccess'))
       }
 
       form.reset()
       setOpen(false)
       onSuccess()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to invite member')
+      toast.error(error.message || t('inviteFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -98,16 +99,13 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
-          Invite Member
+          {t('inviteMember')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
-          <DialogDescription>
-            Send an invitation to a new team member. They will receive an email with instructions to
-            join.
-          </DialogDescription>
+          <DialogTitle>{t('inviteTitle')}</DialogTitle>
+          <DialogDescription>{t('inviteDescription')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -116,7 +114,7 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('email')}</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="member@example.com" {...field} />
                   </FormControl>
@@ -129,19 +127,19 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>{t('role')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
+                        <SelectValue placeholder={t('selectRole')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ORG_ADMIN">Organization Admin</SelectItem>
-                      <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                      <SelectItem value="SUB_HR">Sub-HR</SelectItem>
-                      <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
-                      <SelectItem value="AGENCY">Agency</SelectItem>
+                      <SelectItem value="ORG_ADMIN">{t('roles.ORG_ADMIN')}</SelectItem>
+                      <SelectItem value="RECRUITER">{t('roles.RECRUITER')}</SelectItem>
+                      <SelectItem value="SUB_HR">{t('roles.SUB_HR')}</SelectItem>
+                      <SelectItem value="HIRING_MANAGER">{t('roles.HIRING_MANAGER')}</SelectItem>
+                      <SelectItem value="AGENCY">{t('roles.AGENCY')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -155,10 +153,10 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
                 onClick={() => setOpen(false)}
                 disabled={isLoading}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Inviting...' : 'Invite'}
+                {isLoading ? t('inviting') : t('invite')}
               </Button>
             </DialogFooter>
           </form>
