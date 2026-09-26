@@ -457,7 +457,7 @@
     "category": "I - Dependencies",
     "file": "next 14.2.35",
     "status": "open",
-    "summary": "yarn audit: okrem 2 Critical (RCE Windows/Image Optimization, >=15.5.24) aj High DoS cez Server Components (>=15.5.15/16) a SSRF — dosiahnuteľné aj na Vercel/Linux. Jediná oprava = major upgrade na Next 15.5.x (samostatná úloha).",
+    "summary": "yarn audit: okrem 2 Critical (RCE Windows/Image Optimization, >=15.5.24) aj High DoS cez Server Components (>=15.5.15/16) a SSRF — dosiahnuteľné aj na Vercel/Linux. Jediná oprava = major upgrade na Next 15.5.x (samostatná úloha). (rovnaká oprava ako SEC-1 — do skóre sa nepočíta dvakrát)",
     "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle"
   },
   {

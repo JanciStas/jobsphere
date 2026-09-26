@@ -277,8 +277,8 @@ test.describe('Email Sequences', () => {
     await orgAdminUser.getByRole('button', { name: 'Save Sequence' }).click()
     await expect(orgAdminUser.getByText('Email sequence updated')).toBeVisible({ timeout: 15000 })
 
-    // The list is not pluralised — it really does render "1 steps".
-    await expect(sequenceCard(orgAdminUser, name)).toContainText('1 steps')
+    // The step counter is an ICU plural: one step reads "1 step".
+    await expect(sequenceCard(orgAdminUser, name)).toContainText(/1 step(?!s)/)
   })
 
   test('ORG_ADMIN can activate/deactivate sequence', async ({ orgAdminUser }) => {
