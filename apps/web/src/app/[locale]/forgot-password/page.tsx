@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function ForgotPasswordPage({ params }: Props) {
-  return <ForgotPasswordClient params={params} />
+export default async function ForgotPasswordPage({ params }: Props) {
+  return <ForgotPasswordClient params={await params} />
 }

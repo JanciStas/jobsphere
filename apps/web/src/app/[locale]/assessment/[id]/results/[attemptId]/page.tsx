@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function AssessmentResultsPage({ params }: Props) {
-  return <AssessmentResultsClient params={params} />
+export default async function AssessmentResultsPage({ params }: Props) {
+  return <AssessmentResultsClient params={await params} />
 }

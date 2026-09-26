@@ -379,20 +379,28 @@ describe('SQL Injection Prevention Tests', () => {
     })
 
     it('should prevent SQL injection in vector similarity queries', async () => {
-      // Test the semantic search which uses $queryRaw
-      const maliciousJobDescription = '\' UNION SELECT * FROM "User"--'
+      // The payload becomes the text that is embedded, never SQL. Whether the search
+      // then fails at embedding generation (no OpenAI key) or completes with an empty
+      // result set depends on the environment, so both are acceptable — what must hold
+      // is that nothing was executed as SQL.
+      const maliciousJobDescription = `' UNION SELECT * FROM "User"--; DROP TABLE "User";--`
+      const usersBefore = await prisma.user.count()
 
-      // Should either throw validation error or return safe results
-      await expect(async () => {
-        const results = await searchCandidates({
-          jobDescription: maliciousJobDescription,
-          organizationId: testOrg.id,
-          limit: 10,
-        })
+      const outcome = await searchCandidates({
+        jobDescription: maliciousJobDescription,
+        organizationId: testOrg.id,
+        limit: 10,
+      }).then(
+        (results) => ({ ok: true as const, results }),
+        (error: unknown) => ({ ok: false as const, error }),
+      )
 
-        // If it succeeds, results should be safe
-        expect(Array.isArray(results)).toBe(true)
-      }).rejects.toThrow() // Will likely fail at embedding generation
+      if (outcome.ok) {
+        expect(Array.isArray(outcome.results)).toBe(true)
+        expect(outcome.results).toHaveLength(0)
+      }
+      // If the payload had run, this would fail with `relation "User" does not exist`.
+      expect(await prisma.user.count()).toBe(usersBefore)
     })
 
     it('should safely handle numeric parameters in $queryRaw', async () => {

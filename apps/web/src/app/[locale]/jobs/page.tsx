@@ -155,7 +155,7 @@ export default async function JobsPage({ params, searchParams }: Props) {
 
   return (
     <JobsClient
-      params={params}
+      params={await params}
       initialJobs={jobs}
       initialTotal={total}
       initialPage={page}

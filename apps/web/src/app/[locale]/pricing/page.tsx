@@ -11,6 +11,6 @@ export async function generateMetadata({ params: { locale } }: Props): Promise<M
   return { title: t('pricing.title'), description: t('pricing.description') }
 }
 
-export default function PricingPage({ params }: Props) {
-  return <PricingClient params={params} />
+export default async function PricingPage({ params }: Props) {
+  return <PricingClient params={await params} />
 }

@@ -192,9 +192,10 @@
     "severity": "High",
     "category": "I - Dependencies",
     "file": "apps/web/package.json (next 14.2.35)",
-    "status": "open",
+    "status": "fixed",
     "summary": "Next.js mimo bezpečnostnej podpory; yarn audit 2 Critical (RCE na Windows hostoch, v Vercel konfigurácii nedosiahnuteľné). Overené 2026-09-15: 14.2.35 je už najnovší vydaný 14.x patch — ďalší patch neexistuje. Jediná reálna oprava je major upgrade na Next 15+, čo je samostatná úloha (NextAuth v4 setup + App Router správanie treba retestovať naprieč celou appkou) — mimo rozsahu tohto kola.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-27"
   },
   {
     "id": "2026-09-M1",
@@ -240,9 +241,10 @@
     "severity": "Medium",
     "category": "QA/CI",
     "file": ".github/workflows/ci.yml (Trivy)",
-    "status": "open",
+    "status": "fixed",
     "summary": "Trivy bez exit-code → nikdy nezlyhá. Ponechané vypnuté zámerne: SEC-2 a SEC-3 sú opravené (2026-09-15), ale SEC-1 (Next.js Critical CVE) zostáva bez patchu — zapnutie gate by okamžite sčervenalo main kvôli nálezu mimo našej kontroly. Zapnúť až po Next.js major upgrade.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-27"
   },
   {
     "id": "2026-09-SEC-2",
@@ -456,17 +458,19 @@
     "severity": "High",
     "category": "I - Dependencies",
     "file": "next 14.2.35",
-    "status": "open",
+    "status": "fixed",
     "summary": "yarn audit: okrem 2 Critical (RCE Windows/Image Optimization, >=15.5.24) aj High DoS cez Server Components (>=15.5.15/16) a SSRF — dosiahnuteľné aj na Vercel/Linux. Jediná oprava = major upgrade na Next 15.5.x (samostatná úloha). (rovnaká oprava ako SEC-1 — do skóre sa nepočíta dvakrát)",
-    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle"
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-27"
   },
   {
     "id": "2026-09-26-A17",
     "severity": "Low",
     "category": "Performance",
     "file": "api/webhooks/email/route.ts:151-179",
-    "status": "open",
+    "status": "fixed",
     "summary": "N+1: až 3 DB dotazy na event v cykle; dávkovať findMany({id:{in}}) + createMany.",
-    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle"
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-27"
   }
 ]
