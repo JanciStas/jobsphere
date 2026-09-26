@@ -140,7 +140,9 @@ jobs:
       # it needs a local Docker run (yarn test:db:up) that has not been possible
       # here. Delete continue-on-error once this step passes on its own for a few
       # consecutive runs — not on the first green, so flakes have a chance to show.
-      # TODO: verify green locally + 3-5 CI runs, then delete continue-on-error.
+      # 2026-09-27: 380/381 on a fresh local database (docker-compose.test.yml); the last
+      # failing test (cv-auto-fill mock path) is fixed. Remaining condition:
+      # 3-5 consecutive green CI runs, then delete continue-on-error.
       - name: Run security integration tests
         continue-on-error: true
         run: |

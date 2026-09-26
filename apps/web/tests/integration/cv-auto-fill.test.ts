@@ -27,8 +27,8 @@ vi.mock('@jobsphere/ai', () => ({
   },
 }))
 
-// Mock pdf-parse
-vi.mock('pdf-parse', () => ({
+// Mock pdf-parse — the pipeline imports the inner lib entry, not the package index
+vi.mock('pdf-parse/lib/pdf-parse.js', () => ({
   default: vi.fn(),
 }))
 
@@ -97,7 +97,8 @@ describe('CV Auto-Fill Integration', () => {
         TypeScript, React, Node.js, Python, Docker, AWS
       `
 
-      const pdfParse = await import('pdf-parse')
+      // @ts-expect-error pdf-parse v1 inner lib entry ships no type declarations
+      const pdfParse = await import('pdf-parse/lib/pdf-parse.js')
       vi.mocked(pdfParse.default).mockResolvedValueOnce({
         text: mockCVText,
         numpages: 2,
@@ -201,7 +202,9 @@ describe('CV Auto-Fill Integration', () => {
       const mockBuffer = new ArrayBuffer(200)
       const minimalCVText = 'Jane Smith\njane@example.com\nDeveloper with 2 years experience'
 
-      const pdfParse = await import('pdf-parse')
+      // @ts-expect-error pdf-parse v1 inner lib entry ships no type declarations
+
+      const pdfParse = await import('pdf-parse/lib/pdf-parse.js')
       vi.mocked(pdfParse.default).mockResolvedValueOnce({
         text: minimalCVText,
         numpages: 1,
@@ -267,7 +270,9 @@ describe('CV Auto-Fill Integration', () => {
         Java, Spring, PostgreSQL, Docker, Kubernetes
       `
 
-      const pdfParse = await import('pdf-parse')
+      // @ts-expect-error pdf-parse v1 inner lib entry ships no type declarations
+
+      const pdfParse = await import('pdf-parse/lib/pdf-parse.js')
       vi.mocked(pdfParse.default).mockResolvedValueOnce({
         text: germanCVText,
         numpages: 1,
@@ -603,7 +608,9 @@ describe('CV Auto-Fill Integration', () => {
       const mockBuffer = new ArrayBuffer(200)
       const mockCVText = 'Some CV text'
 
-      const pdfParse = await import('pdf-parse')
+      // @ts-expect-error pdf-parse v1 inner lib entry ships no type declarations
+
+      const pdfParse = await import('pdf-parse/lib/pdf-parse.js')
       vi.mocked(pdfParse.default).mockResolvedValueOnce({
         text: mockCVText,
         numpages: 1,
