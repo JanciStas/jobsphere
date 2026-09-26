@@ -72,7 +72,8 @@ test.describe('Candidate Search', () => {
     await expect(
       recruiterUser
         .getByText(/candidates found/i)
-        .or(recruiterUser.getByText('No candidates found matching your criteria.')),
+        .or(recruiterUser.getByText('No candidates found matching your criteria.'))
+        .first(), // an empty result shows both the count and the empty state
     ).toBeVisible({ timeout: 15000 })
   })
 
