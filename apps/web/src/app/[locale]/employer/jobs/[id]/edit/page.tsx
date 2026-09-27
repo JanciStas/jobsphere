@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function EditJobPage({ params }: Props) {
-  return <EditJobClient params={params} />
+export default async function EditJobPage({ params }: Props) {
+  return <EditJobClient params={await params} />
 }

@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function CVEditPage({ params }: Props) {
-  return <CVEditClient params={params} />
+export default async function CVEditPage({ params }: Props) {
+  return <CVEditClient params={await params} />
 }

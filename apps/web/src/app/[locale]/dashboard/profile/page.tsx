@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function ProfilePage({ params }: Props) {
-  return <ProfileClient params={params} />
+export default async function ProfilePage({ params }: Props) {
+  return <ProfileClient params={await params} />
 }

@@ -80,7 +80,7 @@ function timingSafeEqual(a: string, b: string): boolean {
  * Get CSRF token from cookie or generate new one
  */
 export async function getCsrfToken(): Promise<string> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const existingToken = cookieStore.get(CSRF_COOKIE_NAME)?.value
 
   if (existingToken && verifyCsrfToken(existingToken)) {
@@ -110,7 +110,7 @@ export async function verifyCsrfFromRequest(headerToken: string | null): Promise
     return false
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value
 
   if (!cookieToken) {

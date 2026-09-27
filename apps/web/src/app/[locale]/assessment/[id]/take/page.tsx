@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function TakeAssessmentPage({ params }: Props) {
-  return <TakeAssessmentClient params={params} />
+export default async function TakeAssessmentPage({ params }: Props) {
+  return <TakeAssessmentClient params={await params} />
 }

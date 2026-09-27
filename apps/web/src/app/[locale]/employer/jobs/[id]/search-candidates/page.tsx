@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function SearchCandidatesPage({ params }: Props) {
-  return <SearchCandidatesClient params={params} />
+export default async function SearchCandidatesPage({ params }: Props) {
+  return <SearchCandidatesClient params={await params} />
 }

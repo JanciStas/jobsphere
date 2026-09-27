@@ -13,6 +13,6 @@ export async function generateMetadata({
   }
 }
 
-export default function EmployerGigsPage({ params }: { params: { locale: string } }) {
-  return <GigsClient params={params} />
+export default async function EmployerGigsPage({ params }: { params: { locale: string } }) {
+  return <GigsClient params={await params} />
 }

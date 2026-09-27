@@ -25,7 +25,7 @@ export const POST = withRateLimit(
 
     try {
       const body = await request.text()
-      const signature = headers().get('stripe-signature')
+      const signature = (await headers()).get('stripe-signature')
 
       if (!signature) {
         return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })

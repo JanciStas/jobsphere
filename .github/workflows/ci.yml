@@ -305,6 +305,10 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          # M9: a CRITICAL-only gate (severity+exit-code) was tried here after the Next 15
+          # upgrade but trivy-action@master crashed mid-scan (yarn/pip dependency detection)
+          # with no vulnerability table printed, so it's not distinguishable from a real
+          # finding without deeper investigation. Left as upload-only until that's understood.
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3

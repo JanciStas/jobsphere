@@ -6,7 +6,6 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts')
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  swcMinify: true,
   transpilePackages: ['@jobsphere/db'],
 
   images: {

@@ -18,6 +18,6 @@ export async function generateMetadata({
   }
 }
 
-export default function ApplyPage({ params }: Props) {
-  return <ApplyClient params={params} />
+export default async function ApplyPage({ params }: Props) {
+  return <ApplyClient params={await params} />
 }

@@ -41,5 +41,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
     apple: Boolean(process.env.APPLE_ID && process.env.APPLE_SECRET),
   }
 
-  return <LoginClient params={params} notice={notice} providersAvailable={providersAvailable} />
+  return (
+    <LoginClient params={await params} notice={notice} providersAvailable={providersAvailable} />
+  )
 }
