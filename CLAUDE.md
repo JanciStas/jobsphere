@@ -646,13 +646,13 @@ Príkazy projektu: typecheck=`yarn typecheck` · lint=`yarn lint` · test=`yarn 
 
 ## Security posture
 
-skóre: **83/100** (findings.json, 2026-09-27) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v `bezpecnostny-audit/findings.json`.
+skóre: **79/100** (findings.json, 2026-09-27) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v `bezpecnostny-audit/findings.json`.
 
-otvorené: **0 Critical · 1 High** (H4 Stripe env) · **1 Medium** (M2 KV rate-limit env) · **3 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET — env doplnený, čaká na deploy). SEC-1/A2 (Next 14 RCE/DoS/SSRF) opravené upgradom na **Next 15.5.26** (vetva `feat/next-15`, PR #24; `yarn audit`: 0 Critical), M9 Trivy gate zapnutý (`CRITICAL`, exit-code 1), A17 webhook N+1 opravený.
+otvorené: **0 Critical · 1 High** (H4 Stripe env) · **2 Medium** (M2 KV rate-limit env, M9 Trivy gate — crashol, viď nižšie) · **3 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET — env doplnený, čaká na deploy). SEC-1/A2 (Next 14 RCE/DoS/SSRF) opravené upgradom na **Next 15.5.26** (vetva `feat/next-15`, PR #24; `yarn audit`: 0 Critical), A17 webhook N+1 opravený. M9 Trivy CRITICAL gate NEbol zapnutý — trivy-action@master pri exit-code/severity crashol bez výpisu nálezov (yarn/pip detekcia), potrebuje samostatné vyšetrenie skôr než sa zapne.
 
 **Merania 2026-09-27**: unit **1163/1163** · integrácia **384/384** · E2E chromium na Next 15 produkčnom builde **234 passed / 1 failed (cv-upload PDF — chýba storage/OpenAI env) / 3 flaky / 48 skipped** · typecheck, lint src, build ✅. Next 15: `params` sa do klientskych komponentov posiela ako `await params`; `cookies()`/`headers()` sú async.
 
-**Celkové hodnotenie projektu: ~85 %** — chýbajúce Stripe/KV env, mŕtvy Sentry a to, že PR #22–#24 nie sú v `main`, ťahajú prevádzku dole.
+**Celkové hodnotenie projektu: ~84 %** — chýbajúce Stripe/KV env, mŕtvy Sentry a to, že PR #22–#24 nie sú v `main`, ťahajú prevádzku dole.
 
 > Predošlá baseline (100/100, 2026-06-29): `bezpecnostny-audit/SECURITY_REPORT_2026-06-29.md` · tracking: `bezpecnostny-audit/findings.json`. M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
 

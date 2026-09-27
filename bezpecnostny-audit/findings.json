@@ -241,10 +241,9 @@
     "severity": "Medium",
     "category": "QA/CI",
     "file": ".github/workflows/ci.yml (Trivy)",
-    "status": "fixed",
-    "summary": "Trivy bez exit-code → nikdy nezlyhá. Ponechané vypnuté zámerne: SEC-2 a SEC-3 sú opravené (2026-09-15), ale SEC-1 (Next.js Critical CVE) zostáva bez patchu — zapnutie gate by okamžite sčervenalo main kvôli nálezu mimo našej kontroly. Zapnúť až po Next.js major upgrade.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
-    "fixedAt": "2026-09-27"
+    "status": "open",
+    "summary": "Trivy bez exit-code → nikdy nezlyhá. Ponechané vypnuté zámerne: SEC-2 a SEC-3 sú opravené (2026-09-15), ale SEC-1 (Next.js Critical CVE) zostáva bez patchu — zapnutie gate by okamžite sčervenalo main kvôli nálezu mimo našej kontroly. Zapnúť až po Next.js major upgrade. (2026-09-27: pokus zapnúť exit-code gate spôsobil crash trivy-action@master pri detekcii yarn/pip závislostí bez výpisu nálezov — potrebuje ďalšie vyšetrenie, gate ostáva len upload-only).",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
   },
   {
     "id": "2026-09-SEC-2",
