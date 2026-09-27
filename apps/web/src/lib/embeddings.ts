@@ -34,6 +34,14 @@ const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-
 const EMBEDDING_DIMENSIONS = parseInt(process.env.OPENAI_EMBEDDING_DIMENSIONS || '1536')
 
 /**
+ * pgvector accepts its literal as '[a,b,c]'. Prisma has no vector type, so the
+ * value has to reach the database as text and be cast in SQL.
+ */
+function toVectorLiteral(embedding: number[]): string {
+  return `[${embedding.join(',')}]`
+}
+
+/**
  * Generate embeddings for a single text
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -117,11 +125,19 @@ export async function generateCVEmbeddings(resumeId: string): Promise<void> {
       try {
         const embedding = await generateEmbedding(sectionText)
 
-        await prisma.resumeSection.update({
-          where: { id: section.id },
-          // @ts-expect-error embeddingVector is a Prisma `Unsupported` (pgvector) column, so it is absent from the generated update input type
-          data: { embeddingVector: embedding },
-        })
+        // Raw UPDATE, not prisma.resumeSection.update(). `embeddingVector` is
+        // Unsupported("vector"), so Prisma rejects it as an unknown argument at
+        // RUNTIME — the @ts-expect-error that used to sit here silenced the
+        // compiler but not the query engine. The throw landed in the per-section
+        // catch below, which logs and continues, so CV embeddings were never
+        // written and semantic CV search had nothing to match on. pgvector also
+        // needs the ::vector cast that the client cannot produce.
+        await prisma.$executeRaw`
+          UPDATE "ResumeSection"
+          SET "embeddingVector" = ${toVectorLiteral(embedding)}::vector,
+              "embeddingModel" = ${EMBEDDING_MODEL}
+          WHERE id = ${section.id}
+        `
 
         logger.info('Generated embedding for resume section', {
           resumeId,
@@ -176,11 +192,16 @@ export async function generateJobEmbedding(jobId: string): Promise<void> {
 
     const embedding = await generateEmbedding(jobText)
 
-    await prisma.job.update({
-      where: { id: jobId },
-      // @ts-expect-error embedding is a Prisma `Unsupported` (pgvector) column, so it is absent from the generated update input type
-      data: { embedding },
-    })
+    // Same reason as generateCVEmbeddings: Job.embedding is
+    // Unsupported("vector(1536)") and prisma.job.update() throws on it at
+    // runtime, so no job embedding was ever persisted and semantic job search
+    // matched nothing.
+    await prisma.$executeRaw`
+      UPDATE "Job"
+      SET embedding = ${toVectorLiteral(embedding)}::vector,
+          "updatedAt" = NOW()
+      WHERE id = ${jobId}
+    `
 
     logger.info('Generated job embedding', { jobId })
   } catch (error) {

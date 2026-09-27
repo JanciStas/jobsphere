@@ -25,15 +25,30 @@ const U = {
   noemail: 'test-user-idn-noemail',
 } as const
 
+// Upsert, not create. cleanupDynamicData (the global beforeEach) only removes
+// org-scoped rows — User is deliberately left alone — so the same throwaway user
+// survives into the next test in this file and a second `create` blew up with
+// P2002 on `id`. The tests are each meant to start from "this user exists".
 async function makeUser(id: string, email: string | null, name = 'Idn User') {
-  return prisma.user.create({ data: { id, email: email as string, name, locale: 'en' } })
+  return prisma.user.upsert({
+    where: { id },
+    update: { email: email as string, name, locale: 'en' },
+    create: { id, email: email as string, name, locale: 'en' },
+  })
 }
 
 afterAll(async () => {
-  // Candidates are cleaned per-test by cleanupDynamicData (orgId scoped); remove the
-  // throwaway users this file created so re-runs on a persistent DB stay clean.
-  await prisma.candidate.deleteMany({ where: { userId: { in: Object.values(U) } } })
-  await prisma.user.deleteMany({ where: { id: { in: Object.values(U) } } })
+  // Candidates are cleaned per-test by cleanupDynamicData (orgId scoped), but the
+  // LAST test's rows are still there when this runs — and CandidateContact holds a
+  // non-cascading FK to Candidate, so deleting candidates first raised P2003
+  // (CandidateContact_candidateId_fkey) and failed the file even with every test
+  // green. Leaves first, as everywhere else in this suite.
+  const userIds = Object.values(U)
+  await prisma.candidateContact.deleteMany({
+    where: { candidate: { userId: { in: userIds } } },
+  })
+  await prisma.candidate.deleteMany({ where: { userId: { in: userIds } } })
+  await prisma.user.deleteMany({ where: { id: { in: userIds } } })
 })
 
 describe('identity resolver — getOrCreateCandidateForUser (integration)', () => {

@@ -173,9 +173,10 @@
     "severity": "High",
     "category": "Logic",
     "file": "[locale]/assessment/[id]/results/[attemptId]/assessment-results-client.tsx",
-    "status": "open",
-    "summary": "Stránka výsledkov volá neexistujúci GET /api/assessments/[id]/results/[attemptId]; výsledky sa nikdy nezobrazia.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "status": "fixed",
+    "summary": "Stránka výsledkov volala neexistujúci GET /api/assessments/[id]/results/[attemptId]; pridaná route s requireAuth() + org-scopingom cez UserOrgRole (bypass pre kandidáta-vlastníka).",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-15"
   },
   {
     "id": "2026-09-H4",
@@ -192,7 +193,7 @@
     "category": "I - Dependencies",
     "file": "apps/web/package.json (next 14.2.35)",
     "status": "open",
-    "summary": "Next.js mimo bezpečnostnej podpory; yarn audit 2 Critical (RCE na Windows hostoch, v Vercel konfigurácii nedosiahnuteľné).",
+    "summary": "Next.js mimo bezpečnostnej podpory; yarn audit 2 Critical (RCE na Windows hostoch, v Vercel konfigurácii nedosiahnuteľné). Overené 2026-09-15: 14.2.35 je už najnovší vydaný 14.x patch — ďalší patch neexistuje. Jediná reálna oprava je major upgrade na Next 15+, čo je samostatná úloha (NextAuth v4 setup + App Router správanie treba retestovať naprieč celou appkou) — mimo rozsahu tohto kola.",
     "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
   },
   {
@@ -200,9 +201,10 @@
     "severity": "Medium",
     "category": "B - AuthN",
     "file": "[locale]/login/login-client.tsx",
-    "status": "open",
-    "summary": "Google a Apple tlačidlá zobrazené, produkcia má len provider credentials → klik končí chybou NextAuth.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "status": "fixed",
+    "summary": "Google a Apple tlačidlá boli zobrazené bez ohľadu na to, či je provider nakonfigurovaný. Server komponent teraz odovzdáva providersAvailable (google/apple) a klient renderuje len skutočne registrované providery.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-15"
   },
   {
     "id": "2026-09-M2",
@@ -239,7 +241,7 @@
     "category": "QA/CI",
     "file": ".github/workflows/ci.yml (Trivy)",
     "status": "open",
-    "summary": "Trivy bez exit-code → nikdy nezlyhá. Flip by sčervenal main kvôli Next advisories — rozhodnutie vlastníka.",
+    "summary": "Trivy bez exit-code → nikdy nezlyhá. Ponechané vypnuté zámerne: SEC-2 a SEC-3 sú opravené (2026-09-15), ale SEC-1 (Next.js Critical CVE) zostáva bez patchu — zapnutie gate by okamžite sčervenalo main kvôli nálezu mimo našej kontroly. Zapnúť až po Next.js major upgrade.",
     "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
   },
   {
@@ -247,18 +249,20 @@
     "severity": "Medium",
     "category": "I - Dependencies",
     "file": "next-auth 4.24.7",
-    "status": "open",
-    "summary": "< 4.24.15: homoglyph bypass v email normalizeri (Email provider); upgrade.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "status": "fixed",
+    "summary": "< 4.24.15: homoglyph bypass v email normalizeri (Email provider). Upgradnuté na 4.24.15 (patch v rámci v4 — v5 zostáva zakázaný kvôli produkčnému bugu). Build + 1124/1124 unit testov PASS po upgrade.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-15"
   },
   {
     "id": "2026-09-SEC-3",
     "severity": "Medium",
     "category": "I - Dependencies",
     "file": "@xmldom/xmldom 0.8.11 via mammoth",
-    "status": "open",
-    "summary": "13 High advisories vrátane kvadratickej zložitosti pri parsovaní DOCX.",
-    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+    "status": "fixed",
+    "summary": "13 High advisories vrátane CVE-2026-34601 (CDATA injection cez ']]>' terminátor) a kvadratickej zložitosti pri parsovaní DOCX. Opravené v 0.8.12 v rámci tej istej ^0.8.6 vetvy, ktorú mammoth povoľuje — pridaný root resolutions pin (^0.8.12), reálne nainštalované 0.8.15. Mammoth samotný nebolo treba meniť.",
+    "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
+    "fixedAt": "2026-09-15"
   },
   {
     "id": "2026-09-SEC-4",
@@ -296,6 +300,56 @@
     "status": "open",
     "summary": "/api/health/db a /api/health/redis vracajú 503 — mŕtve sondy.",
     "source": "PRODUCTION_TEST_REPORT_2026-09-14.md"
+  },
+  {
+    "id": "2026-09-15-H1",
+    "severity": "High",
+    "category": "D - Data integrity",
+    "file": "apps/web/src/lib/embeddings.ts",
+    "status": "fixed",
+    "summary": "prisma.resumeSection.update()/prisma.job.update() throwovali runtime na stĺpci Unsupported(\"vector\"); per-section catch chybu tichým spôsobom prehltol. Embeddings pre CV aj joby sa preto reálne nikdy neukladali — sémantické vyhľadávanie/matching bežalo na prázdnych vektoroch mesiace. Opravené: zápis cez $executeRaw s explicitným ::vector castom.",
+    "source": "session 2026-09-15 (feat/results-route-and-test-repair)",
+    "fixedAt": "2026-09-15"
+  },
+  {
+    "id": "2026-09-15-H2",
+    "severity": "High",
+    "category": "D - Logic/reliability",
+    "file": "apps/web/src/app/api/applications/[id]/route.ts + lib/actions/applications.ts",
+    "status": "fixed",
+    "summary": "ApplicationActivity a Interview majú ON DELETE RESTRICT FK na Application → withdraw aplikácie padal na Prisma P2003 pri každom pokuse. Opravené zmazaním detí v tej istej transakcii pred zmazaním aplikácie.",
+    "source": "session 2026-09-15 (feat/results-route-and-test-repair)",
+    "fixedAt": "2026-09-15"
+  },
+  {
+    "id": "2026-09-15-M1",
+    "severity": "Medium",
+    "category": "D - Validation",
+    "file": "apps/web/src/app/api/applications/route.ts",
+    "status": "fixed",
+    "summary": "searchParams.get('page') vracia null, nie undefined, takže Zod .default(1) sa nikdy neaplikoval → 500 na každý bežný request bez explicitného ?page=. Opravené + ZodError teraz vracia 400 namiesto 500.",
+    "source": "session 2026-09-15 (feat/results-route-and-test-repair)",
+    "fixedAt": "2026-09-15"
+  },
+  {
+    "id": "2026-09-15-M2",
+    "severity": "Medium",
+    "category": "D - Logic",
+    "file": "apps/web/src/workers/assessment-grading.worker.ts",
+    "status": "fixed",
+    "summary": "questionTypeMap mal kľúče MULTI/SHORT/LONG/FILE namiesto skutočných hodnôt MCQ/MULTI_SELECT/SHORT_TEXT/LONG_TEXT/CODE. Každá MULTI_SELECT odpoveď spadla na FREE_TEXT a čakala na manuálne hodnotenie (0 bodov) namiesto auto-gradingu.",
+    "source": "session 2026-09-15 (feat/results-route-and-test-repair)",
+    "fixedAt": "2026-09-15"
+  },
+  {
+    "id": "2026-09-15-M3",
+    "severity": "Medium",
+    "category": "H - i18n",
+    "file": "candidate-tags.tsx, notification-bell.tsx, employer/tasks/*",
+    "status": "fixed",
+    "summary": "M7 z HANDOFF_TEST_SWEEP_2026-09-14: tri PR #18 komponenty mali 0× useTranslations, celý text natvrdo po anglicky bez ohľadu na locale. Doplnené namespaces (employer.tasks, notifications, candidateTags) do všetkých 5 katalógov, parity skript potvrdzuje 1162 kľúčov v každom.",
+    "source": "HANDOFF_TEST_SWEEP_2026-09-14.md",
+    "fixedAt": "2026-09-15"
   },
   {
     "id": "2026-09-L10",

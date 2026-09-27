@@ -75,11 +75,14 @@ test.describe('Email Sequence Builder', () => {
     // Wait for success notification
     await expect(recruiterUser.locator('text=/sequence.*created/i')).toBeVisible({ timeout: 10000 })
 
-    // Verify the sequence appears in the list
-    await expect(recruiterUser.locator('text=Welcome Series E2E Test')).toBeVisible()
-
-    // Verify it shows as active
-    await expect(recruiterUser.locator('text=Active')).toBeVisible()
+    // The saved sequence shows up in the left-hand list as a button whose
+    // accessible name is "<name> <n> steps [Active]". Asserting on a bare
+    // `text=Active` matched both that badge and the "Active (automatically send
+    // to new candidates)" checkbox label in the editor — a strict mode violation.
+    const listEntry = recruiterUser.getByRole('button', { name: /Welcome Series E2E Test/ })
+    await expect(listEntry).toBeVisible()
+    await expect(listEntry).toContainText('Active')
+    await expect(listEntry).toContainText('3 steps')
   })
 
   test('recruiter can edit an existing email sequence', async ({ recruiterUser }) => {
@@ -134,33 +137,17 @@ test.describe('Email Sequence Builder', () => {
     await recruiterUser.fill('input[name="steps.2.subject"]', 'Step 3')
     await recruiterUser.fill('textarea[name="steps.2.bodyTemplate"]', 'Step 3 body')
 
-    // Count steps (should have 3)
-    const stepCount = await recruiterUser
-      .locator('[data-testid="step-card"]')
-      .count()
-      .catch(() => {
-        // Try alternative selector
-        return recruiterUser.locator('input[name*="steps."][name$=".subject"]').count()
-      })
+    // There is no [data-testid="step-card"] in this UI; the old `.count().catch()`
+    // fallback never fired because Locator.count() resolves to 0 instead of
+    // throwing, so the assertion silently compared 0 >= 3.
+    const stepSubjects = recruiterUser.locator('input[name^="steps."][name$=".subject"]')
+    await expect(stepSubjects).toHaveCount(3)
 
-    expect(stepCount).toBeGreaterThanOrEqual(3)
+    // The per-step delete buttons are icon-only; they carry an aria-label so
+    // they can be addressed (and announced) by name.
+    await recruiterUser.getByRole('button', { name: 'Delete step 2' }).click()
 
-    // Remove the middle step (step 1, zero-indexed)
-    const deleteButtons = recruiterUser
-      .locator('button[aria-label="Delete step"]')
-      .or(recruiterUser.locator('button').filter({ hasText: /trash|delete/i }))
-
-    const deleteButtonCount = await deleteButtons.count()
-    if (deleteButtonCount >= 2) {
-      // Click the second delete button (removes step 2)
-      await deleteButtons.nth(1).click()
-
-      // Verify step was removed
-      const newStepCount = await recruiterUser
-        .locator('input[name*="steps."][name$=".subject"]')
-        .count()
-      expect(newStepCount).toBe(2)
-    }
+    await expect(stepSubjects).toHaveCount(2)
   })
 
   test('email sequence builder shows template variable suggestions', async ({ recruiterUser }) => {
@@ -206,39 +193,30 @@ test.describe('Email Sequence Builder', () => {
 
     await recruiterUser.click('button:has-text("New Sequence")')
 
-    await recruiterUser.fill('input[name=name]', 'Active Toggle Test')
+    await recruiterUser.fill('input[name=name]', 'Toggle Flag Test')
     await recruiterUser.fill('input[name="steps.0.subject"]', 'Test Subject')
     await recruiterUser.fill('textarea[name="steps.0.bodyTemplate"]', 'Test body')
 
-    // Ensure active is checked
     await recruiterUser.check('input[name=active]')
-
-    // Save
     await recruiterUser.click('button:has-text("Save Sequence")')
-
     await expect(recruiterUser.locator('text=/sequence.*created/i')).toBeVisible({ timeout: 10000 })
 
-    // Verify "Active" badge is shown
-    await expect(recruiterUser.locator('text=Active')).toBeVisible()
+    // The list entry carries the "Active" badge in its accessible name.
+    const listEntry = recruiterUser.getByRole('button', { name: /Toggle Flag Test/ })
+    await expect(listEntry).toContainText('Active')
 
-    // Click to edit
-    await recruiterUser.click('text=Active Toggle Test')
-
-    // Uncheck active
+    // Re-open it and turn the flag off.
+    await listEntry.click()
     await recruiterUser.uncheck('input[name=active]')
-
-    // Save
     await recruiterUser.click('button:has-text("Save Sequence")')
-
     await expect(recruiterUser.locator('text=/sequence.*updated/i')).toBeVisible({ timeout: 10000 })
 
-    // Verify "Active" badge is no longer shown (or shows "Inactive")
-    const activeBadge = recruiterUser
-      .locator('[data-testid="active-badge"]')
-      .or(recruiterUser.locator('text=Active').first())
-
-    const isVisible = await activeBadge.isVisible().catch(() => false)
-    // Active badge should not be visible for inactive sequences
+    // The badge renders only while the sequence is active. (The sequence name
+    // deliberately avoids the word "Active" so this assertion means something.)
+    await expect(recruiterUser.getByRole('button', { name: /Toggle Flag Test/ })).not.toContainText(
+      'Active',
+      { timeout: 10000 },
+    )
   })
 
   test('email sequence builder shows step count in list', async ({ recruiterUser }) => {
@@ -264,8 +242,11 @@ test.describe('Email Sequence Builder', () => {
 
     await expect(recruiterUser.locator('text=/sequence.*created/i')).toBeVisible({ timeout: 10000 })
 
-    // Verify the list shows "3 steps"
-    await expect(recruiterUser.locator('text=3 steps')).toBeVisible()
+    // The count lives inside this sequence's list entry. A bare `text=3 steps`
+    // also matched the editor heading "Email Steps (3)" in some states.
+    await expect(recruiterUser.getByRole('button', { name: /Step Count Test/ })).toContainText(
+      '3 steps',
+    )
   })
 
   test('email sequence builder validates required fields', async ({ recruiterUser }) => {

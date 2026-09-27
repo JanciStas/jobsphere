@@ -127,9 +127,14 @@ export const GET = withRateLimit(
       const stageRaw = searchParams.get('stage') || undefined
       const jobId = searchParams.get('jobId')
       const validatedStage = stageEnum.parse(stageRaw)
+      // `searchParams.get` returns null for an absent param, and a Zod `.default()`
+      // only fires on undefined — so `z.coerce.number().min(1).default(1)` coerced
+      // null to 0, failed min(1), and the handler answered its own default request
+      // with 500. Every plain GET of "my applications" hit this. Coalesce to
+      // undefined so the defaults apply, as the jobs route already does.
       const { page, limit } = paginationSchema.parse({
-        page: searchParams.get('page'),
-        limit: searchParams.get('limit'),
+        page: searchParams.get('page') ?? undefined,
+        limit: searchParams.get('limit') ?? undefined,
       })
 
       // Resolve Candidate records linked to this user by email across all orgs
@@ -241,6 +246,14 @@ export const GET = withRateLimit(
         hasMore: page * limit < total,
       })
     } catch (error) {
+      // A bad `stage` or `page` is the caller's mistake, not ours; it used to be
+      // reported as 500 alongside genuine server faults.
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid query parameters', issues: error.issues },
+          { status: 400 },
+        )
+      }
       logger.error('Error fetching applications', error)
       return NextResponse.json({ error: 'Failed to fetch applications' }, { status: 500 })
     }

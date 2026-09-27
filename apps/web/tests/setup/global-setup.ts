@@ -16,6 +16,47 @@ import path from 'path'
 import fs from 'fs'
 import { createAllTestUsers, getUserCredentials, TEST_USERS } from '../helpers/test-users'
 
+/**
+ * Refuse to run against anything that is not an obviously local test database.
+ *
+ * Global setup seeds rows and global teardown deletes them again. Launched
+ * without an explicit DATABASE_URL the suite silently inherits whatever the
+ * repo's env files point at - which is a real, shared database. Running the
+ * suite then means seeding and wiping rows there. This check turns that into a
+ * loud refusal instead of a quiet accident: the host must be loopback and the
+ * database name must contain "test".
+ */
+function assertLocalTestDatabase() {
+  const raw = process.env.DATABASE_URL
+  if (!raw) {
+    throw new Error(
+      'DATABASE_URL is not set - refusing to run E2E setup without an explicit test database.',
+    )
+  }
+
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw new Error('DATABASE_URL is not a valid URL - refusing to run E2E setup.')
+  }
+
+  const isLoopback = ['localhost', '127.0.0.1', '::1', 'db', 'postgres'].includes(url.hostname)
+  const dbName = url.pathname.replace(/^\//, '')
+  const looksLikeTestDb = /test/i.test(dbName)
+
+  if (!isLoopback || !looksLikeTestDb) {
+    // Never echo the URL itself - it carries credentials.
+    throw new Error(
+      'Refusing to run E2E global setup: DATABASE_URL must point at a local database whose name ' +
+        `contains "test" (got host "${url.hostname}", database "${dbName}"). ` +
+        'Export the test DATABASE_URL before running Playwright.',
+    )
+  }
+
+  console.log(`Using test database "${dbName}" on ${url.hostname}`)
+}
+
 const AUTH_DIR = path.join(__dirname, '..', '..', 'playwright', '.auth')
 
 /**
@@ -70,6 +111,8 @@ async function globalSetup(config: FullConfig) {
   console.log('\n🔧 Running Playwright global setup...\n')
 
   // Initialize Prisma client
+  assertLocalTestDatabase()
+
   const prisma = new PrismaClient()
 
   try {
@@ -89,6 +132,8 @@ async function globalSetup(config: FullConfig) {
     console.log(`  - Org Admin: ${users.orgAdmin.email}`)
     console.log(`  - Hiring Manager: ${users.hiringManager.email}`)
     console.log(`  - Agency: ${users.agency.email}\n`)
+
+    console.log('Test jobs seeded: 3 published jobs owned by Test Org Inc\n')
 
     console.log('🔐 Logging in users and saving auth states...\n')
 

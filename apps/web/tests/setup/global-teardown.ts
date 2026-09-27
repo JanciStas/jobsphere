@@ -40,6 +40,7 @@ async function globalTeardown() {
         'orgAdmin.json',
         'hiringManager.json',
         'agency.json',
+        'globalAdmin.json',
       ]
 
       for (const file of authFiles) {

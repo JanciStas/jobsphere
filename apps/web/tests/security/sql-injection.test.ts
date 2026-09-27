@@ -23,15 +23,9 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { ApplicationService } from '@/services/application.service'
-import { searchCandidates, getJobCandidateMatchScore } from '@/lib/semantic-search'
+import { searchCandidates } from '@/lib/semantic-search'
 import { Prisma } from '@prisma/client'
-import {
-  prisma,
-  TEST_IDS,
-  seedTestData,
-  cleanupDynamicData,
-  cleanupAllTestData,
-} from '../integration/helpers/test-db'
+import { prisma, TEST_IDS, seedTestData, cleanupAllTestData } from '../integration/helpers/test-db'
 
 /**
  * Test Utilities
@@ -125,7 +119,7 @@ vi.mock('@/lib/embeddings', () => ({
     // Return a mock embedding (1536 dimensions for OpenAI)
     return Array(1536)
       .fill(0)
-      .map((_, i) => Math.random())
+      .map(() => Math.random())
   }),
 }))
 
@@ -252,7 +246,11 @@ describe('SQL Injection Prevention Tests', () => {
       }
     })
 
-    it('should prevent SQL injection in stage filters', async () => {
+    it('treats a malicious stage filter as an inert, non-matching value', async () => {
+      // There is no enum gate inside the service: the stage string goes into a
+      // parameterized Prisma where-clause. A quote-laden stage can neither
+      // escape into SQL nor match any row — the call resolves with an empty
+      // page, which is the actual protection.
       const maliciousStages = [
         "NEW' OR '1'='1",
         'NEW\'; DROP TABLE "Application"--',
@@ -260,13 +258,13 @@ describe('SQL Injection Prevention Tests', () => {
       ]
 
       for (const payload of maliciousStages) {
-        await expect(async () => {
-          await ApplicationService.searchApplications({
-            // @ts-expect-error - Testing invalid input
-            stage: payload,
-            limit: 10,
-          })
-        }).rejects.toThrow()
+        const result = await ApplicationService.searchApplications({
+          // @ts-expect-error - Testing invalid input
+          stage: payload,
+          limit: 10,
+        })
+        expect(Array.isArray(result.applications)).toBe(true)
+        expect(result.applications).toHaveLength(0)
       }
     })
   })
@@ -840,7 +838,6 @@ describe('SQL Injection Prevention Tests', () => {
     it('should combine multiple security layers', async () => {
       // Test that even with multiple injection points, the query is safe
       const maliciousEmail = "admin@example.com' OR '1'='1--"
-      const maliciousName = 'Admin\' UNION SELECT * FROM "User"--'
       const maliciousStage = "NEW' OR '1'='1"
 
       const { applications } = await ApplicationService.searchApplications({

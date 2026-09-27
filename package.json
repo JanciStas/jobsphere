@@ -54,5 +54,8 @@
       "prettier --write"
     ]
   },
-  "dependencies": {}
+  "dependencies": {},
+  "resolutions": {
+    "@xmldom/xmldom": "^0.8.12"
+  }
 }

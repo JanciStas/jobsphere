@@ -302,6 +302,7 @@ export default function SequencesClient() {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          aria-label={`Delete step ${index + 1}`}
                           onClick={() => removeStep(index)}
                           disabled={steps.length === 1}
                         >

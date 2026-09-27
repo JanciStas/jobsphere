@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,6 +29,7 @@ type Filter = 'OPEN' | 'DONE' | 'ALL'
  * management tool nobody asked for.
  */
 export function TasksClient({ locale }: { locale: string }) {
+  const t = useTranslations('employer.tasks')
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [filter, setFilter] = useState<Filter>('OPEN')
   const [mineOnly, setMineOnly] = useState(true)
@@ -43,14 +45,14 @@ export function TasksClient({ locale }: { locale: string }) {
 
     try {
       const res = await fetch(`/api/tasks?${params.toString()}`)
-      if (!res.ok) throw new Error('Failed to load tasks')
+      if (!res.ok) throw new Error(t('loadFailed'))
       const data = await res.json()
       setTasks(data.tasks ?? [])
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tasks')
+      setError(err instanceof Error ? err.message : t('loadFailed'))
     }
-  }, [filter, mineOnly])
+  }, [filter, mineOnly, t])
 
   useEffect(() => {
     load()
@@ -75,13 +77,13 @@ export function TasksClient({ locale }: { locale: string }) {
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? 'Failed to create task')
+        throw new Error(body.error ?? t('createFailed'))
       }
       setTitle('')
       setDueDate('')
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create task')
+      setError(err instanceof Error ? err.message : t('createFailed'))
     } finally {
       setLoading(false)
     }
@@ -97,7 +99,7 @@ export function TasksClient({ locale }: { locale: string }) {
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this task?')) return
+    if (!confirm(t('deleteConfirm'))) return
     await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
     await load()
   }
@@ -111,20 +113,20 @@ export function TasksClient({ locale }: { locale: string }) {
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Call her back about the offer…"
-            aria-label="Task"
+            placeholder={t('taskPlaceholder')}
+            aria-label={t('taskLabel')}
           />
         </div>
         <Input
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          aria-label="Due date"
+          aria-label={t('dueDateLabel')}
           className="w-40"
         />
         <Button type="submit" disabled={loading || !title.trim()}>
           <Plus className="mr-2 h-4 w-4" />
-          {loading ? 'Adding…' : 'Add'}
+          {loading ? t('adding') : t('add')}
         </Button>
       </form>
 
@@ -149,14 +151,14 @@ export function TasksClient({ locale }: { locale: string }) {
             checked={mineOnly}
             onChange={(e) => setMineOnly(e.target.checked)}
           />
-          Only mine
+          {t('onlyMine')}
         </label>
       </div>
 
       {tasks.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nothing here.
+            {t('empty')}
           </CardContent>
         </Card>
       ) : (
@@ -180,7 +182,7 @@ export function TasksClient({ locale }: { locale: string }) {
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {task.dueDate && (
                       <span className={overdue ? 'font-semibold text-red-600' : ''}>
-                        Due {task.dueDate.slice(0, 10)}
+                        {t('due', { date: task.dueDate.slice(0, 10) })}
                       </span>
                     )}
                     {task.assignee && <> · {task.assignee.name || task.assignee.email}</>}
@@ -204,11 +206,11 @@ export function TasksClient({ locale }: { locale: string }) {
                     onClick={() => setStatus(task.id, task.status === 'DONE' ? 'OPEN' : 'DONE')}
                   >
                     <Check className="mr-1 h-4 w-4" />
-                    {task.status === 'DONE' ? 'Reopen' : 'Done'}
+                    {task.status === 'DONE' ? t('reopen') : t('done')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => remove(task.id)}>
                     <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
+                    <span className="sr-only">{t('delete')}</span>
                   </Button>
                 </div>
               </div>

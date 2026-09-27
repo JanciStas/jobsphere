@@ -211,9 +211,11 @@ describe('POST /api/assessments', () => {
       const response = await POST(request)
       const data = await parseResponse(response)
 
-      // Assert
+      // Assert — the route returns a fixed `error` and the per-field detail in
+      // `issues`; the field name is never interpolated into `error`.
       expect(response.status).toBe(400)
-      expect(data.error).toContain('duration')
+      expect(data.error).toBe('Validation failed')
+      expect(data.issues.some((i: any) => i.path.includes('durationMin'))).toBe(true)
     })
 
     it('should reject invalid passing score', async () => {
@@ -231,7 +233,8 @@ describe('POST /api/assessments', () => {
 
       // Assert
       expect(response.status).toBe(400)
-      expect(data.error).toContain('passing')
+      expect(data.error).toBe('Validation failed')
+      expect(data.issues.some((i: any) => i.path.includes('passingScore'))).toBe(true)
     })
 
     it('should reject invalid question type', async () => {
@@ -448,13 +451,20 @@ describe('POST /api/assessments', () => {
       expect(questions?.[2].text).toBe('Question 3')
     })
 
+    // `sections: z.array(...).min(1)` — an assessment with no sections is not a
+    // valid assessment, so these cases cannot post an empty array and expect 201.
     it('should default isPublished to false', async () => {
       // Arrange
       const request = createTestRequest('POST', {
         name: 'Unpublished Assessment',
         durationMin: 60,
         passingScore: 70,
-        sections: [],
+        sections: [
+          {
+            title: 'Section 1',
+            questions: [{ type: 'SHORT_TEXT', text: 'Why do you want this role?' }],
+          },
+        ],
       })
 
       // Act
@@ -529,7 +539,8 @@ describe('POST /api/assessments', () => {
                 text: 'Implement a binary search',
                 language: 'python',
                 code: 'def binary_search(arr, target):\n    # Your code here\n    pass',
-                rubric: 'Must handle edge cases, O(log n) complexity',
+                // `rubric` is z.record(z.any()) — a JSON object, not a sentence.
+                rubric: { criteria: ['Must handle edge cases', 'O(log n) complexity'] },
                 points: 30,
               },
             ],
@@ -555,8 +566,11 @@ describe('POST /api/assessments', () => {
 
       const question = assessment?.sections[0].questions[0]
       expect(question?.language).toBe('python')
-      expect(question?.code).toContain('binary_search')
-      expect(question?.rubric).toContain('O(log n)')
+      // The column is starterCode; the request field is `code` and the route maps it.
+      expect(question?.starterCode).toContain('binary_search')
+      expect(question?.rubric).toMatchObject({
+        criteria: ['Must handle edge cases', 'O(log n) complexity'],
+      })
     })
   })
 
@@ -572,7 +586,12 @@ describe('POST /api/assessments', () => {
         durationMin: 60,
         passingScore: 70,
         randomize: true,
-        sections: [],
+        sections: [
+          {
+            title: 'Section 1',
+            questions: [{ type: 'SHORT_TEXT', text: 'Why do you want this role?' }],
+          },
+        ],
       })
 
       // Act

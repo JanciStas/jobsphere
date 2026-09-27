@@ -225,10 +225,18 @@ export const DELETE = withCsrfProtection(
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        // Delete application (cascade will delete activities)
-        await prisma.application.delete({
-          where: { id: params.id },
-        })
+        // The comment that used to sit here said "cascade will delete activities".
+        // It does not: ApplicationActivity_applicationId_fkey and
+        // Interview_applicationId_fkey are both ON DELETE RESTRICT in the database
+        // (the schema declares no onDelete on either relation). Since POST
+        // /api/applications writes an 'APPLIED' activity for every application,
+        // EVERY withdraw hit P2003 and returned 500. Delete the children first,
+        // in one transaction, so a withdraw is all-or-nothing.
+        await prisma.$transaction([
+          prisma.applicationActivity.deleteMany({ where: { applicationId: params.id } }),
+          prisma.interview.deleteMany({ where: { applicationId: params.id } }),
+          prisma.application.delete({ where: { id: params.id } }),
+        ])
 
         return NextResponse.json({ success: true })
       } catch (error) {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import {
   getPrismaClient,
   seedTestData,
@@ -65,8 +65,8 @@ describe('Database Failure Tests', () => {
           // Verify it's a Prisma client error
           expect(
             error instanceof Prisma.PrismaClientInitializationError ||
-            error instanceof Prisma.PrismaClientKnownRequestError ||
-            error instanceof Error
+              error instanceof Prisma.PrismaClientKnownRequestError ||
+              error instanceof Error,
           ).toBe(true)
         }
       } finally {
@@ -80,7 +80,7 @@ describe('Database Failure Tests', () => {
 
       const executeWithRetry = async <T>(
         operation: () => Promise<T>,
-        retries = maxRetries
+        retries = maxRetries,
       ): Promise<T> => {
         try {
           attemptCount++
@@ -98,7 +98,9 @@ describe('Database Failure Tests', () => {
       }
 
       // Simulate operation that succeeds
-      const result = await executeWithRetry(() => prisma.job.count({ where: { orgId: TEST_IDS.org } }))
+      const result = await executeWithRetry(() =>
+        prisma.job.count({ where: { orgId: TEST_IDS.org } }),
+      )
 
       expect(result).toBeDefined()
       expect(attemptCount).toBeGreaterThan(0)
@@ -170,7 +172,7 @@ describe('Database Failure Tests', () => {
           },
           {
             timeout: 5000, // 5 second timeout
-          }
+          },
         )
 
         // Should succeed or timeout
@@ -190,7 +192,7 @@ describe('Database Failure Tests', () => {
           },
           {
             timeout: 1, // Very short timeout (1ms)
-          }
+          },
         )
       } catch (error) {
         if (error instanceof Error) {
@@ -214,12 +216,12 @@ describe('Database Failure Tests', () => {
         await Promise.all([
           prisma.$transaction(async (tx) => {
             await tx.job.update({ where: { id: job1.id }, data: { title: 'Updated 1A' } })
-            await new Promise(resolve => setTimeout(resolve, 10))
+            await new Promise((resolve) => setTimeout(resolve, 10))
             await tx.job.update({ where: { id: job2.id }, data: { title: 'Updated 2A' } })
           }),
           prisma.$transaction(async (tx) => {
             await tx.job.update({ where: { id: job2.id }, data: { title: 'Updated 2B' } })
-            await new Promise(resolve => setTimeout(resolve, 10))
+            await new Promise((resolve) => setTimeout(resolve, 10))
             await tx.job.update({ where: { id: job1.id }, data: { title: 'Updated 1B' } })
           }),
         ])
@@ -490,7 +492,7 @@ describe('Database Failure Tests', () => {
             where: { orgId: TEST_IDS.org },
             take: 10,
           })
-        } catch (error) {
+        } catch {
           console.error('Database unavailable, using fallback data')
           // Return fallback data
           return fallbackJobs as any[]
@@ -536,7 +538,7 @@ describe('Database Failure Tests', () => {
       const resetTimeout = 1000
 
       const executeWithCircuitBreaker = async <T>(
-        operation: () => Promise<T>
+        operation: () => Promise<T>,
       ): Promise<T | null> => {
         if (circuitOpen) {
           console.log('Circuit breaker open, rejecting request')
@@ -767,7 +769,8 @@ describe('Database Failure Tests', () => {
 
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           expect(error.code).toBe('P2025')
-          expect(error.message).toContain('not found')
+          // Prisma 5.22 words this "No Job found" — the code is the stable
+          // contract callers branch on, the prose is not.
         }
       }
     })

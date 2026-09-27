@@ -75,16 +75,30 @@ Return your evaluation in JSON format:
 }
 
 /**
- * Map schema question types to internal worker types
+ * Map stored question types to internal worker types.
+ *
+ * The keys on the left are the values that actually reach the database. The app
+ * writes exactly five of them — MCQ, MULTI_SELECT, SHORT_TEXT, LONG_TEXT, CODE
+ * (see schemas/assessment.schema.ts, the builder and the runner). This map used
+ * to key on MULTI / SHORT / LONG / FILE, a vocabulary nothing produces, so
+ * MULTI_SELECT fell through the `|| 'FREE_TEXT'` default below and every
+ * multi-select answer was filed as "Pending manual review" worth zero points —
+ * silently dragging the attempt percentage down and flipping passes into fails.
+ * The legacy spellings are kept for rows written before the vocabulary settled.
  */
-const questionTypeMap: Record<string, 'MULTIPLE_CHOICE' | 'CODING' | 'FREE_TEXT'> = {
-  MCQ: 'MULTIPLE_CHOICE',
-  MULTI: 'MULTIPLE_CHOICE',
-  CODE: 'CODING',
-  SHORT: 'FREE_TEXT',
-  LONG: 'FREE_TEXT',
-  FILE: 'FREE_TEXT',
-}
+const questionTypeMap: Record<string, 'MULTIPLE_CHOICE' | 'MULTI_SELECT' | 'CODING' | 'FREE_TEXT'> =
+  {
+    MCQ: 'MULTIPLE_CHOICE',
+    MULTI_SELECT: 'MULTI_SELECT',
+    SHORT_TEXT: 'FREE_TEXT',
+    LONG_TEXT: 'FREE_TEXT',
+    CODE: 'CODING',
+    // Legacy keys.
+    MULTI: 'MULTI_SELECT',
+    SHORT: 'FREE_TEXT',
+    LONG: 'FREE_TEXT',
+    FILE: 'FREE_TEXT',
+  }
 
 /**
  * Process assessment grading
@@ -158,6 +172,44 @@ export async function processAssessmentGrading(job: Job<AssessmentJobData>) {
             feedback = 'Correct answer'
           } else {
             feedback = `Incorrect. Correct answer: ${correctChoice}`
+          }
+          break
+        }
+
+        case 'MULTI_SELECT': {
+          // The runner stores a MULTI_SELECT answer as an array of choice TEXTS,
+          // so compare sets rather than a single index: all correct choices, and
+          // nothing else, earns the points.
+          const correctChoices = question.correctIndexes
+            .map((i) => question.choices[i])
+            .filter((choice): choice is string => typeof choice === 'string')
+
+          const raw = response.response as unknown
+          let selected: string[] = []
+          if (Array.isArray(raw)) {
+            selected = raw.map((v) => String(v))
+          } else if (typeof answerValue === 'string' && answerValue.trim().startsWith('[')) {
+            try {
+              const parsed = JSON.parse(answerValue)
+              if (Array.isArray(parsed)) selected = parsed.map((v) => String(v))
+            } catch {
+              selected = []
+            }
+          } else if (answerValue) {
+            selected = [String(answerValue)]
+          }
+
+          const selectedSet = new Set(selected)
+          const exact =
+            correctChoices.length > 0 &&
+            selectedSet.size === correctChoices.length &&
+            correctChoices.every((choice) => selectedSet.has(choice))
+
+          if (exact) {
+            earnedPoints = questionPoints
+            feedback = 'Correct answer'
+          } else {
+            feedback = `Incorrect. Correct answer: ${correctChoices.join(', ')}`
           }
           break
         }

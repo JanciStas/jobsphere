@@ -9,28 +9,34 @@ import IORedis from 'ioredis'
 import { prisma, TEST_IDS, createTestCandidateWithContact } from '../helpers/test-db'
 import type { AssessmentJobData } from '@/lib/queue'
 
-// Mock Anthropic to prevent actual API calls
+// Mock Anthropic to prevent actual API calls.
+//
+// `messages` lives on the PROTOTYPE, not as a class field. The worker builds its
+// Anthropic instance at module scope, and two tests below reach it through
+// `vi.spyOn(Anthropic.prototype.messages, 'create')`. As an own field per
+// instance, `Anthropic.prototype.messages` was undefined and every one of those
+// calls died with "spyOn could not find an object to spy upon".
+const { anthropicCreate } = vi.hoisted(() => ({ anthropicCreate: vi.fn() }))
+
 vi.mock('@anthropic-ai/sdk', () => {
-  return {
-    default: class Anthropic {
-      messages = {
-        create: vi.fn().mockResolvedValue({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                score: 85,
-                feedback: 'Good solution with proper logic and clean code.',
-                passedTests: 4,
-                totalTests: 5,
-              }),
-            },
-          ],
-        }),
-      }
-    },
-  }
+  class Anthropic {}
+  ;(Anthropic.prototype as any).messages = { create: anthropicCreate }
+  return { default: Anthropic }
 })
+
+const DEFAULT_CLAUDE_RESPONSE = {
+  content: [
+    {
+      type: 'text',
+      text: JSON.stringify({
+        score: 85,
+        feedback: 'Good solution with proper logic and clean code.',
+        passedTests: 4,
+        totalTests: 5,
+      }),
+    },
+  ],
+}
 
 // Mock email service
 vi.mock('@/lib/email', () => ({
@@ -50,6 +56,13 @@ describe('Assessment Grading Worker Integration Tests', () => {
   let attempt: any
 
   beforeEach(async () => {
+    // One shared mock function now backs every Anthropic instance, so restore its
+    // default behaviour before each test (a spyOn/mockRejectedValue in one test
+    // would otherwise bleed into the next).
+    vi.restoreAllMocks()
+    anthropicCreate.mockReset()
+    anthropicCreate.mockResolvedValue(DEFAULT_CLAUDE_RESPONSE)
+
     // Setup Redis connection
     connection = new IORedis(REDIS_URL, {
       maxRetriesPerRequest: null,
@@ -175,8 +188,12 @@ describe('Assessment Grading Worker Integration Tests', () => {
       expect(job.data.attemptId).toBe(attempt.id)
       expect(job.opts.priority).toBe(1)
 
-      const waitingCount = await assessmentQueue.getWaitingCount()
-      expect(waitingCount).toBe(1)
+      // BullMQ 5 keeps prioritised jobs in their own `prioritized` set, not in
+      // `wait` — getWaitingCount() is 0 for a job added with a priority, which is
+      // why this asserted 1 and got 0. Count both so the assertion says what it
+      // means: exactly one job is queued and not yet picked up.
+      const counts = await assessmentQueue.getJobCounts('wait', 'prioritized')
+      expect((counts.wait ?? 0) + (counts.prioritized ?? 0)).toBe(1)
     })
 
     it('should set high priority for grading jobs', async () => {
@@ -208,7 +225,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'What is the output of typeof null?',
           choices: ['null', 'undefined', 'object', 'number'],
           correctIndexes: [2], // 'object' is correct
@@ -241,9 +258,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -269,12 +284,123 @@ describe('Assessment Grading Worker Integration Tests', () => {
       expect(updatedAttempt?.percentage).toBe(100)
     })
 
+    // Regression: MULTI_SELECT is one of the five types the app writes
+    // (schemas/assessment.schema.ts), but questionTypeMap keyed on 'MULTI' — a
+    // spelling nothing produces — so these answers fell through to FREE_TEXT and
+    // were filed as "Pending manual review" worth 0, pulling the whole attempt's
+    // percentage down. Both the exact-set and the partial-answer cases are pinned.
+    it('grades a MULTI_SELECT answer on the exact set of choices', async () => {
+      const question = await prisma.question.create({
+        data: {
+          sectionId: section.id,
+          type: 'MULTI_SELECT',
+          text: 'Which of these are falsy in JavaScript?',
+          choices: ['0', '"0"', 'null', '[]'],
+          correctIndexes: [0, 2],
+          points: 10,
+          order: 1,
+        },
+      })
+
+      attempt = await prisma.attempt.create({
+        data: {
+          candidateId: candidate.id,
+          inviteId: invite.id,
+          startedAt: new Date(),
+          status: 'SUBMITTED',
+        },
+      })
+
+      await prisma.answer.create({
+        data: {
+          attemptId: attempt.id,
+          questionId: question.id,
+          // The runner stores an array of choice texts.
+          response: ['0', 'null'],
+        },
+      })
+
+      await assessmentQueue.add('grade-assessment', { attemptId: attempt.id })
+
+      worker = new Worker<AssessmentJobData>(
+        'assessments-test',
+        async (job: Job<AssessmentJobData>) => {
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
+          return processAssessmentGrading(job)
+        },
+        { connection },
+      )
+
+      const completed = await new Promise<Job>((resolve) => {
+        worker.on('completed', resolve)
+      })
+
+      expect(completed.returnvalue.totalScore).toBe(10)
+      expect(completed.returnvalue.percentage).toBe(100)
+
+      const answer = await prisma.answer.findFirst({ where: { attemptId: attempt.id } })
+      expect(answer?.aiRationale).toBe('Correct answer')
+    })
+
+    it('does not award a partially correct MULTI_SELECT answer', async () => {
+      const question = await prisma.question.create({
+        data: {
+          sectionId: section.id,
+          type: 'MULTI_SELECT',
+          text: 'Which of these are falsy in JavaScript?',
+          choices: ['0', '"0"', 'null', '[]'],
+          correctIndexes: [0, 2],
+          points: 10,
+          order: 1,
+        },
+      })
+
+      attempt = await prisma.attempt.create({
+        data: {
+          candidateId: candidate.id,
+          inviteId: invite.id,
+          startedAt: new Date(),
+          status: 'SUBMITTED',
+        },
+      })
+
+      await prisma.answer.create({
+        data: {
+          attemptId: attempt.id,
+          questionId: question.id,
+          response: ['0'], // one of the two correct choices
+        },
+      })
+
+      await assessmentQueue.add('grade-assessment', { attemptId: attempt.id })
+
+      worker = new Worker<AssessmentJobData>(
+        'assessments-test',
+        async (job: Job<AssessmentJobData>) => {
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
+          return processAssessmentGrading(job)
+        },
+        { connection },
+      )
+
+      const completed = await new Promise<Job>((resolve) => {
+        worker.on('completed', resolve)
+      })
+
+      expect(completed.returnvalue.totalScore).toBe(0)
+
+      const answer = await prisma.answer.findFirst({ where: { attemptId: attempt.id } })
+      // Scored, not parked for manual review.
+      expect(answer?.aiRationale).toContain('Incorrect')
+      expect(answer?.aiRationale).not.toContain('Pending manual review')
+    })
+
     it('should mark incorrect multiple choice answer as wrong', async () => {
       // Arrange
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'What is the output of typeof null?',
           choices: ['null', 'undefined', 'object', 'number'],
           correctIndexes: [2],
@@ -307,9 +433,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -343,7 +467,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'CODING',
+          type: 'CODE',
           text: 'Write a function to reverse a string',
           points: 20,
           order: 1,
@@ -376,9 +500,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -423,7 +545,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'CODING',
+          type: 'CODE',
           text: 'Write a function to check if a string is a palindrome',
           points: 15,
           order: 1,
@@ -456,9 +578,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -483,7 +603,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'FREE_TEXT',
+          type: 'LONG_TEXT',
           text: 'Explain the event loop in JavaScript',
           points: 15,
           order: 1,
@@ -516,9 +636,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -545,7 +663,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const mcQuestion = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Which is a primitive type?',
           choices: ['Array', 'String', 'Object', 'Function'],
           correctIndexes: [1],
@@ -557,7 +675,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const codingQuestion = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'CODING',
+          type: 'CODE',
           text: 'Write a function to add two numbers',
           points: 20,
           order: 2,
@@ -567,7 +685,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const freeTextQuestion = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'FREE_TEXT',
+          type: 'LONG_TEXT',
           text: 'Explain closures',
           points: 15,
           order: 3,
@@ -610,9 +728,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -640,7 +756,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Test question',
           choices: ['A', 'B', 'C', 'D'],
           correctIndexes: [0],
@@ -673,9 +789,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -704,7 +818,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Test question',
           choices: ['A', 'B'],
           correctIndexes: [0],
@@ -737,9 +851,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -796,7 +908,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'CODING',
+          type: 'CODE',
           text: 'Test coding question',
           points: 20,
           order: 1,
@@ -825,9 +937,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -862,9 +972,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -900,9 +1008,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -951,7 +1057,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Test',
           choices: ['A', 'B'],
           correctIndexes: [0],
@@ -975,9 +1081,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -1005,7 +1109,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const q1 = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Q1',
           choices: ['A', 'B'],
           correctIndexes: [0],
@@ -1017,7 +1121,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const q2 = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Q2',
           choices: ['A', 'B'],
           correctIndexes: [1],
@@ -1057,9 +1161,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },
@@ -1081,7 +1183,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       const question = await prisma.question.create({
         data: {
           sectionId: section.id,
-          type: 'MULTIPLE_CHOICE',
+          type: 'MCQ',
           text: 'Test',
           choices: ['A', 'B'],
           correctIndexes: [0],
@@ -1114,9 +1216,7 @@ describe('Assessment Grading Worker Integration Tests', () => {
       worker = new Worker<AssessmentJobData>(
         'assessments-test',
         async (job: Job<AssessmentJobData>) => {
-          const { default: processAssessmentGrading } = await import(
-            '@/workers/assessment-grading.worker'
-          )
+          const { processAssessmentGrading } = await import('@/workers/assessment-grading.worker')
           return processAssessmentGrading(job)
         },
         { connection },

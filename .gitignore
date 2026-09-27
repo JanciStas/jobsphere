@@ -99,6 +99,7 @@ docker/volumes
 
 # Debug artifacts
 debug_screenshots/
+.playwright-mcp/
 
 # Windows artifacts
 nul

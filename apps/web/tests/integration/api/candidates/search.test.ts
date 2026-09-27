@@ -6,7 +6,13 @@ import {
   createCandidateSession,
   parseResponse,
 } from '../../helpers/api-client'
-import { prisma, TEST_IDS, createTestJob, createTestCandidate } from '../../helpers/test-db'
+import {
+  prisma,
+  TEST_IDS,
+  createTestJob,
+  createTestCandidate,
+  createTestOrganization,
+} from '../../helpers/test-db'
 
 /**
  * Integration tests for POST /api/candidates/search
@@ -163,25 +169,39 @@ describe('POST /api/candidates/search', () => {
 
   describe('Authorization', () => {
     it('should reject access to job from different organization', async () => {
-      // Arrange - user from different org
-      mockAuthFn.mockResolvedValue(
-        createRecruiterSession({
-          orgId: 'different-org-id',
-          orgName: 'Different Organization',
-        }),
+      // The route resolves the caller's membership against the JOB'S organization
+      // in the database — the orgId on the session is never consulted. Overriding
+      // it on the mock session (the old approach) proves nothing: the seeded
+      // recruiter is still a member of the job's org in the database, so the route
+      // correctly returned 200. What actually exercises the boundary is a job
+      // owned by an organisation the recruiter does not belong to.
+      const otherOrg = await createTestOrganization(
+        'Search Foreign Org',
+        `search-foreign-${Date.now()}`,
       )
+      let foreignJob: { id: string } | null = null
+      try {
+        foreignJob = await createTestJob({ orgId: otherOrg.id })
+        mockAuthFn.mockResolvedValue(createRecruiterSession()) // member of TEST_IDS.org only
 
-      const request = createTestRequest('POST', {
-        jobId: testJobId, // Job belongs to TEST_IDS.org
-      })
+        const request = createTestRequest('POST', {
+          jobId: foreignJob.id,
+        })
 
-      // Act
-      const response = await POST(request)
+        // Act
+        const response = await POST(request)
 
-      // Assert
-      expect(response.status).toBe(403)
-      const data = await parseResponse(response)
-      expect(data.error).toContain('Forbidden')
+        // Assert
+        expect(response.status).toBe(403)
+        const data = await parseResponse(response)
+        expect(data.error).toContain('Forbidden')
+        expect(mockSearchCandidates).not.toHaveBeenCalled()
+      } finally {
+        // The global cleanup only removes rows scoped to TEST_IDS.org, so this
+        // foreign pair would otherwise survive into the next run.
+        if (foreignJob) await prisma.job.delete({ where: { id: foreignJob.id } }).catch(() => {})
+        await prisma.organization.delete({ where: { id: otherOrg.id } }).catch(() => {})
+      }
     })
 
     it('should allow recruiter from same organization', async () => {

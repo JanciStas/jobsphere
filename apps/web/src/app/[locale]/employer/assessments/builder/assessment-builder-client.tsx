@@ -480,6 +480,7 @@ function SectionEditor({
               type="button"
               variant="ghost"
               size="sm"
+              aria-label={`Delete section ${sectionIndex + 1}`}
               onClick={(e) => {
                 e.stopPropagation()
                 removeSection(sectionIndex)
@@ -659,6 +660,7 @@ function QuestionEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-label={`Delete question ${questionIndex + 1}`}
           onClick={() => removeQuestion(questionIndex)}
           className="ml-2"
         >
@@ -713,6 +715,7 @@ function QuestionEditor({
                 type="button"
                 variant="ghost"
                 size="sm"
+                aria-label={`Delete choice ${choiceIndex + 1}`}
                 onClick={() => removeChoice(choiceIndex)}
                 className="h-6 px-2"
               >
