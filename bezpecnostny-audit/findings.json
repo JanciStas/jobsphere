@@ -471,5 +471,13 @@
     "summary": "N+1: až 3 DB dotazy na event v cykle; dávkovať findMany({id:{in}}) + createMany.",
     "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
     "fixedAt": "2026-09-27"
+  },
+  {
+    "id": "2026-09-27-N1",
+    "severity": "Medium",
+    "category": "N - Operations",
+    "file": "apps/web/src/app/api/health/route.ts",
+    "status": "open",
+    "summary": "/api/health vracia 500 (unhealthy) v produkcii na jobsphere.eu, potvrdene aj pred aj po Next 15 mergi (nie je to regresia tohto kola) -- prisma.$queryRaw SELECT 1 v health route zlyhava, hoci bezne stranky (/sk, /en) sa nacitavaju 200 a teda DB inak funguje. Vyzaduje samostatne vysetrenie (Prisma connection pooling limit na health route bez keep-alive? Vercel Fluid Compute cold start timeout?). Objavene po nasadeni PR #24, 2026-09-27."
   }
 ]
