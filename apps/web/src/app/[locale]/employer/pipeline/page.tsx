@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { PipelineBoard } from '@/components/employer/pipeline-board'
@@ -46,9 +47,7 @@ export default async function PipelinePage({
     redirect(`/${params.locale}/login`)
   }
 
-  const userOrgRole = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-  })
+  const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
   if (!userOrgRole) {
     redirect(`/${params.locale}/dashboard`)
   }

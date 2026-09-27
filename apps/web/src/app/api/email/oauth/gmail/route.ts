@@ -8,6 +8,7 @@ import crypto from 'crypto'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { encrypt } from '@/lib/encryption'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
@@ -96,9 +97,7 @@ export const POST = withCsrfProtection<NextRequest>(
         }
         const { accessToken, refreshToken, email } = parsed.data
 
-        const orgMember = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-        })
+        const orgMember = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
         if (!orgMember) {
           return NextResponse.json({ error: 'User not in organization' }, { status: 400 })

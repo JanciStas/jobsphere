@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { errorResponse } from '@/lib/errors'
 import { withRateLimit } from '@/lib/rate-limit'
@@ -18,10 +19,7 @@ export const GET = withRateLimit(
       }
 
       // Get user's organization membership to find candidates
-      const userOrg = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
-        select: { orgId: true },
-      })
+      const userOrg = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
       if (!userOrg) {
         return NextResponse.json({ cvs: [] })

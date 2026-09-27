@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { ChevronDown, ChevronUp, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 interface MatchExplanationProps {
@@ -33,6 +34,7 @@ export function MatchExplanation({
   evidence,
 }: MatchExplanationProps) {
   const [expanded, setExpanded] = useState(false)
+  const t = useTranslations('matchExplanation')
 
   // Determine color based on score
   const getScoreColor = (score: number) => {
@@ -42,10 +44,10 @@ export function MatchExplanation({
   }
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'Excellent Match'
-    if (score >= 60) return 'Good Match'
-    if (score >= 40) return 'Potential Match'
-    return 'Weak Match'
+    if (score >= 80) return t('excellent')
+    if (score >= 60) return t('good')
+    if (score >= 40) return t('potential')
+    return t('weak')
   }
 
   return (
@@ -54,7 +56,7 @@ export function MatchExplanation({
       <button
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        aria-label={expanded ? 'Collapse match details' : 'Expand match details'}
+        aria-label={expanded ? t('collapse') : t('expand')}
         className="flex w-full items-center justify-between p-4 transition-colors hover:bg-gray-50"
       >
         <div className="flex items-center gap-4">
@@ -71,7 +73,7 @@ export function MatchExplanation({
           <div className="text-left">
             <p className="text-lg font-semibold text-gray-900">{getScoreLabel(score)}</p>
             <p className="text-sm text-gray-600">
-              {evidence.matchingSkills.length} matching skills
+              {t('matchingSkillsCount', { count: evidence.matchingSkills.length })}
             </p>
           </div>
         </div>
@@ -91,20 +93,20 @@ export function MatchExplanation({
           <div>
             <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
               <AlertCircle className="h-4 w-4 text-primary" />
-              AI Analysis
+              {t('aiAnalysis')}
             </h3>
             <p className="text-sm leading-relaxed text-gray-700">{evidence.reasoning}</p>
           </div>
 
           {/* Score Breakdown */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-gray-900">Score Breakdown</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('scoreBreakdown')}</h3>
             <div className="space-y-2">
               {/* BM25 (Keyword Matching) */}
               {bm25Score !== undefined && (
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Keyword Match</span>
+                    <span className="text-gray-600">{t('keywordMatch')}</span>
                     <span className="font-medium text-gray-900">
                       {Math.round(bm25Score * 100)}%
                     </span>
@@ -115,7 +117,7 @@ export function MatchExplanation({
                     aria-valuenow={Math.round(bm25Score * 100)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label="Keyword match score"
+                    aria-label={t('keywordScore')}
                   >
                     <div
                       className="h-2 rounded-full bg-blue-600"
@@ -129,7 +131,7 @@ export function MatchExplanation({
               {vectorScore !== undefined && (
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Semantic Match</span>
+                    <span className="text-gray-600">{t('semanticMatch')}</span>
                     <span className="font-medium text-gray-900">
                       {Math.round(vectorScore * 100)}%
                     </span>
@@ -140,7 +142,7 @@ export function MatchExplanation({
                     aria-valuenow={Math.round(vectorScore * 100)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label="Semantic match score"
+                    aria-label={t('semanticScore')}
                   >
                     <div
                       className="h-2 rounded-full bg-purple-600"
@@ -154,7 +156,7 @@ export function MatchExplanation({
               {llmScore !== undefined && (
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">AI Reasoning</span>
+                    <span className="text-gray-600">{t('aiReasoning')}</span>
                     <span className="font-medium text-gray-900">{Math.round(llmScore * 100)}%</span>
                   </div>
                   <div
@@ -163,7 +165,7 @@ export function MatchExplanation({
                     aria-valuenow={Math.round(llmScore * 100)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label="AI reasoning score"
+                    aria-label={t('aiReasoningScore')}
                   >
                     <div
                       className="h-2 rounded-full bg-green-600"
@@ -180,9 +182,13 @@ export function MatchExplanation({
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Matching Skills ({evidence.matchingSkills.length})
+                {t('matchingSkills', { count: evidence.matchingSkills.length })}
               </h3>
-              <div className="flex flex-wrap gap-2" role="list" aria-label="Matching skills">
+              <div
+                className="flex flex-wrap gap-2"
+                role="list"
+                aria-label={t('matchingSkillsList')}
+              >
                 {evidence.matchingSkills.map((skill, idx) => (
                   <span
                     key={idx}
@@ -201,9 +207,9 @@ export function MatchExplanation({
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
                 <XCircle className="h-4 w-4 text-red-600" />
-                Missing Skills ({evidence.missingSkills.length})
+                {t('missingSkills', { count: evidence.missingSkills.length })}
               </h3>
-              <div className="flex flex-wrap gap-2" role="list" aria-label="Missing skills">
+              <div className="flex flex-wrap gap-2" role="list" aria-label={t('missingSkillsList')}>
                 {evidence.missingSkills.map((skill, idx) => (
                   <span
                     key={idx}
@@ -220,7 +226,9 @@ export function MatchExplanation({
           {/* Relevant Experience */}
           {evidence.relevantExperience.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-gray-900">Relevant Experience</h3>
+              <h3 className="mb-2 text-sm font-semibold text-gray-900">
+                {t('relevantExperience')}
+              </h3>
               <ul className="space-y-1">
                 {evidence.relevantExperience.map((exp, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
@@ -234,7 +242,7 @@ export function MatchExplanation({
 
           {/* Additional Criteria */}
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-gray-900">Other Criteria</h3>
+            <h3 className="mb-2 text-sm font-semibold text-gray-900">{t('otherCriteria')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
                 {evidence.educationMatch ? (
@@ -243,7 +251,7 @@ export function MatchExplanation({
                   <XCircle className="h-4 w-4 text-red-600" />
                 )}
                 <span className="text-sm text-gray-700">
-                  Education: {evidence.educationMatch ? 'Match' : 'No Match'}
+                  {t('education', { result: evidence.educationMatch ? t('match') : t('noMatch') })}
                 </span>
               </div>
 
@@ -254,7 +262,7 @@ export function MatchExplanation({
                   <XCircle className="h-4 w-4 text-red-600" />
                 )}
                 <span className="text-sm text-gray-700">
-                  Location: {evidence.locationMatch ? 'Match' : 'No Match'}
+                  {t('location', { result: evidence.locationMatch ? t('match') : t('noMatch') })}
                 </span>
               </div>
 
@@ -262,7 +270,7 @@ export function MatchExplanation({
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <span className="text-sm text-gray-700">
-                    {evidence.yearsOfExperience} years experience
+                    {t('yearsExperience', { count: evidence.yearsOfExperience })}
                   </span>
                 </div>
               )}

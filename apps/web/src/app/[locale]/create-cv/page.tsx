@@ -1,10 +1,16 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import CreateCVClient from './create-cv-client'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Create CV',
-    description: 'Build your professional CV with AI assistance.',
+    title: t('createCv.title'),
+    description: t('createCv.description'),
   }
 }
 

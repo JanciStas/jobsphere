@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,7 @@ const INDUSTRIES = [
 const COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+']
 
 export function ProfileTab() {
+  const t = useTranslations('settingsTabs.profile')
   const { data: session } = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -84,7 +86,7 @@ export function ProfileTab() {
           videoUrl: data.videoUrl || '',
         })
       } catch {
-        toast.error('Failed to load organization data')
+        toast.error(t('loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -105,13 +107,13 @@ export function ProfileTab() {
       const res = await fetch('/api/upload/logo', { method: 'POST', body })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Upload failed')
+        throw new Error(err.error || t('uploadFailed'))
       }
       const { url } = await res.json()
       setFormData((prev) => ({ ...prev, logo: url }))
-      toast.success('Logo uploaded')
+      toast.success(t('logoUploaded'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to upload logo')
+      toast.error(error instanceof Error ? error.message : t('logoUploadFailed'))
     } finally {
       setLogoUploading(false)
       if (logoInputRef.current) logoInputRef.current.value = ''
@@ -128,13 +130,13 @@ export function ProfileTab() {
       const res = await fetch('/api/upload/video', { method: 'POST', body })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Upload failed')
+        throw new Error(err.error || t('uploadFailed'))
       }
       const { url } = await res.json()
       setFormData((prev) => ({ ...prev, videoUrl: url }))
-      toast.success('Video uploaded')
+      toast.success(t('videoUploaded'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to upload video')
+      toast.error(error instanceof Error ? error.message : t('videoUploadFailed'))
     } finally {
       setVideoUploading(false)
       if (videoInputRef.current) videoInputRef.current.value = ''
@@ -152,14 +154,14 @@ export function ProfileTab() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Failed to generate profile')
+        throw new Error(err.error || t('generateFailed'))
       }
       const { description } = await res.json()
       // Draft only — not persisted until the user hits Save.
       setFormData((prev) => ({ ...prev, description }))
-      toast.success('Návrh popisu vygenerovaný — skontrolujte a uložte')
+      toast.success(t('generated'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to generate profile')
+      toast.error(error instanceof Error ? error.message : t('generateFailed'))
     } finally {
       setGenerating(false)
     }
@@ -180,15 +182,15 @@ export function ProfileTab() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to update organization')
+        throw new Error(error.message || t('updateFailed'))
       }
 
       const updated = await response.json()
       setOrgData(updated)
 
-      toast.success('Organization updated successfully')
+      toast.success(t('updated'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update organization')
+      toast.error(error instanceof Error ? error.message : t('updateFailed'))
     } finally {
       setSaving(false)
     }
@@ -209,22 +211,22 @@ export function ProfileTab() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Building2 className="h-5 w-5" />
-          Company Profile
+          {t('title')}
         </CardTitle>
-        <CardDescription>Update your organization information and branding</CardDescription>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Logo & Video branding */}
         <div className="mb-8 space-y-6">
           {/* Logo */}
           <div className="space-y-2">
-            <Label>Logo</Label>
+            <Label>{t('logo')}</Label>
             <div className="flex items-center gap-4">
               {formData.logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={formData.logo}
-                  alt="Company logo"
+                  alt={t('logoAlt')}
                   className="h-16 w-16 rounded-lg border object-cover"
                 />
               ) : (
@@ -252,16 +254,16 @@ export function ProfileTab() {
                   ) : (
                     <Upload className="mr-2 h-4 w-4" />
                   )}
-                  Upload logo
+                  {t('uploadLogo')}
                 </Button>
-                <p className="text-xs text-muted-foreground">JPG, PNG, WEBP or SVG. Max 5MB.</p>
+                <p className="text-xs text-muted-foreground">{t('logoHint')}</p>
               </div>
             </div>
           </div>
 
           {/* Video */}
           <div className="space-y-2">
-            <Label>Company video</Label>
+            <Label>{t('video')}</Label>
             {formData.videoUrl && (
               <video
                 controls
@@ -290,9 +292,9 @@ export function ProfileTab() {
                 ) : (
                   <Video className="mr-2 h-4 w-4" />
                 )}
-                Upload video
+                {t('uploadVideo')}
               </Button>
-              <p className="text-xs text-muted-foreground">MP4 or WEBM. Max 50MB.</p>
+              <p className="text-xs text-muted-foreground">{t('videoHint')}</p>
             </div>
           </div>
         </div>
@@ -300,7 +302,7 @@ export function ProfileTab() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Company Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Company Name *</Label>
+            <Label htmlFor="name">{t('companyName')}</Label>
             <Input
               id="name"
               value={formData.name}
@@ -312,7 +314,7 @@ export function ProfileTab() {
 
           {/* Website */}
           <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
+            <Label htmlFor="website">{t('website')}</Label>
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-muted-foreground" />
               <Input
@@ -327,18 +329,18 @@ export function ProfileTab() {
 
           {/* Industry */}
           <div className="space-y-2">
-            <Label htmlFor="industry">Industry</Label>
+            <Label htmlFor="industry">{t('industry')}</Label>
             <Select
               value={formData.industry}
               onValueChange={(value) => setFormData({ ...formData, industry: value })}
             >
               <SelectTrigger id="industry">
-                <SelectValue placeholder="Select industry" />
+                <SelectValue placeholder={t('selectIndustry')} />
               </SelectTrigger>
               <SelectContent>
                 {INDUSTRIES.map((industry) => (
                   <SelectItem key={industry} value={industry}>
-                    {industry}
+                    {t(`industries.${industry}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -347,18 +349,18 @@ export function ProfileTab() {
 
           {/* Company Size */}
           <div className="space-y-2">
-            <Label htmlFor="size">Company Size</Label>
+            <Label htmlFor="size">{t('companySize')}</Label>
             <Select
               value={formData.size}
               onValueChange={(value) => setFormData({ ...formData, size: value })}
             >
               <SelectTrigger id="size">
-                <SelectValue placeholder="Select company size" />
+                <SelectValue placeholder={t('selectSize')} />
               </SelectTrigger>
               <SelectContent>
                 {COMPANY_SIZES.map((size) => (
                   <SelectItem key={size} value={size}>
-                    {size} employees
+                    {t('employees', { size })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -368,7 +370,7 @@ export function ProfileTab() {
           {/* Description */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="description">Company Description</Label>
+              <Label htmlFor="description">{t('companyDescription')}</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -381,7 +383,7 @@ export function ProfileTab() {
                 ) : (
                   <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Vygenerovať popis AI
+                {t('generateAi')}
               </Button>
             </div>
             <Textarea
@@ -389,18 +391,16 @@ export function ProfileTab() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              placeholder="Tell us about your company..."
+              placeholder={t('descriptionPlaceholder')}
             />
-            <p className="text-xs text-muted-foreground">
-              This description will be shown on your job postings
-            </p>
+            <p className="text-xs text-muted-foreground">{t('descriptionHint')}</p>
           </div>
 
           {/* Submit Button */}
           <div className="flex items-center gap-4">
             <Button type="submit" disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {t('save')}
             </Button>
             <Button
               type="button"
@@ -419,7 +419,7 @@ export function ProfileTab() {
                 }
               }}
             >
-              Reset
+              {t('reset')}
             </Button>
           </div>
         </form>

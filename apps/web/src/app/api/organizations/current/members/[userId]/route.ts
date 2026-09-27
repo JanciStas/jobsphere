@@ -24,11 +24,14 @@ async function patchHandler(request: Request, context?: { params?: Record<string
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's organization and verify admin role
+    // Scoped to the org the admin is acting in — a user who administers two orgs
+    // must not edit members of whichever one Prisma happens to return first.
     const userOrgRole = await prisma.userOrgRole.findFirst({
       where: {
         userId: session.user.id,
         role: 'ORG_ADMIN',
+        deletedAt: null,
+        ...(session.user.activeOrgId ? { orgId: session.user.activeOrgId } : {}),
       },
     })
 
@@ -46,6 +49,15 @@ async function patchHandler(request: Request, context?: { params?: Record<string
 
     const body = await request.json()
     const { role } = updateRoleSchema.parse(body)
+
+    // A removed member has no role to change (and bumping their sessionEpoch would
+    // sign them out of every other organisation for nothing).
+    const target = await prisma.userOrgRole.findFirst({
+      where: { userId: params.userId, orgId: userOrgRole.orgId, deletedAt: null },
+    })
+    if (!target) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
 
     // Update the member's role and revoke their active sessions (AUTH-001) so the
     // new role takes effect immediately instead of after the JWT naturally expires.
@@ -101,11 +113,13 @@ async function deleteHandler(request: Request, context?: { params?: Record<strin
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's organization and verify admin role
+    // Scoped to the org the admin is acting in (see patchHandler).
     const userOrgRole = await prisma.userOrgRole.findFirst({
       where: {
         userId: session.user.id,
         role: 'ORG_ADMIN',
+        deletedAt: null,
+        ...(session.user.activeOrgId ? { orgId: session.user.activeOrgId } : {}),
       },
     })
 
@@ -124,32 +138,35 @@ async function deleteHandler(request: Request, context?: { params?: Record<strin
       )
     }
 
-    // Check if member exists
-    const member = await prisma.userOrgRole.findUnique({
-      where: {
-        userId_orgId: {
-          userId: params.userId,
-          orgId: userOrgRole.orgId,
-        },
-      },
+    // findFirst (not findUnique) so an already-removed member reads as not found.
+    const member = await prisma.userOrgRole.findFirst({
+      where: { userId: params.userId, orgId: userOrgRole.orgId, deletedAt: null },
     })
 
     if (!member) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // Soft delete by setting deletedAt
-    await prisma.userOrgRole.update({
-      where: {
-        userId_orgId: {
-          userId: params.userId,
-          orgId: userOrgRole.orgId,
+    // Soft delete, and revoke the member's sessions in the same transaction
+    // (AUTH-001): their JWT caches the membership list, so without the epoch bump a
+    // removed member keeps working until the token expires.
+    await prisma.$transaction([
+      prisma.userOrgRole.update({
+        where: {
+          userId_orgId: {
+            userId: params.userId,
+            orgId: userOrgRole.orgId,
+          },
         },
-      },
-      data: {
-        deletedAt: new Date(),
-      },
-    })
+        data: {
+          deletedAt: new Date(),
+        },
+      }),
+      prisma.user.update({
+        where: { id: params.userId },
+        data: { sessionEpoch: { increment: 1 } },
+      }),
+    ])
 
     return NextResponse.json({ message: 'Member removed successfully' })
   } catch (error) {

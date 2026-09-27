@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 interface EmailSequence {
   id: string
@@ -29,6 +30,7 @@ interface EmailSequence {
 }
 
 export default function SequencesClient() {
+  const t = useTranslations('sequencesPage')
   const [sequences, setSequences] = useState<EmailSequence[]>([])
   const [selectedSequenceId, setSelectedSequenceId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -75,13 +77,13 @@ export default function SequencesClient() {
   const loadSequences = async () => {
     try {
       const response = await fetch('/api/sequences')
-      if (!response.ok) throw new Error('Failed to load sequences')
+      if (!response.ok) throw new Error(t('loadFailed'))
 
       const data = await response.json()
       setSequences(data.sequences)
     } catch (error) {
-      toast.error('Error', {
-        description: error instanceof Error ? error.message : 'Failed to load sequences',
+      toast.error(t('error'), {
+        description: error instanceof Error ? error.message : t('loadFailed'),
       })
     } finally {
       setIsLoading(false)
@@ -108,7 +110,7 @@ export default function SequencesClient() {
   const handleNewSequence = () => {
     setSelectedSequenceId(null)
     reset({
-      name: 'New Email Sequence',
+      name: t('defaultName'),
       description: '',
       active: false,
       steps: [
@@ -139,20 +141,20 @@ export default function SequencesClient() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to save sequence')
+        throw new Error(error.error || t('saveFailed'))
       }
 
       const result = await response.json()
 
-      toast.success('Success!', {
-        description: isNew ? 'Email sequence created' : 'Email sequence updated',
+      toast.success(t('success'), {
+        description: isNew ? t('created') : t('updated'),
       })
 
       await loadSequences()
       setSelectedSequenceId(result.sequence.id)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save sequence'
-      toast.error('Error', { description: message })
+      const message = error instanceof Error ? error.message : t('saveFailed')
+      toast.error(t('error'), { description: message })
     } finally {
       setIsSubmitting(false)
     }
@@ -182,12 +184,12 @@ export default function SequencesClient() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-4xl font-bold">Email Sequences</h1>
-            <p className="text-xl text-muted-foreground">Automate candidate engagement campaigns</p>
+            <h1 className="mb-2 text-4xl font-bold">{t('title')}</h1>
+            <p className="text-xl text-muted-foreground">{t('subtitle')}</p>
           </div>
           <Button onClick={handleNewSequence}>
             <Plus className="mr-2 h-4 w-4" />
-            New Sequence
+            {t('newSequence')}
           </Button>
         </div>
 
@@ -195,11 +197,11 @@ export default function SequencesClient() {
           {/* Sequences List */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle className="text-lg">Your Sequences</CardTitle>
+              <CardTitle className="text-lg">{t('yourSequences')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {sequences.length === 0 && (
-                <p className="py-4 text-center text-sm text-muted-foreground">No sequences yet</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">{t('noSequences')}</p>
               )}
               {sequences.map((seq) => (
                 <button
@@ -212,11 +214,13 @@ export default function SequencesClient() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-medium">{seq.name}</p>
-                      <p className="text-sm text-muted-foreground">{seq.steps.length} steps</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('stepsCount', { count: seq.steps.length })}
+                      </p>
                     </div>
                     {seq.active && (
                       <Badge variant="default" className="text-xs">
-                        Active
+                        {t('active')}
                       </Badge>
                     )}
                   </div>
@@ -231,27 +235,23 @@ export default function SequencesClient() {
               {/* Basic Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Sequence Details</CardTitle>
+                  <CardTitle>{t('details')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Sequence Name</Label>
-                    <Input
-                      id="name"
-                      {...register('name')}
-                      placeholder="e.g., Welcome & Follow-up Series"
-                    />
+                    <Label htmlFor="name">{t('sequenceName')}</Label>
+                    <Input id="name" {...register('name')} placeholder={t('namePlaceholder')} />
                     {errors.name && (
                       <p className="mt-1 text-sm text-destructive">{errors.name.message}</p>
                     )}
                   </div>
 
                   <div>
-                    <Label htmlFor="description">Description (Optional)</Label>
+                    <Label htmlFor="description">{t('descriptionOptional')}</Label>
                     <textarea
                       id="description"
                       {...register('description')}
-                      placeholder="Brief description of this email sequence..."
+                      placeholder={t('descriptionPlaceholder')}
                       className="min-h-[80px] w-full rounded-md border px-3 py-2"
                       rows={3}
                     />
@@ -265,7 +265,7 @@ export default function SequencesClient() {
                       className="h-4 w-4"
                     />
                     <Label htmlFor="active" className="font-normal">
-                      Active (automatically send to new candidates)
+                      {t('activeLabel')}
                     </Label>
                   </div>
                 </CardContent>
@@ -274,10 +274,12 @@ export default function SequencesClient() {
               {/* Steps */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Email Steps ({steps.length})</h2>
+                  <h2 className="text-2xl font-semibold">
+                    {t('emailSteps', { count: steps.length })}
+                  </h2>
                   <Button type="button" onClick={addStep} variant="outline" size="sm">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Step
+                    {t('addStep')}
                   </Button>
                 </div>
 
@@ -290,10 +292,10 @@ export default function SequencesClient() {
                             {index + 1}
                           </div>
                           <CardTitle className="text-lg">
-                            Step {index + 1}
+                            {t('step', { number: index + 1 })}
                             {watch(`steps.${index}.dayOffset`) !== undefined && (
                               <span className="ml-2 text-sm font-normal text-muted-foreground">
-                                (Day {watch(`steps.${index}.dayOffset`)})
+                                ({t('day', { day: watch(`steps.${index}.dayOffset`) })})
                               </span>
                             )}
                           </CardTitle>
@@ -302,7 +304,7 @@ export default function SequencesClient() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          aria-label={`Delete step ${index + 1}`}
+                          aria-label={t('deleteStep', { number: index + 1 })}
                           onClick={() => removeStep(index)}
                           disabled={steps.length === 1}
                         >
@@ -313,16 +315,16 @@ export default function SequencesClient() {
                     <CardContent className="space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                          <Label>Step Name (Optional)</Label>
+                          <Label>{t('stepNameOptional')}</Label>
                           <Input
                             {...register(`steps.${index}.name`)}
-                            placeholder={`Step ${index + 1}`}
+                            placeholder={t('step', { number: index + 1 })}
                           />
                         </div>
                         <div>
                           <Label>
                             <Clock className="mr-1 inline h-4 w-4" />
-                            Send after (days)
+                            {t('sendAfterDays')}
                           </Label>
                           <Input
                             type="number"
@@ -338,8 +340,11 @@ export default function SequencesClient() {
                       </div>
 
                       <div>
-                        <Label>Email Subject</Label>
-                        <Input {...register(`steps.${index}.subject`)} placeholder="Subject line" />
+                        <Label>{t('emailSubject')}</Label>
+                        <Input
+                          {...register(`steps.${index}.subject`)}
+                          placeholder={t('subjectPlaceholder')}
+                        />
                         {errors.steps?.[index]?.subject && (
                           <p className="mt-1 text-sm text-destructive">
                             {errors.steps[index]?.subject?.message}
@@ -348,10 +353,10 @@ export default function SequencesClient() {
                       </div>
 
                       <div>
-                        <Label>Email Body</Label>
+                        <Label>{t('emailBody')}</Label>
                         <textarea
                           {...register(`steps.${index}.bodyTemplate`)}
-                          placeholder="Email content with variables..."
+                          placeholder={t('bodyPlaceholder')}
                           className="min-h-[150px] w-full rounded-md border px-3 py-2 font-mono text-sm"
                           rows={8}
                         />
@@ -363,7 +368,7 @@ export default function SequencesClient() {
                         <div className="mt-2 rounded-lg bg-muted p-3 text-xs">
                           <p className="flex items-center gap-1 font-medium">
                             <Info className="h-3 w-3" />
-                            Available variables:
+                            {t('availableVariables')}
                           </p>
                           <p className="mt-1 text-muted-foreground">
                             {'{{candidateName}}'}, {'{{jobTitle}}'}, {'{{companyName}}'}
@@ -377,7 +382,7 @@ export default function SequencesClient() {
                 {steps.length === 0 && (
                   <Card>
                     <CardContent className="py-12 text-center text-muted-foreground">
-                      <p>No steps yet. Click &quot;Add Step&quot; to create one.</p>
+                      <p>{t('noSteps')}</p>
                     </CardContent>
                   </Card>
                 )}
@@ -386,18 +391,18 @@ export default function SequencesClient() {
               {/* Submit */}
               <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={() => reset()}>
-                  Reset
+                  {t('reset')}
                 </Button>
                 <Button type="submit" disabled={isSubmitting || steps.length === 0}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      {t('saving')}
                     </>
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Save Sequence
+                      {t('save')}
                     </>
                   )}
                 </Button>

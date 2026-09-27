@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import TakeAssessmentClient from './take-assessment-client'
 
@@ -5,10 +6,15 @@ type Props = {
   params: { id: string }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Take Assessment',
-    description: 'Complete your skills assessment.',
+    title: t('takeAssessment.title'),
+    description: t('takeAssessment.description'),
   }
 }
 

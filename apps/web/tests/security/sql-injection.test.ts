@@ -357,15 +357,25 @@ describe('SQL Injection Prevention Tests', () => {
     it('should prevent SQL injection in $queryRaw with template literals', async () => {
       const maliciousId = '1\'; DROP TABLE "User"--'
 
-      // Prisma $queryRaw with template literals automatically parameterizes
-      await expect(async () => {
-        const result = await prisma.$queryRaw<any[]>`
-          SELECT * FROM "User" WHERE id = ${maliciousId}
-        `
+      // Prisma $queryRaw with template literals parameterises, so the payload is
+      // compared as a string value and matches no row.
+      //
+      // This test previously read `await expect(async () => { … }).resolves.not.toThrow()`.
+      // `.resolves` requires a Promise; handed a function it threw
+      // "You must provide a Promise to expect() when using .resolves" before the
+      // query was ever sent. The red result had nothing to do with SQL injection.
+      const usersBefore = await prisma.user.count()
 
-        // Should safely parameterize and return empty result
-        expect(Array.isArray(result)).toBe(true)
-      }).resolves.not.toThrow()
+      const result = await prisma.$queryRaw<any[]>`
+        SELECT * FROM "User" WHERE id = ${maliciousId}
+      `
+
+      expect(Array.isArray(result)).toBe(true)
+      expect(result.length).toBe(0)
+
+      // The payload ends in DROP TABLE. If it had executed, this count would fail
+      // with `relation "User" does not exist` instead of returning a number.
+      expect(await prisma.user.count()).toBe(usersBefore)
     })
 
     it('should prevent SQL injection in vector similarity queries', async () => {
@@ -714,11 +724,21 @@ describe('SQL Injection Prevention Tests', () => {
     it('should handle null bytes in input', async () => {
       const payload = 'test\x00@example.com'
 
-      const result = await prisma.user.findFirst({
-        where: { email: payload },
-      })
+      // Postgres cannot represent a NUL byte in text. The wire protocol rejects it
+      // with 22021 (`invalid byte sequence for encoding "UTF8": 0x00`) before any
+      // SQL is parsed, so the old assertion — `expect(result).toBeNull()` — was
+      // unreachable: the call always threw, and the test could never pass.
+      //
+      // For injection safety what matters is that the value is refused *by the
+      // database* rather than being interpreted as SQL, and that the connection
+      // survives. The app layer never reaches this: every route validates its body
+      // through Zod first, and a NUL fails the string checks there.
+      await expect(prisma.user.findFirst({ where: { email: payload } })).rejects.toThrow(
+        /invalid byte sequence|22021/,
+      )
 
-      expect(result).toBeNull()
+      // The connection was not poisoned — an ordinary query still works.
+      await expect(prisma.user.count()).resolves.toBeTypeOf('number')
     })
 
     it('should handle Unicode escaping attempts', async () => {

@@ -44,7 +44,7 @@ export const POST = withCsrfProtection(
 
         // Get user's organizations
         const userOrgs = await prisma.userOrgRole.findMany({
-          where: { userId: session.user.id },
+          where: { userId: session.user.id, deletedAt: null },
           select: { orgId: true },
         })
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -23,9 +24,10 @@ const updateBranchSchema = z.object({
 // result so handlers can early-return the right status.
 async function loadBranchInOrg(
   userId: string,
+  activeOrgId: string | null | undefined,
   branchId: string,
 ): Promise<{ ok: true; orgId: string } | { ok: false; status: 401 | 403 | 404; error: string }> {
-  const userOrgRole = await prisma.userOrgRole.findFirst({ where: { userId } })
+  const userOrgRole = await resolveActiveMembership(userId, activeOrgId)
   if (!userOrgRole) {
     return { ok: false, status: 404, error: 'Organization not found' }
   }
@@ -53,7 +55,11 @@ export const PATCH = withCsrfProtection(
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const access = await loadBranchInOrg(session.user.id, params.branchId)
+        const access = await loadBranchInOrg(
+          session.user.id,
+          session.user.activeOrgId,
+          params.branchId,
+        )
         if (!access.ok) {
           return NextResponse.json({ error: access.error }, { status: access.status })
         }
@@ -112,7 +118,11 @@ export const DELETE = withCsrfProtection(
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const access = await loadBranchInOrg(session.user.id, params.branchId)
+        const access = await loadBranchInOrg(
+          session.user.id,
+          session.user.activeOrgId,
+          params.branchId,
+        )
         if (!access.ok) {
           return NextResponse.json({ error: access.error }, { status: access.status })
         }

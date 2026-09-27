@@ -124,7 +124,9 @@ export const POST = withCsrfProtection(
           await tx.userOrgRole.upsert({
             where: { userId_orgId: { userId: user.id, orgId: organization.id } },
             create: { userId: user.id, orgId: organization.id, role: memberRole },
-            update: { role: memberRole },
+            // deletedAt: null reinstates a previously removed member; without it the
+            // invite reported success while the member stayed removed.
+            update: { role: memberRole, deletedAt: null },
           })
 
           return { organization, userEmail: user.email, isNewUser, actionUrl }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 
 type DsarAction = 'EXECUTE_DELETE' | 'MARK_COMPLETED' | 'REJECT'
@@ -24,21 +25,19 @@ export function DsarActionButton({
   variant?: 'outline' | 'destructive' | 'default'
 }) {
   const router = useRouter()
+  const t = useTranslations('adminGdpr')
   const [loading, setLoading] = useState(false)
 
   async function run() {
     // Erasure is irreversible and hard-deletes another person's data. The one
     // action that cannot be undone gets the one confirmation.
-    if (
-      action === 'EXECUTE_DELETE' &&
-      !confirm('Trvale vymazať všetky osobné údaje tejto osoby? Akcia sa nedá vrátiť.')
-    ) {
+    if (action === 'EXECUTE_DELETE' && !confirm(t('confirmDelete'))) {
       return
     }
 
     let rejectionReason: string | undefined
     if (action === 'REJECT') {
-      const reason = prompt('Dôvod zamietnutia (uloží sa k žiadosti):')
+      const reason = prompt(t('rejectPrompt'))
       if (reason === null) return
       rejectionReason = reason || undefined
     }
@@ -52,7 +51,7 @@ export function DsarActionButton({
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        alert(data.error ?? 'Chyba')
+        alert(data.error ?? t('error'))
         return
       }
       router.refresh()
@@ -63,7 +62,7 @@ export function DsarActionButton({
 
   return (
     <Button variant={variant} size="sm" disabled={loading} onClick={run}>
-      {loading ? 'Pracujem…' : label}
+      {loading ? t('working') : label}
     </Button>
   )
 }

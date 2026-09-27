@@ -1,10 +1,16 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import SettingsClient from './settings-client'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Company Settings',
-    description: 'Manage your organization settings, team members, and billing.',
+    title: t('companySettings.title'),
+    description: t('companySettings.description'),
   }
 }
 

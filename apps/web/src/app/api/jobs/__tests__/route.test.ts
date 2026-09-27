@@ -111,6 +111,25 @@ describe('POST /api/jobs — PR5', () => {
     )
   })
 
+  it('resolves the caller’s org from live memberships only, preferring the active org', async () => {
+    asMock(requireAuth).mockResolvedValue({ user: { id: 'u1', activeOrgId: 'org-b' } })
+    asMock(prisma.user.findUnique).mockResolvedValue({
+      organizations: [
+        { orgId: 'org-a', role: 'ORG_ADMIN', organization: { id: 'org-a' } },
+        { orgId: 'org-b', role: 'ORG_ADMIN', organization: { id: 'org-b' } },
+      ],
+    })
+
+    const res = await POST(req(base))
+
+    expect(res.status).toBe(201)
+    // Nested includes bypass the soft-delete middleware: a removed member must be
+    // filtered out in the query itself.
+    const include = asMock(prisma.user.findUnique).mock.calls[0][0].include
+    expect(include.organizations.where).toEqual({ deletedAt: null })
+    expect(lastCreateData().orgId ?? lastCreateData().organization?.connect?.id).toBe('org-b')
+  })
+
   it('rejects an assigned recruiter who is not a member of the org (400, no create)', async () => {
     asMock(prisma.userOrgRole.findFirst).mockResolvedValue(null)
 

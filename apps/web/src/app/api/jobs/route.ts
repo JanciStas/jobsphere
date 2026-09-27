@@ -220,7 +220,11 @@ export const POST = withCsrfProtection(
         const userWithOrg = await prisma.user.findUnique({
           where: { id: session.user.id },
           include: {
+            // Nested includes bypass the soft-delete middleware, so a removed
+            // member has to be excluded here by hand (audit A1).
             organizations: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: 'asc' },
               include: {
                 organization: true,
               },
@@ -228,7 +232,10 @@ export const POST = withCsrfProtection(
           },
         })
 
-        const membership = userWithOrg?.organizations?.[0]
+        // Prefer the org the user is currently acting in over the first row.
+        const memberships = userWithOrg?.organizations ?? []
+        const membership =
+          memberships.find((m) => m.orgId === session.user.activeOrgId) ?? memberships[0]
 
         if (!membership?.organization) {
           return NextResponse.json(

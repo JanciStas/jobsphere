@@ -119,30 +119,17 @@ async function handleResendWebhook(event: any) {
   const emailId = data.headers?.['X-Email-ID'] || data.tags?.emailId
 
   if (emailId) {
-    const run = await prisma.emailSequenceRun.findFirst({
-      where: { id: emailId },
+    // An event row implies its run exists (FK), so there is no separate run lookup.
+    const lastEvent = await prisma.emailSequenceEvent.findFirst({
+      where: { runId: emailId },
+      orderBy: { at: 'desc' },
+      select: { stepId: true },
     })
 
-    if (run) {
-      // Fetch the latest event separately since events is not a direct relation on EmailSequenceRun
-      const events = await prisma.emailSequenceEvent.findMany({
-        where: { runId: run.id },
-        orderBy: { at: 'desc' },
-        take: 1,
+    if (lastEvent) {
+      await prisma.emailSequenceEvent.create({
+        data: { runId: emailId, stepId: lastEvent.stepId, kind, metadata: data },
       })
-
-      const lastEvent = events[0]
-
-      if (lastEvent) {
-        await prisma.emailSequenceEvent.create({
-          data: {
-            runId: run.id,
-            stepId: lastEvent.stepId,
-            kind,
-            metadata: data,
-          },
-        })
-      }
     }
   }
 
@@ -150,36 +137,38 @@ async function handleResendWebhook(event: any) {
 }
 
 async function handleSendGridWebhook(events: any[]) {
-  for (const event of events) {
-    const kind = event.event?.toUpperCase()
-    const emailId = event.emailId || event['X-Email-ID']
+  // SendGrid batches 100+ events per request. This used to run three queries per
+  // event in a loop; now it is one lookup for the latest step of every run plus
+  // one bulk insert.
+  const pending = events
+    .map((event) => ({
+      event,
+      kind: event.event?.toUpperCase() as string | undefined,
+      runId: (event.emailId || event['X-Email-ID']) as string | undefined,
+    }))
+    .filter((e): e is { event: any; kind: string; runId: string } => Boolean(e.runId && e.kind))
 
-    if (emailId && kind) {
-      const run = await prisma.emailSequenceRun.findFirst({
-        where: { id: emailId },
-      })
+  if (pending.length > 0) {
+    const runIds = [...new Set(pending.map((e) => e.runId))]
+    const latest = await prisma.emailSequenceEvent.findMany({
+      where: { runId: { in: runIds } },
+      orderBy: [{ runId: 'asc' }, { at: 'desc' }],
+      distinct: ['runId'],
+      select: { runId: true, stepId: true },
+    })
+    const stepByRun = new Map(latest.map((row) => [row.runId, row.stepId]))
 
-      if (run) {
-        // Fetch the latest event separately since events is not a direct relation on EmailSequenceRun
-        const events = await prisma.emailSequenceEvent.findMany({
-          where: { runId: run.id },
-          orderBy: { at: 'desc' },
-          take: 1,
-        })
+    const data = pending
+      .filter((e) => stepByRun.has(e.runId))
+      .map((e) => ({
+        runId: e.runId,
+        stepId: stepByRun.get(e.runId) as string,
+        kind: e.kind,
+        metadata: e.event,
+      }))
 
-        const lastEvent = events[0]
-
-        if (lastEvent) {
-          await prisma.emailSequenceEvent.create({
-            data: {
-              runId: run.id,
-              stepId: lastEvent.stepId,
-              kind,
-              metadata: event,
-            },
-          })
-        }
-      }
+    if (data.length > 0) {
+      await prisma.emailSequenceEvent.createMany({ data })
     }
   }
 

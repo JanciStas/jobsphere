@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/rate-limit'
@@ -37,15 +38,8 @@ export const GET = withRateLimit(
       }
 
       // Get user's organization to access settings
-      const userOrgRole = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
-        include: {
-          organization: {
-            select: {
-              settings: true,
-            },
-          },
-        },
+      const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId, {
+        organization: { select: { settings: true } },
       })
 
       if (!userOrgRole) {
@@ -77,9 +71,7 @@ export const PATCH = withCsrfProtection(
         }
 
         // Get user's organization
-        const userOrgRole = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-        })
+        const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
         if (!userOrgRole) {
           return NextResponse.json({ error: 'Organization not found' }, { status: 404 })

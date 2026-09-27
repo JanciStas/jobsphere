@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,8 +29,8 @@ function typeIcon(type: string) {
   return <MapPin className="h-4 w-4" />
 }
 
-async function getInterviews(userId: string) {
-  const userOrgRole = await prisma.userOrgRole.findFirst({ where: { userId } })
+async function getInterviews(userId: string, activeOrgId?: string | null) {
+  const userOrgRole = await resolveActiveMembership(userId, activeOrgId)
   if (!userOrgRole) return null
 
   // Upcoming interviews from the start of today onward, scoped to the caller's org.
@@ -70,7 +71,7 @@ export default async function EmployerCalendarPage({ params }: { params: { local
     redirect(`/${params.locale}/login`)
   }
 
-  const result = await getInterviews(session.user.id)
+  const result = await getInterviews(session.user.id, session.user.activeOrgId)
   if (!result) {
     redirect(`/${params.locale}/dashboard`)
   }

@@ -210,8 +210,9 @@ export const authOptions: NextAuthOptions = {
           // candidate/freelancer identities.
           const [memberships, dbUser] = await Promise.all([
             prisma.userOrgRole.findMany({
-              where: { userId: user.id },
+              where: { userId: user.id, deletedAt: null },
               include: { organization: { select: { id: true, name: true } } },
+              orderBy: { createdAt: 'asc' },
             }),
             prisma.user.findUnique({
               where: { id: user.id },

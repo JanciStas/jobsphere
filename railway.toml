@@ -1,50 +1,27 @@
-# Railway Configuration for JobSphere Backend
-# Deploy API + Workers together
+# Railway configuration for the JobSphere background WORKER.
+#
+# The web app runs on Vercel. Vercel cannot host a long-lived process, so the BullMQ
+# workers + cron scheduler (apps/web/src/workers/index.ts, started with
+# `yarn workers`) are built by Dockerfile.worker and deployed here — see
+# remediation/worker-deploy-runbook.md.
+#
+# (The previous version of this file installed with pnpm and started
+# `@jobsphere/api` / `@jobsphere/workers`; those trees are not in the yarn
+# workspaces, so the deploy could never have built.)
 
 [build]
-builder = "NIXPACKS"
-buildCommand = "pnpm install && pnpm build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.worker"
 
 [deploy]
 numReplicas = 1
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# API Service
-[[services]]
-name = "api"
-startCommand = "pnpm --filter @jobsphere/api start"
-
-[services.healthcheck]
-path = "/health"
-port = 4000
-interval = 30
-timeout = 10
-
-[[services.ports]]
-port = 4000
-protocol = "http"
-
-# Workers Service (runs alongside API)
-[[services]]
-name = "workers"
-startCommand = "pnpm --filter @jobsphere/workers start"
-
-[services.healthcheck]
-# Workers don't have HTTP endpoint, use Redis connection check
-command = "redis-cli -u $REDIS_URL ping"
-interval = 30
-timeout = 10
-
-# Environment Variables (set in Railway dashboard)
-# DATABASE_URL
-# REDIS_URL
-# ANTHROPIC_API_KEY
-# JWT_SECRET
-# COOKIE_SECRET
-# STRIPE_SECRET_KEY
-# STRIPE_WEBHOOK_SECRET
-# S3_BUCKET
-# S3_ACCESS_KEY
-# S3_SECRET_KEY
-# NEXT_PUBLIC_APP_URL (Vercel URL)
+# Environment variables (set in the Railway dashboard) — must point at the SAME
+# Redis and Postgres as the Vercel deployment:
+#   DATABASE_URL
+#   REDIS_URL
+#   ANTHROPIC_API_KEY / OPENAI_API_KEY (embeddings) / OPENROUTER_API_KEY
+#   EMAIL_SERVICE + RESEND_API_KEY or SENDGRID_API_KEY, EMAIL_FROM
+#   ENCRYPTION_KEY

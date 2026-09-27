@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ApplicationsTrendProps {
@@ -19,10 +20,11 @@ interface ApplicationsTrendProps {
 }
 
 export function ApplicationsTrend({ data }: ApplicationsTrendProps) {
+  const t = useTranslations('miscAnalytics')
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Applications Over Time</CardTitle>
+        <CardTitle>{t('applicationsOverTime')}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>

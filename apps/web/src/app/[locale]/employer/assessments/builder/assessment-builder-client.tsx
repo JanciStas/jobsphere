@@ -27,6 +27,7 @@ export default function AssessmentBuilderClient() {
   const params = useParams()
   const locale = (params?.locale as string) || 'en'
   const t = useTranslations('employer')
+  const tb = useTranslations('assessmentBuilder')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]))
   // AI draft generation state.
@@ -93,6 +94,22 @@ export default function AssessmentBuilderClient() {
     setExpandedSections((prev) => new Set(prev).add(newIndex))
   }
 
+  // Validation used to fail silently: errors on a question inside a collapsed
+  // section were never rendered, so the submit button just did nothing.
+  const onInvalid = (formErrors: Record<string, unknown>) => {
+    const sectionErrors = formErrors.sections
+    if (Array.isArray(sectionErrors)) {
+      const withErrors: number[] = []
+      sectionErrors.forEach((entry, index) => {
+        if (entry) withErrors.push(index)
+      })
+      if (withErrors.length > 0) {
+        setExpandedSections((prev) => new Set([...prev, ...withErrors]))
+      }
+    }
+    toast.error(tb('fixFields'))
+  }
+
   const onSubmit = async (data: CreateAssessmentInput) => {
     try {
       setIsSubmitting(true)
@@ -126,13 +143,13 @@ export default function AssessmentBuilderClient() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to create assessment')
+        throw new Error(error.error || tb('createFailed'))
       }
 
       const result = await response.json()
 
-      toast.success('Assessment created successfully!', {
-        description: `Created assessment with ${result.assessment.sections.length} sections`,
+      toast.success(tb('createdSuccess'), {
+        description: tb('createdDescription', { count: result.assessment.sections.length }),
       })
 
       // Was `/employer/assessments/${result.assessment.id}` — wrong twice over:
@@ -141,8 +158,8 @@ export default function AssessmentBuilderClient() {
       // assessment therefore ended on a 404 even though it had been created.
       router.push(`/${locale}/employer/assessments/${result.assessment.id}/results`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create assessment'
-      toast.error('Error', { description: message })
+      const message = error instanceof Error ? error.message : tb('createFailed')
+      toast.error(tb('error'), { description: message })
     } finally {
       setIsSubmitting(false)
     }
@@ -150,7 +167,7 @@ export default function AssessmentBuilderClient() {
 
   const onGenerate = async () => {
     if (!genJobTitle.trim() || !genJobDescription.trim()) {
-      toast.error('Add a job title and description first')
+      toast.error(tb('addTitleDescFirst'))
       return
     }
     try {
@@ -166,7 +183,7 @@ export default function AssessmentBuilderClient() {
       })
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
-        throw new Error(error.error || 'Failed to generate assessment')
+        throw new Error(error.error || tb('generateFailed'))
       }
       const { assessment } = await response.json()
       // Load the AI draft into the form. Expand every generated section.
@@ -180,12 +197,12 @@ export default function AssessmentBuilderClient() {
         sections: assessment.sections ?? [],
       })
       setExpandedSections(new Set((assessment.sections ?? []).map((_: unknown, i: number) => i)))
-      toast.success('Draft generated', {
-        description: `Review and edit the ${assessment.sections?.length ?? 0} generated section(s) before saving.`,
+      toast.success(tb('draftGenerated'), {
+        description: tb('draftGeneratedDescription', { count: assessment.sections?.length ?? 0 }),
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to generate assessment'
-      toast.error('Error', { description: message })
+      const message = error instanceof Error ? error.message : tb('generateFailed')
+      toast.error(tb('error'), { description: message })
     } finally {
       setIsGenerating(false)
     }
@@ -202,10 +219,8 @@ export default function AssessmentBuilderClient() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="mb-4 text-4xl font-bold">Create Assessment</h1>
-          <p className="text-xl text-muted-foreground">
-            Build skills assessments with sections and questions
-          </p>
+          <h1 className="mb-4 text-4xl font-bold">{tb('pageTitle')}</h1>
+          <p className="text-xl text-muted-foreground">{tb('pageSubtitle')}</p>
         </div>
 
         {/* AI Generation Card — sits outside the form so its inputs don't submit it */}
@@ -213,30 +228,27 @@ export default function AssessmentBuilderClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Generate with AI
+              {tb('generateHeading')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Paste a job title and description and let AI draft the sections and questions. You can
-              edit everything before saving.
-            </p>
+            <p className="text-sm text-muted-foreground">{tb('generateHelp')}</p>
             <div>
-              <Label htmlFor="genJobTitle">Job Title</Label>
+              <Label htmlFor="genJobTitle">{tb('jobTitle')}</Label>
               <Input
                 id="genJobTitle"
                 value={genJobTitle}
                 onChange={(e) => setGenJobTitle(e.target.value)}
-                placeholder="e.g., Senior React Developer"
+                placeholder={tb('jobTitlePlaceholder')}
               />
             </div>
             <div>
-              <Label htmlFor="genJobDescription">Job Description</Label>
+              <Label htmlFor="genJobDescription">{tb('jobDescription')}</Label>
               <textarea
                 id="genJobDescription"
                 value={genJobDescription}
                 onChange={(e) => setGenJobDescription(e.target.value)}
-                placeholder="Paste the role responsibilities and required skills..."
+                placeholder={tb('jobDescriptionPlaceholder')}
                 className="min-h-[120px] w-full rounded-md border px-3 py-2"
                 rows={4}
               />
@@ -245,7 +257,7 @@ export default function AssessmentBuilderClient() {
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  {tb('generating')}
                 </>
               ) : (
                 <>
@@ -257,19 +269,19 @@ export default function AssessmentBuilderClient() {
           </CardContent>
         </Card>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-5xl space-y-6">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mx-auto max-w-5xl space-y-6">
           {/* Basic Info Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>{tb('basicInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="name">Assessment Name</Label>
+                <Label htmlFor="name">{tb('assessmentName')}</Label>
                 <Input
                   id="name"
                   {...register('name')}
-                  placeholder="e.g., Senior JavaScript Developer Test"
+                  placeholder={tb('assessmentNamePlaceholder')}
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-destructive">{errors.name.message}</p>
@@ -277,11 +289,11 @@ export default function AssessmentBuilderClient() {
               </div>
 
               <div>
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description">{tb('descriptionOptional')}</Label>
                 <textarea
                   id="description"
                   {...register('description')}
-                  placeholder="Brief description of this assessment..."
+                  placeholder={tb('descriptionPlaceholder')}
                   className="min-h-[80px] w-full rounded-md border px-3 py-2"
                   rows={3}
                 />
@@ -289,7 +301,7 @@ export default function AssessmentBuilderClient() {
 
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <Label htmlFor="durationMin">Duration (minutes)</Label>
+                  <Label htmlFor="durationMin">{tb('duration')}</Label>
                   <Input
                     id="durationMin"
                     type="number"
@@ -302,7 +314,7 @@ export default function AssessmentBuilderClient() {
                 </div>
 
                 <div>
-                  <Label htmlFor="passingScore">Passing Score (%)</Label>
+                  <Label htmlFor="passingScore">{tb('passingScore')}</Label>
                   <Input
                     id="passingScore"
                     type="number"
@@ -315,17 +327,17 @@ export default function AssessmentBuilderClient() {
                 </div>
 
                 <div>
-                  <Label htmlFor="locale">Language</Label>
+                  <Label htmlFor="locale">{tb('language')}</Label>
                   <select
                     id="locale"
                     {...register('locale')}
                     className="w-full rounded-md border px-3 py-2"
                   >
-                    <option value="en">English</option>
-                    <option value="de">German</option>
-                    <option value="sk">Slovak</option>
-                    <option value="cs">Czech</option>
-                    <option value="pl">Polish</option>
+                    <option value="en">{tb('langEn')}</option>
+                    <option value="de">{tb('langDe')}</option>
+                    <option value="sk">{tb('langSk')}</option>
+                    <option value="cs">{tb('langCs')}</option>
+                    <option value="pl">{tb('langPl')}</option>
                   </select>
                 </div>
               </div>
@@ -338,7 +350,7 @@ export default function AssessmentBuilderClient() {
                   className="h-4 w-4"
                 />
                 <Label htmlFor="randomize" className="font-normal">
-                  Randomize question order
+                  {tb('randomize')}
                 </Label>
               </div>
             </CardContent>
@@ -348,11 +360,14 @@ export default function AssessmentBuilderClient() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">
-                Sections ({sections.length}) - {totalQuestions} questions total
+                {tb('sectionsHeading', {
+                  sections: sections.length,
+                  questions: totalQuestions ?? 0,
+                })}
               </h2>
               <Button type="button" onClick={addSection} variant="outline">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Section
+                {tb('addSection')}
               </Button>
             </div>
 
@@ -373,7 +388,7 @@ export default function AssessmentBuilderClient() {
             {sections.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  <p>No sections yet. Click &quot;Add Section&quot; to get started.</p>
+                  <p>{tb('noSections')}</p>
                 </CardContent>
               </Card>
             )}
@@ -382,18 +397,18 @@ export default function AssessmentBuilderClient() {
           {/* Submit Button */}
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
+              {tb('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting || sections.length === 0}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {tb('creating')}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Create Assessment
+                  {tb('createButton')}
                 </>
               )}
             </Button>
@@ -429,6 +444,7 @@ function SectionEditor({
   toggleExpanded: () => void
   watch: any
 }) {
+  const tb = useTranslations('assessmentBuilder')
   const {
     fields: questions,
     append: appendQuestion,
@@ -467,51 +483,56 @@ function SectionEditor({
 
   return (
     <Card>
-      <CardHeader className="cursor-pointer" onClick={toggleExpanded}>
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center gap-3">
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-lg">
-              Section {sectionIndex + 1} - {questions.length} questions
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`Delete section ${sectionIndex + 1}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                removeSection(sectionIndex)
-              }}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          {/* A real button so the section can be toggled from the keyboard; the old
+              clickable div had no role, tabindex or key handler. */}
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            onClick={toggleExpanded}
+            className="flex flex-1 items-center gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <GripVertical className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <span className="text-lg font-semibold leading-none tracking-tight">
+              {tb('sectionHeader', { n: sectionIndex + 1, count: questions.length })}
+            </span>
             {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              <ChevronUp className="ml-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
             ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <ChevronDown className="ml-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
             )}
-          </div>
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={tb('deleteSection', { n: sectionIndex + 1 })}
+            onClick={() => removeSection(sectionIndex)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
       </CardHeader>
 
       {isExpanded && (
         <CardContent className="space-y-4">
           <div>
-            <Label>Section Title</Label>
-            <Input {...register(`sections.${sectionIndex}.title`)} placeholder="Section title" />
+            <Label>{tb('sectionTitle')}</Label>
+            <Input
+              {...register(`sections.${sectionIndex}.title`)}
+              placeholder={tb('sectionTitlePlaceholder')}
+            />
             {sectionErrors?.title && (
               <p className="mt-1 text-sm text-destructive">{sectionErrors.title.message}</p>
             )}
           </div>
 
           <div>
-            <Label>Section Description (Optional)</Label>
+            <Label>{tb('sectionDescription')}</Label>
             <textarea
               {...register(`sections.${sectionIndex}.description`)}
-              placeholder="Brief description..."
+              placeholder={tb('sectionDescriptionPlaceholder')}
               className="min-h-[60px] w-full rounded-md border px-3 py-2"
               rows={2}
             />
@@ -519,7 +540,7 @@ function SectionEditor({
 
           {/* Add Question Buttons */}
           <div>
-            <Label className="mb-2 block">Add Question</Label>
+            <Label className="mb-2 block">{tb('addQuestion')}</Label>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
               <Button
                 type="button"
@@ -528,7 +549,7 @@ function SectionEditor({
                 onClick={() => addQuestion('MCQ')}
                 className="text-xs"
               >
-                Multiple Choice
+                {tb('typeMcq')}
               </Button>
               <Button
                 type="button"
@@ -537,7 +558,7 @@ function SectionEditor({
                 onClick={() => addQuestion('MULTI_SELECT')}
                 className="text-xs"
               >
-                Multi-Select
+                {tb('typeMultiSelect')}
               </Button>
               <Button
                 type="button"
@@ -546,7 +567,7 @@ function SectionEditor({
                 onClick={() => addQuestion('SHORT_TEXT')}
                 className="text-xs"
               >
-                Short Text
+                {tb('typeShortText')}
               </Button>
               <Button
                 type="button"
@@ -555,7 +576,7 @@ function SectionEditor({
                 onClick={() => addQuestion('LONG_TEXT')}
                 className="text-xs"
               >
-                Long Text
+                {tb('typeLongText')}
               </Button>
               <Button
                 type="button"
@@ -564,7 +585,7 @@ function SectionEditor({
                 onClick={() => addQuestion('CODE')}
                 className="text-xs"
               >
-                Code
+                {tb('typeCode')}
               </Button>
             </div>
           </div>
@@ -588,9 +609,7 @@ function SectionEditor({
             })}
 
             {questions.length === 0 && (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No questions yet. Click a button above to add one.
-              </p>
+              <p className="py-4 text-center text-sm text-muted-foreground">{tb('noQuestions')}</p>
             )}
           </div>
 
@@ -623,6 +642,7 @@ function QuestionEditor({
   errors: any
   questionType: 'MCQ' | 'MULTI_SELECT' | 'SHORT_TEXT' | 'LONG_TEXT' | 'CODE'
 }) {
+  const tb = useTranslations('assessmentBuilder')
   const questionPath = `sections.${sectionIndex}.questions.${questionIndex}`
   const questionErrors = errors.sections?.[sectionIndex]?.questions?.[questionIndex]
 
@@ -640,14 +660,17 @@ function QuestionEditor({
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
-            <Label>Question {questionIndex + 1}</Label>
+            <Label htmlFor={`${questionPath}-text`}>
+              {tb('question', { n: questionIndex + 1 })}
+            </Label>
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {questionType.replace('_', ' ')}
+              {(questionType ?? '').replace('_', ' ')}
             </span>
           </div>
           <textarea
+            id={`${questionPath}-text`}
             {...register(`${questionPath}.text`)}
-            placeholder="Enter your question..."
+            placeholder={tb('questionPlaceholder')}
             className="mt-1 min-h-[80px] w-full rounded-md border bg-background px-3 py-2"
             rows={2}
           />
@@ -660,7 +683,7 @@ function QuestionEditor({
           type="button"
           variant="ghost"
           size="sm"
-          aria-label={`Delete question ${questionIndex + 1}`}
+          aria-label={tb('deleteQuestion', { n: questionIndex + 1 })}
           onClick={() => removeQuestion(questionIndex)}
           className="ml-2"
         >
@@ -670,18 +693,24 @@ function QuestionEditor({
 
       <div className="mb-3 grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs">Points</Label>
+          <Label htmlFor={`${questionPath}-points`} className="text-xs">
+            {tb('points')}
+          </Label>
           <Input
+            id={`${questionPath}-points`}
             type="number"
             {...register(`${questionPath}.points`, { valueAsNumber: true })}
             className="h-8"
           />
         </div>
         <div>
-          <Label className="text-xs">Skill Tag (Optional)</Label>
+          <Label htmlFor={`${questionPath}-skillTag`} className="text-xs">
+            {tb('skillTag')}
+          </Label>
           <Input
+            id={`${questionPath}-skillTag`}
             {...register(`${questionPath}.skillTag`)}
-            placeholder="e.g., JavaScript"
+            placeholder={tb('skillTagPlaceholder')}
             className="h-8"
           />
         </div>
@@ -691,7 +720,7 @@ function QuestionEditor({
       {(questionType === 'MCQ' || questionType === 'MULTI_SELECT') && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs">Choices</Label>
+            <Label className="text-xs">{tb('choices')}</Label>
             <Button
               type="button"
               variant="ghost"
@@ -700,7 +729,7 @@ function QuestionEditor({
               className="h-6 text-xs"
             >
               <Plus className="mr-1 h-3 w-3" />
-              Add Choice
+              {tb('addChoice')}
             </Button>
           </div>
           {choices.map((choice, choiceIndex) => (
@@ -709,13 +738,13 @@ function QuestionEditor({
               <Input
                 {...register(`${questionPath}.choices.${choiceIndex}`)}
                 className="h-8 flex-1 text-sm"
-                placeholder={`Choice ${choiceIndex + 1}`}
+                placeholder={tb('choicePlaceholder', { n: choiceIndex + 1 })}
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                aria-label={`Delete choice ${choiceIndex + 1}`}
+                aria-label={tb('deleteChoice', { n: choiceIndex + 1 })}
                 onClick={() => removeChoice(choiceIndex)}
                 className="h-6 px-2"
               >
@@ -724,15 +753,21 @@ function QuestionEditor({
             </div>
           ))}
           <div className="mt-2">
-            <Label className="text-xs">
-              Correct Answer{questionType === 'MULTI_SELECT' ? 's' : ''} (comma-separated indexes,
-              e.g., 0,2)
+            <Label htmlFor={`${questionPath}-correctIndexes`} className="text-xs">
+              {questionType === 'MULTI_SELECT' ? tb('correctAnswers') : tb('correctAnswer')}
             </Label>
             <Input
+              id={`${questionPath}-correctIndexes`}
               {...register(`${questionPath}.correctIndexes`)}
               className="h-8 text-sm"
               placeholder="0"
+              aria-invalid={questionErrors?.correctIndexes ? true : undefined}
             />
+            {questionErrors?.correctIndexes && (
+              <p className="mt-1 text-sm text-destructive">
+                {questionErrors.correctIndexes.message ?? tb('correctInvalid')}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -740,7 +775,7 @@ function QuestionEditor({
       {questionType === 'CODE' && (
         <div className="space-y-2">
           <div>
-            <Label className="text-xs">Programming Language</Label>
+            <Label className="text-xs">{tb('programmingLanguage')}</Label>
             <select
               {...register(`${questionPath}.language`)}
               className="h-8 w-full rounded-md border px-2 text-sm"
@@ -755,7 +790,7 @@ function QuestionEditor({
             </select>
           </div>
           <div>
-            <Label className="text-xs">Starter Code (Optional)</Label>
+            <Label className="text-xs">{tb('starterCode')}</Label>
             <textarea
               {...register(`${questionPath}.code`)}
               className="min-h-[100px] w-full rounded-md border bg-background px-3 py-2 font-mono text-sm"

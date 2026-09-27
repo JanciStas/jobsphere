@@ -360,5 +360,113 @@
     "summary": "Playwright auth states (session cookies test userov) neboli gitignored — vzor nekryl apps/web/.",
     "source": "PRODUCTION_TEST_REPORT_2026-09-14.md",
     "fixedAt": "2026-09-14"
+  },
+  {
+    "id": "2026-09-26-A1",
+    "severity": "High",
+    "category": "B - AuthZ",
+    "file": "lib/prisma.ts, lib/api-helpers.ts, lib/auth.ts, api/organizations/current/members/[userId]/route.ts",
+    "status": "fixed",
+    "summary": "UserOrgRole mal deletedAt, ale nebol v MODELS_WITH_SOFT_DELETE; odobraný člen si po re-logine zachoval prístup a odobranie nezvyšovalo sessionEpoch. Opravené: soft-delete middleware + explicitný deletedAt:null vo všetkých auth lookupoch, transakčný bump sessionEpoch, znovuobnovenie odobraného člena pri pozvánke (PK userId+orgId).",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A3A4",
+    "severity": "High",
+    "category": "B - IDOR",
+    "file": "api/jobs/[id]/route.ts, api/applications/[id]/interviews/[interviewId]/route.ts",
+    "status": "fixed",
+    "summary": "PUT/PATCH neoverovali org cudzích FK (assessmentId, assignedRecruiterId, branchId) — cross-tenant injection; POST ich overoval. Opravené + regresné testy.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A6",
+    "severity": "Medium",
+    "category": "J - Rate limiting",
+    "file": "lib/rate-limit.ts",
+    "status": "fixed",
+    "summary": "byUser kľúčoval na Authorization: Bearer, ktorý appka neposiela a útočník ho môže rotovať; limity boli reálne per-IP. Teraz user id z podpísaného JWT, IP z x-vercel-forwarded-for.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A7",
+    "severity": "Medium",
+    "category": "B - AuthZ",
+    "file": "lib/api-helpers.ts, api/organizations/current/members/**",
+    "status": "fixed",
+    "summary": "requireOrgAuth a admin routes brali prvú membership namiesto activeOrgId → nedeterministický tenant pri viacerých organizáciách.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-N5",
+    "severity": "High",
+    "category": "Logic",
+    "file": "schemas/assessment.schema.ts, assessment-builder-client.tsx",
+    "status": "fixed",
+    "summary": "Upravené correctIndexes (text input → string) zamietol zodResolver pred onSubmit, chyba sa nezobrazila — MCQ/multi-select sa nedali uložiť.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A20",
+    "severity": "Low",
+    "category": "Performance",
+    "file": "packages/db/prisma/schema.prisma (Task)",
+    "status": "fixed",
+    "summary": "Task.candidateId (Cascade FK) bez indexu; pridaný index + idempotentná migrácia 20260926_add_task_candidate_index.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A18",
+    "severity": "Low",
+    "category": "Ops/Docs",
+    "file": "railway.toml, Dockerfile, pnpm-workspace.yaml, README.md",
+    "status": "fixed",
+    "summary": "Deploy konfigurácia mŕtveho stromu cez pnpm, klamlivé README (pnpm, packages/database, coverage 80 %, zero any). Opravené/odstránené.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A14",
+    "severity": "Medium",
+    "category": "H - i18n",
+    "file": "~45 page.tsx",
+    "status": "fixed",
+    "summary": "Natvrdo (miešané SK/EN) metadata bez ohľadu na locale → pageMetadata namespace vo všetkých 5 katalógoch.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A5",
+    "severity": "Medium",
+    "category": "I - Dependencies",
+    "file": "sanitize-html",
+    "status": "fixed",
+    "summary": "sanitize-html 2.17.5 → 2.17.7 (mutation-XSS / SVG SMIL advisories). Overené yarn audit + unit testy.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle",
+    "fixedAt": "2026-09-26"
+  },
+  {
+    "id": "2026-09-26-A2",
+    "severity": "High",
+    "category": "I - Dependencies",
+    "file": "next 14.2.35",
+    "status": "open",
+    "summary": "yarn audit: okrem 2 Critical (RCE Windows/Image Optimization, >=15.5.24) aj High DoS cez Server Components (>=15.5.15/16) a SSRF — dosiahnuteľné aj na Vercel/Linux. Jediná oprava = major upgrade na Next 15.5.x (samostatná úloha). (rovnaká oprava ako SEC-1 — do skóre sa nepočíta dvakrát)",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle"
+  },
+  {
+    "id": "2026-09-26-A17",
+    "severity": "Low",
+    "category": "Performance",
+    "file": "api/webhooks/email/route.ts:151-179",
+    "status": "open",
+    "summary": "N+1: až 3 DB dotazy na event v cykle; dávkovať findMany({id:{in}}) + createMany.",
+    "source": "DS V4.1 Flash audit 2026-09-26 (audit/DEEP_AUDIT_2026-09-26.md), overené nezávisle"
   }
 ]

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -533,12 +534,13 @@ export async function generateMetadata({
 }: {
   params: { locale: string; moduleId: string }
 }): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: 'pageMetadata' })
   const academyModule = moduleContent[params.moduleId]
   if (!academyModule) {
-    return { title: 'Module Not Found' }
+    return { title: t('moduleNotFound') }
   }
   return {
-    title: `${academyModule.title} | Career Academy`,
+    title: t('moduleTitle', { title: academyModule.title }),
     description: academyModule.description,
   }
 }

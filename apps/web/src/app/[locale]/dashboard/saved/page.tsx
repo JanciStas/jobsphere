@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getFormatter } from 'next-intl/server'
+import { getFormatter, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -38,10 +38,15 @@ async function getSavedJobs(userId: string) {
   return savedJobs
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Saved Jobs',
-    description: 'View and manage your saved job listings.',
+    title: t('savedJobs.title'),
+    description: t('savedJobs.description'),
   }
 }
 

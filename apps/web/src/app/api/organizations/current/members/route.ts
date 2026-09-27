@@ -37,7 +37,11 @@ export const GET = withRateLimit(
 
       // Get user's organization
       const userOrgRole = await prisma.userOrgRole.findFirst({
-        where: { userId: session.user.id },
+        where: {
+          userId: session.user.id,
+          deletedAt: null,
+          ...(session.user.activeOrgId ? { orgId: session.user.activeOrgId } : {}),
+        },
       })
 
       if (!userOrgRole) {
@@ -102,6 +106,8 @@ export const POST = withCsrfProtection(
           where: {
             userId: session.user.id,
             role: 'ORG_ADMIN',
+            deletedAt: null,
+            ...(session.user.activeOrgId ? { orgId: session.user.activeOrgId } : {}),
           },
           include: {
             organization: { select: { name: true } },
@@ -185,31 +191,40 @@ export const POST = withCsrfProtection(
           },
         })
 
-        if (existingMember) {
+        if (existingMember && !existingMember.deletedAt) {
           return NextResponse.json(
             { error: 'User is already a member of this organization' },
             { status: 400 },
           )
         }
 
-        // Create organization membership
-        const newMember = await prisma.userOrgRole.create({
-          data: {
-            userId: user.id,
-            orgId: userOrgRole.orgId,
-            role,
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
+        const memberInclude = {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
             },
           },
-        })
+        }
+
+        // (userId, orgId) is the primary key, so a previously removed member cannot be
+        // created again — reinstate the soft-deleted row with the new role instead.
+        const newMember = existingMember
+          ? await prisma.userOrgRole.update({
+              where: { userId_orgId: { userId: user.id, orgId: userOrgRole.orgId } },
+              data: { role, deletedAt: null },
+              include: memberInclude,
+            })
+          : await prisma.userOrgRole.create({
+              data: {
+                userId: user.id,
+                orgId: userOrgRole.orgId,
+                role,
+              },
+              include: memberInclude,
+            })
 
         // Best-effort notification email for users who already had an account.
         // New users were already emailed the set-password invite above, so we

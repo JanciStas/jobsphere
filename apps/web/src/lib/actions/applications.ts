@@ -115,6 +115,7 @@ export async function updateApplicationStatus(
     where: {
       userId: session.user.id,
       orgId: application.job.orgId,
+      deletedAt: null,
     },
   })
 
@@ -280,6 +281,7 @@ export async function addApplicationNote(
     where: {
       userId: session.user.id,
       orgId: application.job.orgId,
+      deletedAt: null,
     },
   })
 

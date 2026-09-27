@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ConversionFunnelProps {
@@ -10,11 +11,20 @@ interface ConversionFunnelProps {
 }
 
 export function ConversionFunnel({ total, screening, interview, hired }: ConversionFunnelProps) {
+  const t = useTranslations('miscAnalytics')
   const stages = [
-    { stage: 'Applied', count: total, percentage: 100 },
-    { stage: 'Screening', count: screening, percentage: total > 0 ? (screening / total) * 100 : 0 },
-    { stage: 'Interview', count: interview, percentage: total > 0 ? (interview / total) * 100 : 0 },
-    { stage: 'Hired', count: hired, percentage: total > 0 ? (hired / total) * 100 : 0 },
+    { stage: t('stageApplied'), count: total, percentage: 100 },
+    {
+      stage: t('stageScreening'),
+      count: screening,
+      percentage: total > 0 ? (screening / total) * 100 : 0,
+    },
+    {
+      stage: t('stageInterview'),
+      count: interview,
+      percentage: total > 0 ? (interview / total) * 100 : 0,
+    },
+    { stage: t('stageHired'), count: hired, percentage: total > 0 ? (hired / total) * 100 : 0 },
   ]
 
   const getColor = (index: number) => {
@@ -25,12 +35,12 @@ export function ConversionFunnel({ total, screening, interview, hired }: Convers
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Conversion Funnel</CardTitle>
+        <CardTitle>{t('conversionFunnel')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {stages.map((stage, index) => (
-            <div key={stage.stage} className="space-y-2">
+            <div key={index} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">{stage.stage}</span>
                 <span className="text-muted-foreground">

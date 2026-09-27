@@ -1,6 +1,8 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -38,10 +40,15 @@ const ApplicationsTrend = dynamic(
   { loading: ChartLoading },
 )
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Analytics Dashboard',
-    description: 'View recruitment analytics, application trends, and hiring metrics.',
+    title: t('analytics.title'),
+    description: t('analytics.description'),
   }
 }
 
@@ -53,9 +60,8 @@ export default async function AnalyticsPage() {
   }
 
   // Get user's organization
-  const membership = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-    include: { organization: true },
+  const membership = await resolveActiveMembership(session.user.id, session.user.activeOrgId, {
+    organization: true,
   })
 
   if (!membership) {

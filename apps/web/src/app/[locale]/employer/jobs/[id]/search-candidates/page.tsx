@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import SearchCandidatesClient from './search-candidates-client'
 
@@ -5,10 +6,15 @@ type Props = {
   params: { locale: string; id: string }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Search Candidates',
-    description: 'Find matching candidates for your job posting using AI-powered search.',
+    title: t('searchCandidates.title'),
+    description: t('searchCandidates.description'),
   }
 }
 

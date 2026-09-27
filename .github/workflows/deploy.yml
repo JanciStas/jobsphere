@@ -25,6 +25,10 @@ jobs:
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
+    env:
+      # Production is also deployed by Vercel's Git integration. Without the secrets
+      # this job used to fail on every push to main ("vercel-token not supplied").
+      HAS_VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN != '' }}
 
     steps:
       - name: Checkout code
@@ -33,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'yarn'
 
       - name: Install dependencies
@@ -61,6 +65,7 @@ jobs:
           yarn typecheck
 
       - name: Deploy to Vercel
+        if: env.HAS_VERCEL_TOKEN == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

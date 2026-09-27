@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -108,10 +109,12 @@ function safeParseResume(
 
 // ---- data fetching ----
 
-async function getApplicationDetail(applicationId: string, userId: string) {
-  const userOrgRole = await prisma.userOrgRole.findFirst({
-    where: { userId },
-  })
+async function getApplicationDetail(
+  applicationId: string,
+  userId: string,
+  activeOrgId?: string | null,
+) {
+  const userOrgRole = await resolveActiveMembership(userId, activeOrgId)
   if (!userOrgRole) return null
 
   const application = await prisma.application.findFirst({
@@ -213,7 +216,7 @@ export default async function EmployerApplicationDetailPage({
   const formatInterviewDateTime = (date: Date) =>
     format.dateTime(new Date(date), { ...LONG_DATE, hour: '2-digit', minute: '2-digit' })
 
-  const result = await getApplicationDetail(params.id, session.user.id)
+  const result = await getApplicationDetail(params.id, session.user.id, session.user.activeOrgId)
   if (!result) {
     redirect(`/${params.locale}/employer/applicants`)
   }
@@ -224,9 +227,7 @@ export default async function EmployerApplicationDetailPage({
   const parsedResume = safeParseResume(latestResume)
 
   const getStatusBadge = (stage: string) => {
-    const label = (APPLICATION_STAGES as readonly string[]).includes(stage)
-      ? tStages(stage)
-      : stage
+    const label = (APPLICATION_STAGES as readonly string[]).includes(stage) ? tStages(stage) : stage
     const colorClass = STAGE_COLORS[stage as keyof typeof STAGE_COLORS]
     if (colorClass) return <Badge className={colorClass}>{label}</Badge>
     return <Badge>{label}</Badge>

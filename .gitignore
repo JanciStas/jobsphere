@@ -116,3 +116,7 @@ nul
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 CLAUDE.local.md
+
+# Scratch / agent artifacts
+.workbuddy-ai/
+scripts/tmp-*

@@ -126,19 +126,14 @@ describe('failure handling', () => {
 })
 
 describe('multi-organisation membership', () => {
-  // Pinning current behaviour, not endorsing it. The membership lookup is
-  // `findFirst({ where: { userId } })` with no orgId, so a user who belongs to
-  // two organisations always reaches whichever row Postgres returns first: they
-  // cannot open the portal for the second organisation, and which one they get is
-  // not defined by anything the caller controls.
-  //
-  // It is not a tenant leak — the row is always one of the caller's own
-  // memberships — so this is a correctness/UX bug rather than a security one. It
-  // needs an explicit orgId in the request to fix properly, which is an API change.
-  it('uses whichever membership comes back first, with no orgId filter', async () => {
+  // Without a session activeOrgId the lookup is deterministic: the caller's oldest
+  // LIVE membership (removed members never resolve). With an activeOrgId that org
+  // wins — see tests/security/tenant-isolation-regressions.test.ts.
+  it('falls back to the oldest live membership when no active org is set', async () => {
     await POST(req())
     expect(prisma.userOrgRole.findFirst).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
+      where: { userId: 'user-1', deletedAt: null },
+      orderBy: { createdAt: 'asc' },
     })
   })
 

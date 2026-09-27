@@ -820,9 +820,20 @@ describe('XSS Protection Security Tests', () => {
       // Arrange - Split attack across multiple fields
       mockAuthFn.mockResolvedValue(createRecruiterSession())
 
+      // The description has to clear the route's 50-character minimum
+      // (`createJobSchema` in src/app/api/jobs/route.ts). It previously held only
+      // the 16-character fragment `("xss")</script>`, so the request was rejected
+      // with 400 before it ever reached the database — and the test then asserted
+      // `expect(400).toBe(201)`. The red result came from the fixture's length,
+      // not from anything to do with XSS.
+      const descriptionFragment = '("xss")</script>'
+      const description =
+        `Closing half of a split XSS attempt: ${descriptionFragment} — ` +
+        `padded with inert prose so the payload clears the minimum length.`
+
       const request = createTestRequest('POST', {
         title: '<script>alert',
-        description: '("xss")</script>',
+        description,
         employmentType: 'FULL_TIME',
         workMode: 'REMOTE',
         type: 'FULL_TIME',
@@ -842,7 +853,8 @@ describe('XSS Protection Security Tests', () => {
         where: { id: data.id },
       })
       expect(job?.title).toBe('<script>alert')
-      expect(job?.description).toBe('("xss")</script>')
+      expect(job?.description).toBe(description)
+      expect(job?.description).toContain(descriptionFragment)
     })
   })
 

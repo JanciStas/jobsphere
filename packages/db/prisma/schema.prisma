@@ -1607,6 +1607,8 @@ model Task {
   @@index([orgId, status, dueDate])
   @@index([assigneeId, status])
   @@index([applicationId])
+  /// candidateId is a Cascade FK: without an index every Candidate delete scans Task.
+  @@index([candidateId])
 }
 
 /// Reusable email bodies, org-scoped.

@@ -4,15 +4,21 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText, Plus, BarChart3 } from 'lucide-react'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Assessments',
-    description: 'Skills assessments for your organisation.',
+    title: t('assessments.title'),
+    description: t('assessments.description'),
   }
 }
 
@@ -33,10 +39,7 @@ export default async function AssessmentsPage({ params }: { params: { locale: st
 
   const t = await getTranslations('employer.assessments')
 
-  const membership = await prisma.userOrgRole.findFirst({
-    where: { userId: session.user.id },
-    select: { orgId: true },
-  })
+  const membership = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
   if (!membership) {
     redirect(`/${params.locale}/employer`)

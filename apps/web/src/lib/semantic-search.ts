@@ -84,10 +84,10 @@ export async function searchCandidates(params: SearchCandidatesParams): Promise<
       return tx.$queryRaw<any[]>`
         SELECT
           r.id as "resumeId",
-          r.title as "resumeTitle",
+          LEFT(COALESCE(r.summary, ''), 120) as "resumeTitle",
           r."candidateId" as "candidateId",
           rs.kind as "sectionType",
-          COALESCE(rs.description, rs.title, '') as "sectionContent",
+          COALESCE(rs.text, rs.title, '') as "sectionContent",
           1 - (rs."embeddingVector" <=> ${embeddingString}::vector) as similarity
         FROM "ResumeSection" rs
         JOIN "Resume" r ON rs."resumeId" = r.id
@@ -192,7 +192,7 @@ export async function findSimilarCandidates(
       return tx.$queryRaw<any[]>`
         SELECT
           r.id as "resumeId",
-          r.title as "resumeTitle",
+          LEFT(COALESCE(r.summary, ''), 120) as "resumeTitle",
           r."candidateId" as "candidateId",
           1 - (rs."embeddingVector" <=> ${embeddingString}::vector) as similarity
         FROM "ResumeSection" rs

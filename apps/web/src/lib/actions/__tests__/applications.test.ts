@@ -128,7 +128,7 @@ describe('employer-side actions enforce the tenant boundary', () => {
   ] as const)('%s scopes the membership lookup to the job orgId', async (_n, invoke) => {
     await invoke()
     expect(prisma.userOrgRole.findFirst).toHaveBeenCalledWith({
-      where: { userId: 'user-1', orgId: 'org-1' },
+      where: { userId: 'user-1', orgId: 'org-1', deletedAt: null },
     })
   })
 

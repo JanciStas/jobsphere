@@ -33,6 +33,7 @@ export async function generateMetadata({
 }: {
   params: { id: string; locale: string }
 }): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: 'pageMetadata' })
   let job = null
   try {
     job = await prisma.job.findUnique({
@@ -52,15 +53,15 @@ export async function generateMetadata({
       },
     })
   } catch {
-    return { title: 'Job not found' }
+    return { title: t('jobNotFound') }
   }
 
   if (!job) {
-    return { title: 'Job not found' }
+    return { title: t('jobNotFound') }
   }
 
-  const title = job.metaTitle || `${job.title} at ${job.organization.name}`
-  const location = job.city || job.region || 'Remote'
+  const title = job.metaTitle || t('jobTitle', { title: job.title, company: job.organization.name })
+  const location = job.city || job.region || t('jobRemote')
   const salary =
     job.salaryMin && job.salaryMax
       ? ` | ${job.salaryCurrency} ${job.salaryMin.toLocaleString()}-${job.salaryMax.toLocaleString()}`

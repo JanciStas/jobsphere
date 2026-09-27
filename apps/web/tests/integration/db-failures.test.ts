@@ -51,8 +51,12 @@ describe('Database Failure Tests', () => {
       })
 
       try {
-        // Execute a query that might timeout
-        await shortTimeoutClient.$queryRaw`SELECT pg_sleep(0.1)`
+        // Execute a query that might timeout.
+        // `pg_sleep` returns `void`, and Prisma cannot deserialise that — it raises
+        // P2010 ("Failed to deserialize column of type 'void'") before the test
+        // reaches the disconnect it actually wants to exercise. Cast to text so the
+        // sleep is the only thing happening here.
+        await shortTimeoutClient.$queryRaw`SELECT pg_sleep(0.1)::text`
 
         // Disconnect and try to query (simulates connection loss)
         await shortTimeoutClient.$disconnect()
@@ -135,9 +139,11 @@ describe('Database Failure Tests', () => {
   describe('Query Timeout Scenarios', () => {
     it('should timeout long-running queries gracefully', async () => {
       try {
-        // Attempt a very long sleep (this should timeout or complete quickly in test)
-        // Note: Actual timeout depends on database and Prisma client configuration
-        await prisma.$queryRaw`SELECT pg_sleep(0.01)`
+        // Attempt a very short sleep — this should complete, not time out.
+        // `pg_sleep` returns `void`; Prisma cannot deserialise it and raises P2010.
+        // This test used to catch that P2010 and then assert it was P2024/P1008, so
+        // it failed on the missing cast rather than on anything timeout-related.
+        await prisma.$queryRaw`SELECT pg_sleep(0.01)::text`
 
         // If it completes, that's fine - we're verifying it handles it gracefully
         expect(true).toBe(true)
@@ -161,8 +167,9 @@ describe('Database Failure Tests', () => {
             // Perform quick operation
             await tx.job.findUnique({ where: { id: job.id } })
 
-            // Simulate timeout with sleep (short for testing)
-            await tx.$queryRaw`SELECT pg_sleep(0.01)`
+            // Simulate timeout with sleep (short for testing).
+            // Cast: `pg_sleep` is `void`, which Prisma cannot deserialise (P2010).
+            await tx.$queryRaw`SELECT pg_sleep(0.01)::text`
 
             // Try to update
             await tx.job.update({
@@ -188,7 +195,8 @@ describe('Database Failure Tests', () => {
         // Create a scenario that might timeout
         await prisma.$transaction(
           async (tx) => {
-            await tx.$queryRaw`SELECT pg_sleep(0.01)`
+            // Cast: `pg_sleep` is `void`, which Prisma cannot deserialise (P2010).
+            await tx.$queryRaw`SELECT pg_sleep(0.01)::text`
           },
           {
             timeout: 1, // Very short timeout (1ms)

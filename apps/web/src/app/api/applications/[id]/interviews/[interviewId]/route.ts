@@ -51,7 +51,7 @@ async function findOwnedInterview(interviewId: string, applicationId: string, us
   if (!interview) return null
 
   const membership = await prisma.userOrgRole.findFirst({
-    where: { userId, orgId: interview.orgId },
+    where: { userId, orgId: interview.orgId, deletedAt: null },
   })
   return membership ? interview : null
 }
@@ -88,6 +88,15 @@ export const PATCH = withCsrfProtection(
             { error: 'This interview was cancelled. Schedule a new one instead.' },
             { status: 409 },
           )
+        }
+
+        // A branch must belong to the interview's own org — POST enforces this and
+        // PATCH used to write any branch id straight through (cross-tenant IDOR).
+        if (data.branchId) {
+          const branch = await prisma.branch.findUnique({ where: { id: data.branchId } })
+          if (!branch || branch.deletedAt || branch.orgId !== interview.orgId) {
+            return NextResponse.json({ error: 'Invalid branch' }, { status: 400 })
+          }
         }
 
         const updated = await prisma.interview.update({

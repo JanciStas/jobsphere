@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Upload, FileText, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { logger } from '@/lib/logger'
 
@@ -15,6 +16,7 @@ type UploadStatus = 'idle' | 'uploading' | 'parsing' | 'success' | 'error'
 
 export default function CVUploadClient() {
   const router = useRouter()
+  const t = useTranslations('cvUpload')
   const params = useParams()
   const locale = (params?.locale as string) || 'sk'
   const [status, setStatus] = useState<UploadStatus>('idle')
@@ -33,13 +35,13 @@ export default function CVUploadClient() {
         'text/plain',
       ]
       if (!validTypes.includes(selectedFile.type)) {
-        setError('Invalid file type. Please upload PDF, DOCX, or TXT.')
+        setError(t('invalidType'))
         return
       }
 
       // Validate file size (max 10MB)
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError('File too large. Maximum size is 10MB.')
+        setError(t('tooLarge'))
         return
       }
 
@@ -96,7 +98,7 @@ export default function CVUploadClient() {
     } catch (err) {
       logger.error('Upload error', err)
       setStatus('error')
-      setError(err instanceof Error ? err.message : 'Failed to upload CV')
+      setError(err instanceof Error ? err.message : t('uploadFailed'))
     }
   }
 
@@ -107,10 +109,8 @@ export default function CVUploadClient() {
           {/* Header */}
           <div className="mb-8 text-center">
             <FileText className="mx-auto mb-4 h-12 w-12 text-primary" />
-            <h1 className="mb-2 text-3xl font-bold text-gray-900">Upload Your CV</h1>
-            <p className="text-gray-600">
-              Upload your resume and we&apos;ll extract the information automatically using AI
-            </p>
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="text-gray-600">{t('subtitle')}</p>
           </div>
 
           {/* Upload Area */}
@@ -126,9 +126,9 @@ export default function CVUploadClient() {
             <label htmlFor="cv-upload" className="flex cursor-pointer flex-col items-center">
               <Upload className="mb-4 h-16 w-16 text-gray-400" />
               <p className="mb-2 text-lg font-medium text-gray-900">
-                {file ? file.name : 'Click to upload or drag and drop'}
+                {file ? file.name : t('dropPrompt')}
               </p>
-              <p className="text-sm text-gray-500">PDF, DOCX, or TXT (max 10MB)</p>
+              <p className="text-sm text-gray-500">{t('fileHint')}</p>
             </label>
           </div>
 
@@ -144,23 +144,21 @@ export default function CVUploadClient() {
           {status === 'uploading' && (
             <div className="mt-6 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-              <p className="text-sm text-blue-800">Uploading file...</p>
+              <p className="text-sm text-blue-800">{t('uploading')}</p>
             </div>
           )}
 
           {status === 'parsing' && (
             <div className="mt-6 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-              <p className="text-sm text-blue-800">Parsing CV with AI...</p>
+              <p className="text-sm text-blue-800">{t('parsing')}</p>
             </div>
           )}
 
           {status === 'success' && (
             <div className="mt-6 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-green-800">
-                CV parsed successfully! Redirecting to editor...
-              </p>
+              <p className="text-sm text-green-800">{t('success')}</p>
             </div>
           )}
 
@@ -170,28 +168,28 @@ export default function CVUploadClient() {
             disabled={!file || status !== 'idle'}
             className="mt-8 w-full rounded-lg bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            {status === 'idle' ? 'Upload & Parse CV' : 'Processing...'}
+            {status === 'idle' ? t('submit') : t('processing')}
           </button>
 
           {/* Info */}
           <div className="mt-8 rounded-lg bg-gray-50 p-4">
-            <h3 className="mb-2 font-medium text-gray-900">What happens next?</h3>
+            <h3 className="mb-2 font-medium text-gray-900">{t('nextTitle')}</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-start gap-2">
                 <span className="text-primary">1.</span>
-                <span>We extract text from your CV using advanced OCR</span>
+                <span>{t('step1')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary">2.</span>
-                <span>Claude AI parses your experience, education, and skills</span>
+                <span>{t('step2')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary">3.</span>
-                <span>You can review and edit the extracted information</span>
+                <span>{t('step3')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary">4.</span>
-                <span>Your CV is matched against relevant job openings</span>
+                <span>{t('step4')}</span>
               </li>
             </ul>
           </div>

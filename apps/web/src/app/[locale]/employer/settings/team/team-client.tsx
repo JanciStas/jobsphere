@@ -10,6 +10,7 @@ import { MemberRow } from '@/components/team/MemberRow'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Member {
   userId: string
@@ -31,6 +32,7 @@ interface TeamData {
 export default function TeamManagementClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const t = useTranslations('teamSettingsPage')
   const [teamData, setTeamData] = useState<TeamData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +45,7 @@ export default function TeamManagementClient() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load team members')
+        throw new Error(data.error || t('loadFailed'))
       }
 
       setTeamData(data)
@@ -105,10 +107,8 @@ export default function TeamManagementClient() {
     <div className="container mx-auto py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Team Management</h1>
-          <p className="text-muted-foreground">
-            Manage your organization&apos;s team members and their roles.
-          </p>
+          <h1 className="mb-2 text-3xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         {isAdmin && <InviteMemberDialog onSuccess={fetchTeam} />}
       </div>
@@ -116,27 +116,25 @@ export default function TeamManagementClient() {
       {!isAdmin && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Only organization administrators can invite, remove, or change roles of team members.
-          </AlertDescription>
+          <AlertDescription>{t('adminOnly')}</AlertDescription>
         </Alert>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Team Members</CardTitle>
+          <CardTitle>{t('teamMembers')}</CardTitle>
           <CardDescription>
-            {teamData?.members.length || 0} member{teamData?.members.length !== 1 ? 's' : ''}
+            {t('memberCount', { count: teamData?.members.length || 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('member')}</TableHead>
+                <TableHead>{t('role')}</TableHead>
+                <TableHead>{t('joined')}</TableHead>
+                <TableHead className="text-right">{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,7 +151,7 @@ export default function TeamManagementClient() {
               ) : (
                 <TableRow>
                   <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                    No team members yet
+                    {t('noMembers')}
                   </td>
                 </TableRow>
               )}

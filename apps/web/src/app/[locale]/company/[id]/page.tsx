@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -66,8 +67,9 @@ export async function generateMetadata({
 }: {
   params: { id: string; locale: string }
 }): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: 'pageMetadata' })
   const company = await getCompany(params.id)
-  if (!company) return { title: 'Company not found' }
+  if (!company) return { title: t('companyNotFound') }
 
   const description =
     company.description?.slice(0, 160) ||

@@ -1,10 +1,16 @@
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import AuthErrorClient from './auth-error-client'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return {
-    title: 'Authentication Error',
-    description: 'An authentication error occurred. Please try again.',
+    title: t('authError.title'),
+    description: t('authError.description'),
   }
 }
 

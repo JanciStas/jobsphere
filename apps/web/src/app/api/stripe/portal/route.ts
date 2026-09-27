@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveActiveMembership } from '@/lib/api-helpers'
 import Stripe from 'stripe'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/rate-limit'
@@ -27,9 +28,7 @@ export const POST = withCsrfProtection(
         }
 
         // Get organization
-        const userOrgRole = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id },
-        })
+        const userOrgRole = await resolveActiveMembership(session.user.id, session.user.activeOrgId)
 
         if (!userOrgRole) {
           return NextResponse.json({ error: 'No organization' }, { status: 400 })
