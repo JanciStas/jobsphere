@@ -175,7 +175,7 @@ jobs:
 
   e2e-tests:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: quality-checks
     # Without this the job inherits GitHub's 6-hour default. With workers: 1 and
     # retries, a broadly failing suite grinds through 300 tests x 3 attempts x a

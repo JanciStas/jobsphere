@@ -18,7 +18,7 @@ concurrency:
 jobs:
   test:
     name: E2E Tests - ${{ matrix.browser }} (${{ matrix.shard }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     strategy:
@@ -184,7 +184,7 @@ jobs:
 
   mobile-test:
     name: E2E Tests - Mobile (${{ matrix.device }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     strategy:
@@ -321,7 +321,7 @@ jobs:
 
   tablet-test:
     name: E2E Tests - Tablet (${{ matrix.device }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     strategy:
@@ -458,7 +458,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [test, mobile-test, tablet-test]
     if: always()
 
