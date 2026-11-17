@@ -477,7 +477,89 @@
     "severity": "Medium",
     "category": "N - Operations",
     "file": "apps/web/src/app/api/health/route.ts",
+    "status": "fixed",
+    "summary": "/api/health vracia 500 (unhealthy) v produkcii na jobsphere.eu, potvrdene aj pred aj po Next 15 mergi (nie je to regresia tohto kola) -- prisma.$queryRaw SELECT 1 v health route zlyhava, hoci bezne stranky (/sk, /en) sa nacitavaju 200 a teda DB inak funguje. Vyzaduje samostatne vysetrenie (Prisma connection pooling limit na health route bez keep-alive? Vercel Fluid Compute cold start timeout?). Objavene po nasadeni PR #24, 2026-09-27.",
+    "fixedAt": "2026-11-17",
+    "note": "Nereprodukovateľné: /api/health vracia 200 {status:healthy} na jobsphere.eu aj na lokálnom prod builde (2026-11-17). Príčina nebola identifikovaná (pravdepodobne prechodný problém Prisma poolu/cold startu po deployi PR #24)."
+  },
+  {
+    "id": "2026-11-I1",
+    "severity": "Medium",
+    "category": "I - i18n",
+    "file": "apps/web/messages/*.json + apps/web/src/app/[locale]/dashboard/cv/[id]/edit/cv-edit-client.tsx",
+    "status": "fixed",
+    "summary": "Namespace cvEdit (81 kľúčov) chýbal vo všetkých 5 jazykoch — stránka úpravy CV zobrazovala surové kľúče. Doplnené sk/en/de/cs/pl.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-I2",
+    "severity": "Low",
+    "category": "I - i18n/a11y",
+    "file": "apps/web/src/components/layout/header.tsx + employer/settings, analytics, search-candidates, candidates/[id], application-detail-client",
+    "status": "fixed",
+    "summary": "Natvrdo anglické/slovenské aria-label a texty v hlavičke a employer/kandidátskych stránkach (A15/A16); aria-label na login/signup prebíjal viditeľný text (WCAG 2.5.3). Presunuté do messages (nav.*, employerPages.*).",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-P1",
+    "severity": "Low",
+    "category": "P - PII",
+    "file": "apps/web/src/lib/auth.ts",
+    "status": "fixed",
+    "summary": "A9: log neúspešného prihlásenia a zamknutia účtu vypisoval celý e-mail. Zdieľaný maskEmail (lib/mask-email.ts) + test.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-P2",
+    "severity": "Low",
+    "category": "P - Data exposure",
+    "file": "apps/web/src/app/api/applications/route.ts",
+    "status": "fixed",
+    "summary": "POST /api/applications vracal uchádzačovi celý riadok Organization (settings s userPreferences členov, features) aj celý Job. Zúžené na explicitný select; testy pridané.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-D1",
+    "severity": "Medium",
+    "category": "D - Operations safety",
+    "file": "packages/db/seed.ts + apps/web/prisma/seed.ts + packages/db/assert-local-database.ts",
+    "status": "fixed",
+    "summary": "Oba seed skripty mazali/TRUNCATE-ovali tabuľky bez kontroly cieľovej DB (yarn db:seed proti produkčnému DATABASE_URL by zmazal dáta). Pridaná poistka assertLocalDatabase (len localhost, odmieta ?host=/hostaddr= override) + test.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-S1",
+    "severity": "Low",
+    "category": "S - SEO",
+    "file": "apps/web/src/app/[locale]/jobs/[id]/page.tsx",
+    "status": "fixed",
+    "summary": "Neexistujúci/nepublikovaný inzerát vracal HTTP 200 (soft 404 za loading.tsx) s robots index,follow. generateMetadata teraz vracia noindex,nofollow; test pridaný.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-U1",
+    "severity": "Low",
+    "category": "U - UX/Auth flow",
+    "file": "apps/web/src/middleware.ts + login/page.tsx + lib/safe-callback.ts",
+    "status": "fixed",
+    "summary": "Middleware redirect na login strácal cieľovú stránku (callbackUrl). Pridaný callbackUrl s validáciou safeCallbackPath (same-origin, same-locale, dot-segmenty, žiadny open redirect) + testy.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-T1",
+    "severity": "Low",
+    "category": "T - Tooling",
+    "file": ".claude/settings.json",
+    "status": "fixed",
+    "summary": "Stop/PostToolUse hooky používali relatívnu cestu node .claude/hooks/*.mjs a padali mimo koreňa repa. Prepnuté na $CLAUDE_PROJECT_DIR.",
+    "fixedAt": "2026-11-17"
+  },
+  {
+    "id": "2026-11-A1",
+    "severity": "Low",
+    "category": "A - AuthZ (owner decision)",
+    "file": "apps/web/src/app/api/organizations/current/{branches,billing,members}/route.ts, applications/[id], candidates/search",
     "status": "open",
-    "summary": "/api/health vracia 500 (unhealthy) v produkcii na jobsphere.eu, potvrdene aj pred aj po Next 15 mergi (nie je to regresia tohto kola) -- prisma.$queryRaw SELECT 1 v health route zlyhava, hoci bezne stranky (/sk, /en) sa nacitavaju 200 a teda DB inak funguje. Vyzaduje samostatne vysetrenie (Prisma connection pooling limit na health route bez keep-alive? Vercel Fluid Compute cold start timeout?). Objavene po nasadeni PR #24, 2026-09-27."
+    "summary": "UserOrgRole.assignedJobs/assignedCandidates sa nikde nečítajú — AGENCY vidí všetko ako bežný člen; branches CRUD, billing GET a zoznam členov nemajú rolovú kontrolu (len členstvo). Vyžaduje rozhodnutie vlastníka o rolovej politike (nie potvrdený cross-tenant únik)."
   }
 ]

@@ -28,7 +28,13 @@ export default async function middleware(request: NextRequest) {
     const firstSegment = pathname.split('/')[1]
     const locale = (locales as readonly string[]).includes(firstSegment) ? firstSegment : 'sk'
     if (!token) {
-      return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
+      // Remember where the user was headed. The login page re-validates this value
+      // (lib/safe-callback.ts) before using it, so it cannot be abused as an open redirect.
+      const loginUrl = new URL(`/${locale}/login`, request.url)
+      if (firstSegment === locale) {
+        loginUrl.searchParams.set('callbackUrl', `${pathname}${request.nextUrl.search}`)
+      }
+      return NextResponse.redirect(loginUrl)
     }
     // /admin je vyhradený len pre globálnych adminov
     const pathWithoutLocale = pathname.replace(/^\/(en|de|cs|sk|pl)/, '')

@@ -29,8 +29,11 @@ export default function LoginClient({
   params,
   notice,
   providersAvailable,
+  callbackUrl = null,
 }: {
   params: { locale: string }
+  /** Pre-validated (lib/safe-callback.ts) in-app path to return to after login. */
+  callbackUrl?: string | null
   /** Server-rendered explanation for a redirect (e.g. `?error=forbidden`). */
   notice?: React.ReactNode
   /** Which OAuth providers lib/auth.ts actually registered (env keys present). */
@@ -73,8 +76,11 @@ export default function LoginClient({
         // Get session to determine redirect based on role
         const session = await getSession()
 
-        // Redirect employers to employer dashboard, candidates to regular dashboard
-        if (session?.user?.orgId) {
+        // Return to the page the user originally wanted; otherwise employers go to the
+        // employer dashboard and candidates to the regular dashboard
+        if (callbackUrl) {
+          router.push(callbackUrl)
+        } else if (session?.user?.orgId) {
           router.push(`/${locale}/employer`)
         } else {
           router.push(`/${locale}/dashboard`)
@@ -90,12 +96,12 @@ export default function LoginClient({
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    await signIn('google', { callbackUrl: `/${locale}/dashboard` })
+    await signIn('google', { callbackUrl: callbackUrl ?? `/${locale}/dashboard` })
   }
 
   const handleAppleSignIn = async () => {
     setLoading(true)
-    await signIn('apple', { callbackUrl: `/${locale}/dashboard` })
+    await signIn('apple', { callbackUrl: callbackUrl ?? `/${locale}/dashboard` })
   }
 
   return (

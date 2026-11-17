@@ -4,10 +4,13 @@
 // separate follow-up change, then delete whichever copy loses.
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import { assertLocalDatabase } from '../../../packages/db/assert-local-database'
 
 const prisma = new PrismaClient()
 
 async function main() {
+  // Deletes ALL users/orgs/jobs/applications below — never allow it on a remote DB.
+  assertLocalDatabase()
   console.log('🌱 Starting seed...')
 
   // Clear existing data
@@ -101,7 +104,7 @@ async function main() {
   })
 
   // Candidates
-  const candidate1 = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'jan.novak@example.com',
       name: 'Ján Novák',
@@ -110,7 +113,7 @@ async function main() {
     },
   })
 
-  const candidate2 = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'maria.kovacova@example.com',
       name: 'Mária Kováčová',
@@ -119,7 +122,7 @@ async function main() {
     },
   })
 
-  const candidate3 = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'peter.szabo@example.com',
       name: 'Peter Szabó',

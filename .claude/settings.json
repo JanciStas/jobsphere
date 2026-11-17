@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/post-edit.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.mjs\"",
             "timeout": 30
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/dod-gate.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/dod-gate.mjs\"",
             "timeout": 600
           }
         ]

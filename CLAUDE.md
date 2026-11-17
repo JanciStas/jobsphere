@@ -646,13 +646,15 @@ Príkazy projektu: typecheck=`yarn typecheck` · lint=`yarn lint` · test=`yarn 
 
 ## Security posture
 
-skóre: **75/100** (findings.json, 2026-09-27, po zlúčení PR #22–#24 do `main`) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v `bezpecnostny-audit/findings.json`.
+skóre: **78/100** (findings.json, 2026-11-17, po oprave N1 a lokálnom audite) — predtým 75/100 (2026-09-27, po PR #22–#24) — formula 100 − Critical·20 − High·10 − Medium·4 − Low·1 len z otvorených nálezov v `bezpecnostny-audit/findings.json`.
 
-otvorené: **0 Critical · 1 High** (H4 Stripe env) · **3 Medium** (M2 KV rate-limit env, M9 Trivy gate — crashol, viď nižšie, N1 `/api/health` vracia 500 v produkcii — potvrdené aj pred aj po Next 15 mergi, appka inak beží, viď nižšie) · **3 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET — env doplnený, čaká na deploy). SEC-1/A2 (Next 14 RCE/DoS/SSRF) opravené upgradom na **Next 15.5.26** (PR #24 v `main`; `yarn audit`: 0 Critical), A17 webhook N+1 opravený. M9 Trivy CRITICAL gate NEbol zapnutý — trivy-action@master pri exit-code/severity crashol bez výpisu nálezov (yarn/pip detekcia), potrebuje samostatné vyšetrenie skôr než sa zapne.
+otvorené: **0 Critical · 1 High** (H4 Stripe env) · **2 Medium** (M2 KV rate-limit env, M9 Trivy gate — crashol, viď nižšie; N1 `/api/health` je od 2026-11-17 uzavretý — už vracia 200) · **4 Low** (SEC-5 swagger-ui-react, SEC-6 axios/@sendgrid, L3 HEALTH_CHECK_SECRET — env doplnený, čaká na deploy, A1 AGENCY/rolová politika — rozhodnutie vlastníka). SEC-1/A2 (Next 14 RCE/DoS/SSRF) opravené upgradom na **Next 15.5.26** (PR #24 v `main`; `yarn audit`: 0 Critical), A17 webhook N+1 opravený. M9 Trivy CRITICAL gate NEbol zapnutý — trivy-action@master pri exit-code/severity crashol bez výpisu nálezov (yarn/pip detekcia), potrebuje samostatné vyšetrenie skôr než sa zapne.
 
 **Merania 2026-09-27**: unit **1163/1163** · integrácia **384/384** · E2E chromium na Next 15 produkčnom builde **234 passed / 1 failed (cv-upload PDF — chýba storage/OpenAI env) / 3 flaky / 48 skipped** · typecheck, lint src, build ✅. Next 15: `params` sa do klientskych komponentov posiela ako `await params`; `cookies()`/`headers()` sú async. PR #22, #23, #24 zlúčené do `main` a nasadené do produkcie (jobsphere.eu); stránky (`/sk`, `/en`) vracajú 200, ale `/api/health` 500 — nový nález N1, potvrdený nezávislý od Next 15.
 
-**Celkové hodnotenie projektu: ~85 %** — chýbajúce Stripe/KV env, mŕtvy Sentry a padajúci `/api/health` (N1) ťahajú prevádzku dole.
+**Celkové hodnotenie projektu: ~85 %** — chýbajúce Stripe/KV env a mŕtvy Sentry ťahajú prevádzku dole. N1 (`/api/health` 500) sa už nereprodukuje: 200 na jobsphere.eu aj lokálne (2026-11-17).
+
+**Audit 2026-11-17 (lokálna seedovaná DB, 8 rolí × 80 URL, 0× 5xx):** opravené cvEdit i18n (81 kľúčov), hlavička a11y/i18n, PII v logoch (A9), únik Organization/Job v POST /api/applications, poistka seed skriptov (len lokálna DB), noindex pre neexistujúce inzeráty, callbackUrl po prihlásení, hook cesta. Otvorené rozhodnutie vlastníka: **2026-11-A1** — `assignedJobs`/`assignedCandidates` pre AGENCY sa nikde nevynucujú a branches/billing/members nemajú rolovú kontrolu. Lokálne testovacie účty: `yarn db:seed` (packages/db) → heslo `demo123` (admin@techcorp.sk, recruiter@techcorp.sk, hiring@techcorp.sk, agency@partner.sk, superadmin@jobsphere.local, candidate@jobsphere.local, freelancer@jobsphere.local); seed odmieta ne-lokálny DATABASE_URL.
 
 > Predošlá baseline (100/100, 2026-06-29): `bezpecnostny-audit/SECURITY_REPORT_2026-06-29.md` · tracking: `bezpecnostny-audit/findings.json`. M5 = samostatný follow-up PR (workeri + Prisma schéma, testovať mimo prod).
 

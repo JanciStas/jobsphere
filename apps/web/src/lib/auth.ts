@@ -7,6 +7,7 @@ import { prisma } from './prisma'
 import * as bcryptjs from 'bcryptjs'
 import { getServerSession } from 'next-auth/next'
 import { logger } from './logger'
+import { maskEmail } from './mask-email'
 import { deriveActiveContext, isMemberOfOrg, type OrgMembership } from './auth-context'
 
 // UnauthorizedError — defined here to break circular dep with api-helpers.ts
@@ -128,7 +129,7 @@ export const authOptions: NextAuthOptions = {
                 },
               })
               logger.warn(
-                `🔒 Account locked for ${user.email} after ${maxAttempts} failed attempts. Locked until ${lockedUntil.toISOString()}`,
+                `🔒 Account locked for ${maskEmail(user.email)} after ${maxAttempts} failed attempts. Locked until ${lockedUntil.toISOString()}`,
               )
             } else {
               // Just increment counter
@@ -139,7 +140,7 @@ export const authOptions: NextAuthOptions = {
                 },
               })
               logger.warn(
-                `⚠️  Failed login attempt ${newFailedAttempts}/${maxAttempts} for ${user.email}`,
+                `⚠️  Failed login attempt ${newFailedAttempts}/${maxAttempts} for ${maskEmail(user.email)}`,
               )
             }
 

@@ -53,11 +53,13 @@ export async function generateMetadata({
       },
     })
   } catch {
-    return { title: t('jobNotFound') }
+    return { title: t('jobNotFound'), robots: { index: false, follow: false } }
   }
 
+  // The page streams behind loading.tsx, so notFound() cannot change the HTTP
+  // status (it stays 200). Keep unknown/unpublished jobs out of search indexes.
   if (!job) {
-    return { title: t('jobNotFound') }
+    return { title: t('jobNotFound'), robots: { index: false, follow: false } }
   }
 
   const title = job.metaTitle || t('jobTitle', { title: job.title, company: job.organization.name })

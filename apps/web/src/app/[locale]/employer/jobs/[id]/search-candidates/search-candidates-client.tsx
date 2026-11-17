@@ -42,6 +42,7 @@ export default function SearchCandidatesClient({
   params: { locale: string; id: string }
 }) {
   const t = useTranslations('employer.searchCandidates')
+  const tp = useTranslations('employerPages')
   const [isSearching, setIsSearching] = useState(false)
   const [isLoadingJob, setIsLoadingJob] = useState(true)
   const [jobTitle, setJobTitle] = useState('')
@@ -164,12 +165,12 @@ export default function SearchCandidatesClient({
           <Link href={`/${params.locale}/employer/jobs`}>
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Jobs
+              {tp('searchCandidatesBackToJobs')}
             </Button>
           </Link>
-          <h1 className="mb-2 text-4xl font-bold">Search Candidates</h1>
+          <h1 className="mb-2 text-4xl font-bold">{tp('searchCandidatesTitle')}</h1>
           <p className="text-xl text-muted-foreground">
-            Find matching candidates for: <span className="font-semibold">{jobTitle}</span>
+            {tp('searchCandidatesFor')} <span className="font-semibold">{jobTitle}</span>
           </p>
         </div>
 

@@ -38,12 +38,13 @@ export default function ApplicationDetailClient({
       try {
         const response = await fetch(`/api/applications/${applicationId}`)
         if (!response.ok) {
-          throw new Error('Failed to fetch application')
+          throw new Error(`HTTP ${response.status}`)
         }
         const data = await response.json()
         setApplication(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+      } catch {
+        // Never surface the raw (English) technical message to the user.
+        setError(t('notFound'))
       } finally {
         setLoading(false)
       }

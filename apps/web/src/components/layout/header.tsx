@@ -50,19 +50,23 @@ export function Header() {
     <header
       className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       role="banner"
-      aria-label="Site header"
+      aria-label={t('nav.siteHeader')}
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-3 lg:gap-8">
           {/* Below md the desktop <nav> is display:none, so this drawer is the
               ONLY way to reach the main navigation. It renders the very same
               `navItems` array — the list is defined once, above. */}
-          <NavDrawer label="Open main menu" title="Main navigation" triggerClassName="lg:hidden">
+          <NavDrawer
+            label={t('nav.openMenu')}
+            title={t('nav.mainNavigation')}
+            triggerClassName="lg:hidden"
+          >
             {(close) => (
               <nav
                 className="flex flex-col gap-1 px-3 pb-6 pt-16"
                 role="navigation"
-                aria-label="Mobile navigation"
+                aria-label={t('nav.mobileNavigation')}
               >
                 {navItems.map((item) => (
                   <Link
@@ -79,7 +83,7 @@ export function Header() {
             )}
           </NavDrawer>
 
-          <Link href={`/${locale}`} className="flex items-center" aria-label="JobSphere home">
+          <Link href={`/${locale}`} className="flex items-center" aria-label={t('nav.homeAria')}>
             <Image
               src="/images/jobsphere_logo.png"
               alt="JobSphere"
@@ -93,7 +97,7 @@ export function Header() {
           <nav
             className="hidden items-center gap-6 lg:flex"
             role="navigation"
-            aria-label="Main navigation"
+            aria-label={t('nav.mainNavigation')}
           >
             {navItems.map((item) => (
               <Link
@@ -111,7 +115,7 @@ export function Header() {
         <div
           className="flex items-center gap-2 lg:gap-4"
           role="navigation"
-          aria-label="User actions"
+          aria-label={t('nav.userActions')}
         >
           <LanguageSwitcher />
           {/* Only for signed-in users: the endpoint is per-user and there is
@@ -125,27 +129,27 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
-                  {session.user.name || session.user.email || 'Account'}
+                  {session.user.name || session.user.email || t('nav.account')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {orgs.length > 0 && (
                   <>
-                    <DropdownMenuLabel>Kontext</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t('nav.context')}</DropdownMenuLabel>
                     {orgs.map((org) => (
                       <DropdownMenuItem key={org.orgId} onClick={() => switchToOrg(org.orgId)}>
                         <span className="mr-2 w-3">{org.orgId === activeOrgId ? '✓' : ''}</span>
-                        {org.orgName || 'Firma'}
+                        {org.orgName || t('nav.company')}
                       </DropdownMenuItem>
                     ))}
                     {/* MVP: personal contexts are a plain redirect (no active-org
                         change) — the candidate context has no org. */}
                     <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/dashboard`}>Ako uchádzač</Link>
+                      <Link href={`/${locale}/dashboard`}>{t('nav.asCandidate')}</Link>
                     </DropdownMenuItem>
                     {session.user.isFreelancer && (
                       <DropdownMenuItem asChild>
-                        <Link href={`/${locale}/freelancers`}>Ako freelancer</Link>
+                        <Link href={`/${locale}/freelancers`}>{t('nav.asFreelancer')}</Link>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
@@ -158,7 +162,7 @@ export function Header() {
                 </DropdownMenuItem>
                 {session.user.orgId && (
                   <DropdownMenuItem asChild>
-                    <Link href={`/${locale}/employer/settings`}>Nastavenia spoločnosti</Link>
+                    <Link href={`/${locale}/employer/settings`}>{t('nav.companySettings')}</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
@@ -173,14 +177,10 @@ export function Header() {
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild>
-                <Link href={`/${locale}/login`} aria-label="Log in to your account">
-                  {t('nav.login')}
-                </Link>
+                <Link href={`/${locale}/login`}>{t('nav.login')}</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href={`/${locale}/signup`} aria-label="Create a new account">
-                  {t('nav.signup')}
-                </Link>
+                <Link href={`/${locale}/signup`}>{t('nav.signup')}</Link>
               </Button>
             </>
           )}

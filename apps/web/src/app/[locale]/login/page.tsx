@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { ShieldAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { safeCallbackPath } from '@/lib/safe-callback'
 import LoginClient from './login-client'
 
 type Props = {
@@ -41,7 +42,18 @@ export default async function LoginPage({ params, searchParams }: Props) {
     apple: Boolean(process.env.APPLE_ID && process.env.APPLE_SECRET),
   }
 
+  const rawCallback = searchParams?.callbackUrl
+  const callbackUrl = safeCallbackPath(
+    Array.isArray(rawCallback) ? rawCallback[0] : rawCallback,
+    params.locale,
+  )
+
   return (
-    <LoginClient params={await params} notice={notice} providersAvailable={providersAvailable} />
+    <LoginClient
+      params={await params}
+      notice={notice}
+      providersAvailable={providersAvailable}
+      callbackUrl={callbackUrl}
+    />
   )
 }

@@ -2,6 +2,7 @@
 import { PrismaClient } from '@prisma/client'
 import { faker } from '@faker-js/faker'
 import * as bcrypt from 'bcryptjs'
+import { assertLocalDatabase } from './assert-local-database'
 
 const prisma = new PrismaClient()
 
@@ -14,6 +15,9 @@ const REGIONS = {
 }
 
 async function seed() {
+  // This seed TRUNCATEs core tables (User, Organization, ...) with CASCADE.
+  // Refuse to run unless DATABASE_URL points at a plain local database.
+  assertLocalDatabase()
   console.log('🌱 Starting seed...')
 
   // Clear existing data (truncate all main tables)
@@ -78,6 +82,67 @@ async function seed() {
       name: 'Agency Partner',
       locale: 'sk',
       emailVerified: new Date(),
+    },
+  })
+
+  // Platform (global) admin — no org membership, reaches /admin
+  await prisma.user.create({
+    data: {
+      email: 'superadmin@jobsphere.local',
+      password: hashedPassword,
+      name: 'Global Admin',
+      locale: 'sk',
+      emailVerified: new Date(),
+      isGlobalAdmin: true,
+    },
+  })
+
+  // Job-seeker (candidate) login: User + Candidate row linked via userId
+  const candidateUser = await prisma.user.create({
+    data: {
+      email: 'candidate@jobsphere.local',
+      password: hashedPassword,
+      name: 'Test Kandidát',
+      locale: 'sk',
+      emailVerified: new Date(),
+    },
+  })
+  await prisma.candidate.create({
+    data: {
+      orgId: org.id,
+      userId: candidateUser.id,
+      source: 'WEBSITE',
+      tags: ['typescript', 'react'],
+      contacts: {
+        create: {
+          fullName: 'Test Kandidát',
+          email: 'candidate@jobsphere.local',
+          location: 'Bratislava',
+          primaryLocale: 'sk',
+        },
+      },
+    },
+  })
+
+  // Freelancer login: User + FreelancerProfile
+  const freelancerUser = await prisma.user.create({
+    data: {
+      email: 'freelancer@jobsphere.local',
+      password: hashedPassword,
+      name: 'Test Freelancer',
+      locale: 'sk',
+      emailVerified: new Date(),
+    },
+  })
+  await prisma.freelancerProfile.create({
+    data: {
+      userId: freelancerUser.id,
+      title: 'Web developer',
+      bio: 'Testovací freelancer profil.',
+      services: ['webdizajn', 'tvorba e-shopu'],
+      skills: ['TypeScript', 'React'],
+      hourlyRate: 30,
+      location: 'Bratislava',
     },
   })
 
@@ -210,6 +275,15 @@ async function seed() {
       { orgId: org.id, featureKey: 'seats', limitInt: 10, remainingInt: 6 },
       { orgId: org.id, featureKey: 'assessments_per_month', limitInt: 10, remainingInt: 8 },
       { orgId: org.id, featureKey: 'email_sends_per_month', limitInt: 5000, remainingInt: 4500 },
+      // Keys actually read by apps/web/src/lib/entitlements.ts (type `Feature`)
+      { orgId: org.id, featureKey: 'MAX_JOBS', limitInt: 15 },
+      { orgId: org.id, featureKey: 'MAX_CANDIDATES', limitInt: null },
+      { orgId: org.id, featureKey: 'MAX_TEAM_MEMBERS', limitInt: 10 },
+      { orgId: org.id, featureKey: 'EMAIL_SEQUENCES', limitInt: 1 },
+      { orgId: org.id, featureKey: 'ASSESSMENTS', limitInt: 1 },
+      { orgId: org.id, featureKey: 'AI_MATCHING', limitInt: 1 },
+      { orgId: org.id, featureKey: 'CUSTOM_BRANDING', limitInt: 1 },
+      { orgId: org.id, featureKey: 'API_ACCESS', limitInt: 1 },
     ],
   })
 
@@ -741,7 +815,9 @@ Best regards,
   console.log('')
   console.log('📊 Seeded Data Summary:')
   console.log('  Organizations: 1')
-  console.log('  Users: 4 (Admin, Recruiter, Hiring Manager, Agency)')
+  console.log(
+    '  Users: 7 (Admin, Recruiter, Hiring Manager, Agency, Global Admin, Candidate, Freelancer)',
+  )
   console.log('  Jobs: 8 (across BA, ZA, KE, REMOTE regions)')
   console.log('  Candidates: 20 (with resumes and sections)')
   console.log('  Assessments: 2 (Full Stack JS/React, Python/SQL)')
@@ -752,6 +828,9 @@ Best regards,
   console.log('  Recruiter: recruiter@techcorp.sk / demo123')
   console.log('  Hiring Manager: hiring@techcorp.sk / demo123')
   console.log('  Agency: agency@partner.sk / demo123')
+  console.log('  Global Admin: superadmin@jobsphere.local / demo123')
+  console.log('  Candidate: candidate@jobsphere.local / demo123')
+  console.log('  Freelancer: freelancer@jobsphere.local / demo123')
 }
 
 seed()

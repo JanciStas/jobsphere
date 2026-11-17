@@ -12,15 +12,9 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/rate-limit'
 import { verifyUnsubscribeToken } from '@/lib/unsubscribe'
+import { maskEmail } from '@/lib/mask-email'
 
 export const runtime = 'nodejs'
-
-/** Mask an email for logging — keep first char + domain (GDPR: no full PII in logs). */
-function maskEmail(email: string): string {
-  const [local, domain] = email.split('@')
-  if (!domain) return '***'
-  return `${local.slice(0, 1)}***@${domain}`
-}
 
 function htmlPage(title: string, message: string, status: number): NextResponse {
   const body = `<!DOCTYPE html>

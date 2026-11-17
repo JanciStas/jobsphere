@@ -45,7 +45,8 @@ test.describe('Screen Reader Accessibility', () => {
         const ariaLabelledBy = await button.getAttribute('aria-labelledby')
 
         // Button must have at least one way to be labeled
-        const hasAccessibleName = ariaLabel || (textContent && textContent.trim().length > 0) || ariaLabelledBy
+        const hasAccessibleName =
+          ariaLabel || (textContent && textContent.trim().length > 0) || ariaLabelledBy
 
         expect(hasAccessibleName).toBeTruthy()
 
@@ -71,8 +72,8 @@ test.describe('Screen Reader Accessibility', () => {
           const ariaLabel = await button.getAttribute('aria-label')
           const textContent = await button.textContent()
 
-          const hasLabel = (ariaLabel && ariaLabel.length > 0) ||
-                          (textContent && textContent.trim().length > 0)
+          const hasLabel =
+            (ariaLabel && ariaLabel.length > 0) || (textContent && textContent.trim().length > 0)
 
           expect(hasLabel).toBeTruthy()
         }
@@ -86,16 +87,10 @@ test.describe('Screen Reader Accessibility', () => {
       const logoLink = page.locator('a[aria-label="JobSphere home"]')
       await expect(logoLink).toBeVisible()
 
-      // Verify auth links have descriptive labels
-      const loginLink = page.locator('a[aria-label="Log in to your account"]')
-      if (await loginLink.count() > 0) {
-        await expect(loginLink).toBeVisible()
-      }
-
-      const signupLink = page.locator('a[aria-label="Create a new account"]')
-      if (await signupLink.count() > 0) {
-        await expect(signupLink).toBeVisible()
-      }
+      // Auth links are named by their visible (translated) text, not a hardcoded aria-label
+      const header = page.getByRole('banner')
+      await expect(header.getByRole('link', { name: 'Log in' })).toBeVisible()
+      await expect(header.getByRole('link', { name: 'Sign up' })).toBeVisible()
     })
   })
 
@@ -118,7 +113,9 @@ test.describe('Screen Reader Accessibility', () => {
       await page.waitForTimeout(1000)
 
       // Check for error message with aria-live or role="alert"
-      const errorRegions = page.locator('[role="alert"], [aria-live="polite"], [aria-live="assertive"]')
+      const errorRegions = page.locator(
+        '[role="alert"], [aria-live="polite"], [aria-live="assertive"]',
+      )
       const errorCount = await errorRegions.count()
 
       // Should have at least one live region for errors
@@ -150,11 +147,7 @@ test.describe('Screen Reader Accessibility', () => {
       // Wait for debounce
       await page.waitForTimeout(700)
 
-      // Results count should update and ideally be in a status region
-      const statusRegions = page.locator('[role="status"], [aria-live]')
-      const statusCount = await statusRegions.count()
-
-      // Even if not in live region, results text should be visible
+      // Results text should be visible (live-region announcement is best practice, not enforced)
       await expect(resultsText.first()).toBeVisible()
     })
 
@@ -162,10 +155,12 @@ test.describe('Screen Reader Accessibility', () => {
       await page.goto('/en/jobs')
 
       // Look for loading indicators
-      const loadingIndicator = page.locator('[aria-live], [role="status"]').filter({ hasText: /loading/i })
+      const loadingIndicator = page
+        .locator('[aria-live], [role="status"]')
+        .filter({ hasText: /loading/i })
 
       // If loading state exists, it should have proper ARIA
-      if (await loadingIndicator.count() > 0) {
+      if ((await loadingIndicator.count()) > 0) {
         const liveRegion = loadingIndicator.first()
 
         // Should have aria-live or role="status"
@@ -221,7 +216,7 @@ test.describe('Screen Reader Accessibility', () => {
         if (describedBy) {
           // Verify the referenced error element exists
           const errorElement = page.locator(`#${describedBy}`)
-          const errorExists = await errorElement.count() > 0
+          const errorExists = (await errorElement.count()) > 0
 
           expect(errorExists).toBeTruthy()
 
@@ -244,7 +239,7 @@ test.describe('Screen Reader Accessibility', () => {
       // Look for error summary or alert
       const errorSummary = page.locator('[role="alert"]').first()
 
-      if (await errorSummary.count() > 0) {
+      if ((await errorSummary.count()) > 0) {
         await expect(errorSummary).toBeVisible()
 
         // Error should have meaningful text
@@ -358,7 +353,7 @@ test.describe('Screen Reader Accessibility', () => {
       const levels: number[] = []
       for (let i = 0; i < count; i++) {
         const heading = headings.nth(i)
-        const tagName = await heading.evaluate(el => el.tagName)
+        const tagName = await heading.evaluate((el) => el.tagName)
         const level = parseInt(tagName.replace('H', ''))
         levels.push(level)
       }
@@ -436,7 +431,7 @@ test.describe('Screen Reader Accessibility', () => {
 
       // User actions navigation (if exists)
       const userNav = page.locator('nav[aria-label="User actions"]')
-      if (await userNav.count() > 0) {
+      if ((await userNav.count()) > 0) {
         await expect(userNav).toBeVisible()
       }
     })
@@ -455,7 +450,7 @@ test.describe('Screen Reader Accessibility', () => {
 
       // Verify skip link exists and points to main content
       const skipLink = page.locator('a[href*="#main"]')
-      if (await skipLink.count() > 0) {
+      if ((await skipLink.count()) > 0) {
         const href = await skipLink.getAttribute('href')
         expect(href).toBeTruthy()
 
@@ -525,7 +520,7 @@ test.describe('Screen Reader Accessibility', () => {
 
       // Status regions should exist for non-urgent updates
       // This is more of a structural check
-      if (await statusRegions.count() > 0) {
+      if ((await statusRegions.count()) > 0) {
         const region = statusRegions.first()
 
         // Verify it has either role or aria-live
@@ -547,7 +542,7 @@ test.describe('Screen Reader Accessibility', () => {
       // Error messages should use alert
       const alerts = page.locator('[role="alert"], [aria-live="assertive"]')
 
-      if (await alerts.count() > 0) {
+      if ((await alerts.count()) > 0) {
         const alert = alerts.first()
 
         // Verify alert is visible
@@ -566,18 +561,10 @@ test.describe('Screen Reader Accessibility', () => {
       // Check for loading state indicators
       const loadingText = page.locator('text=/loading/i')
 
-      if (await loadingText.count() > 0) {
+      if ((await loadingText.count()) > 0) {
         const loader = loadingText.first()
 
-        // Loading message should be in live region or have aria-label
-        const parent = loader.locator('..')
-        const ariaLive = await parent.getAttribute('aria-live')
-        const role = await parent.getAttribute('role')
-
-        // Should have some form of announcement mechanism
-        const hasAnnouncement = ariaLive || role === 'status' || role === 'alert'
-
-        // Not strictly required, but good practice
+        // A live-region announcement is good practice but not strictly required.
         // Just verify the loading text is visible
         await expect(loader).toBeVisible()
       }
@@ -610,7 +597,7 @@ test.describe('Screen Reader Accessibility', () => {
           // If aria-labelledby, verify element exists
           if (labelledBy) {
             const labelElement = page.locator(`#${labelledBy}`)
-            const exists = await labelElement.count() > 0
+            const exists = (await labelElement.count()) > 0
             expect(exists).toBeTruthy()
           }
         }
@@ -624,7 +611,7 @@ test.describe('Screen Reader Accessibility', () => {
       const modals = page.locator('[role="dialog"][aria-modal="true"]')
 
       // If modals exist, they should have proper attributes
-      if (await modals.count() > 0) {
+      if ((await modals.count()) > 0) {
         const modal = modals.first()
 
         // Verify aria-modal
@@ -656,7 +643,7 @@ test.describe('Screen Reader Accessibility', () => {
         if (id) {
           // Should have corresponding label
           const label = page.locator(`label[for="${id}"]`)
-          const labelExists = await label.count() > 0
+          const labelExists = (await label.count()) > 0
 
           // Or should have aria-label
           const ariaLabel = await input.getAttribute('aria-label')

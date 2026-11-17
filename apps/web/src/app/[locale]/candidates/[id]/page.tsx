@@ -31,6 +31,7 @@ export default async function CandidateProfilePage({
   params: { id: string; locale: string }
 }) {
   const session = await auth()
+  const tp = await getTranslations({ locale: params.locale, namespace: 'employerPages' })
 
   if (!session?.user?.id) {
     redirect(`/${params.locale}/login`)
@@ -78,7 +79,7 @@ export default async function CandidateProfilePage({
       <div className="container mx-auto py-10">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Candidate not found</AlertDescription>
+          <AlertDescription>{tp('candidateNotFound')}</AlertDescription>
         </Alert>
       </div>
     )
@@ -97,9 +98,7 @@ export default async function CandidateProfilePage({
       <div className="container mx-auto py-10">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You do not have permission to view this candidate profile.
-          </AlertDescription>
+          <AlertDescription>{tp('candidateNoPermission')}</AlertDescription>
         </Alert>
       </div>
     )
@@ -115,7 +114,7 @@ export default async function CandidateProfilePage({
         <Link href={`/${params.locale}/employer/applicants`}>
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Applicants
+            {tp('backToApplicants')}
           </Button>
         </Link>
 

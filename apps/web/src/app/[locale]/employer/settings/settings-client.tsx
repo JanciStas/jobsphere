@@ -16,6 +16,7 @@ export default function SettingsClient() {
   const params = useParams()
   const locale = params.locale as string
   const t = useTranslations('employer')
+  const tp = useTranslations('employerPages')
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -24,13 +25,13 @@ export default function SettingsClient() {
         <Button variant="ghost" asChild className="mb-6">
           <Link href={`/${locale}/employer`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to dashboard
+            {tp('backToDashboard')}
           </Link>
         </Button>
 
         <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">Company Settings</h1>
-          <p className="text-muted-foreground">Manage your organization settings and preferences</p>
+          <h1 className="mb-2 text-3xl font-bold">{t('companySettings')}</h1>
+          <p className="text-muted-foreground">{tp('settingsDescription')}</p>
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">

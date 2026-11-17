@@ -351,9 +351,16 @@ export const POST = withCsrfProtection(
               : {}),
           },
           include: {
+            // Explicit selects: returning whole Job/Organization rows leaked internal
+            // fields to the applicant (pipeline, assignedRecruiterId, createdBy, and
+            // Organization.settings which holds every member's private userPreferences).
             job: {
-              include: {
-                organization: true,
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                orgId: true,
+                organization: { select: { id: true, name: true, slug: true, logo: true } },
               },
             },
           },

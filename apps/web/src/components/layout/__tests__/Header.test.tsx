@@ -25,6 +25,12 @@ vi.mock('next-intl', () => ({
       'nav.pricing': 'Pricing',
       'nav.login': 'Log In',
       'nav.signup': 'Sign Up',
+      'nav.siteHeader': 'Site header',
+      'nav.mobileNavigation': 'Mobile navigation',
+      'nav.mainNavigation': 'Main navigation',
+      'nav.userActions': 'User actions',
+      'nav.homeAria': 'JobSphere home',
+      'nav.openMenu': 'Open main menu',
     }
     return translations[key] || key
   },
@@ -159,18 +165,21 @@ describe('Header', () => {
     expect(logoLink).toHaveAttribute('href', '/en')
   })
 
-  it('should render login button with aria-label', () => {
+  it('should render login link named by its visible (translated) text', () => {
     render(<Header />)
 
-    const loginButton = screen.getByLabelText('Log in to your account')
-    expect(loginButton).toBeInTheDocument()
+    // No hardcoded English aria-label: accessible name must equal visible text (WCAG 2.5.3)
+    const loginLink = screen.getByRole('link', { name: 'Log In' })
+    expect(loginLink).toBeInTheDocument()
+    expect(loginLink).not.toHaveAttribute('aria-label')
   })
 
-  it('should render signup button with aria-label', () => {
+  it('should render signup link named by its visible (translated) text', () => {
     render(<Header />)
 
-    const signupButton = screen.getByLabelText('Create a new account')
-    expect(signupButton).toBeInTheDocument()
+    const signupLink = screen.getByRole('link', { name: 'Sign Up' })
+    expect(signupLink).toBeInTheDocument()
+    expect(signupLink).not.toHaveAttribute('aria-label')
   })
 
   describe('mobile navigation drawer', () => {

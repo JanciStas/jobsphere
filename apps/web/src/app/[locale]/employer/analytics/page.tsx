@@ -52,7 +52,12 @@ export async function generateMetadata({
   }
 }
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({
+  params: { locale },
+}: {
+  params: { locale: string }
+}) {
+  const tp = await getTranslations({ locale, namespace: 'employerPages' })
   const session = await auth()
 
   if (!session?.user?.id) {
@@ -67,8 +72,8 @@ export default async function AnalyticsPage() {
   if (!membership) {
     return (
       <div className="container mx-auto py-10">
-        <h1 className="mb-6 text-3xl font-bold">Analytics Dashboard</h1>
-        <p className="text-muted-foreground">You are not a member of any organization.</p>
+        <h1 className="mb-6 text-3xl font-bold">{tp('analyticsTitle')}</h1>
+        <p className="text-muted-foreground">{tp('analyticsNoOrg')}</p>
       </div>
     )
   }
@@ -150,9 +155,9 @@ export default async function AnalyticsPage() {
   return (
     <div className="container mx-auto space-y-8 py-10">
       <div>
-        <h1 className="mb-2 text-3xl font-bold">Analytics Dashboard</h1>
+        <h1 className="mb-2 text-3xl font-bold">{tp('analyticsTitle')}</h1>
         <p className="text-muted-foreground">
-          Overview of applications for {membership.organization.name}
+          {tp('analyticsOverview', { organization: membership.organization.name })}
         </p>
       </div>
 
