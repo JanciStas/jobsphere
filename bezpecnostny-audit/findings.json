@@ -561,5 +561,13 @@
     "file": "apps/web/src/app/api/organizations/current/{branches,billing,members}/route.ts, applications/[id], candidates/search",
     "status": "open",
     "summary": "UserOrgRole.assignedJobs/assignedCandidates sa nikde nečítajú — AGENCY vidí všetko ako bežný člen; branches CRUD, billing GET a zoznam členov nemajú rolovú kontrolu (len členstvo). Vyžaduje rozhodnutie vlastníka o rolovej politike (nie potvrdený cross-tenant únik)."
+  },
+  {
+    "id": "2026-11-A2",
+    "severity": "Medium",
+    "category": "A - Authentication",
+    "file": "apps/web/src/lib/auth.ts:150-162 (Vercel env PREVIEW_SKIP_EMAIL_VERIFICATION)",
+    "status": "open",
+    "summary": "Produkcia (jobsphere.eu) nevynucuje overenie e-mailu: účet založený cez /api/auth/signup sa prihlásil bez potvrdenia e-mailu (overené 2026-11-17, session vznikla). Vo Vercel Production existuje PREVIEW_SKIP_EMAIL_VERIFICATION, ktorý kontrolu vypína. Dôsledok: registrácia cudzím e-mailom (pre-hijack účtu), falošné employer organizácie, spam prihlášky. Riešenie (vlastník): nastaviť funkčný e-mailový provider (RESEND_API_KEY, EMAIL_SERVICE) a potom premennú z Production odstrániť + redeploy; bez providera by odstránenie zablokovalo registráciu."
   }
 ]
