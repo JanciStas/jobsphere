@@ -43,12 +43,22 @@ export function Footer() {
 
   return (
     <footer className="border-t bg-muted/30">
-      <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
+      <div className="container py-8">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-5">
+          <div className="col-span-2 md:col-span-1">
+            <Image
+              src="/images/jobsphere_logo.png"
+              alt="JobSphere"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
+            <p className="mt-2 text-sm text-muted-foreground">{t('tagline')}</p>
+          </div>
           {footerSections.map((section, index) => (
             <div key={index}>
-              <h3 className="mb-4 text-sm font-semibold">{section.title}</h3>
-              <ul className="space-y-3">
+              <h3 className="mb-2 text-sm font-semibold">{section.title}</h3>
+              <ul className="space-y-1.5">
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
                     <Link
@@ -64,23 +74,9 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 border-t pt-8">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="text-center md:text-left">
-              <Image
-                src="/images/jobsphere_logo.png"
-                alt="JobSphere"
-                width={120}
-                height={40}
-                className="mx-auto h-10 w-auto md:mx-0"
-              />
-              <p className="mt-2 text-sm text-muted-foreground">{t('tagline')}</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} JobSphere. {t('allRightsReserved')}
-            </p>
-          </div>
-        </div>
+        <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground md:text-left">
+          © {new Date().getFullYear()} JobSphere. {t('allRightsReserved')}
+        </p>
       </div>
     </footer>
   )
