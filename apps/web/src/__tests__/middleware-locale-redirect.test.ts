@@ -25,7 +25,8 @@ describe('middleware: anonymous access to protected routes', () => {
     ['/employer', '/sk/login/employer'],
     ['/agency/dashboard', '/sk/login/agency'],
     ['/freelancer/dashboard', '/sk/login/freelancer'],
-    ['/admin', '/sk/login'],
+    ['/admin', '/sk/login/admin'],
+    ['/admin/audit', '/sk/login/admin'],
     ['/settings', '/sk/login'],
     ['/profile', '/sk/login'],
   ])(

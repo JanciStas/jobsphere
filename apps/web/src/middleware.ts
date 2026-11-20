@@ -55,7 +55,7 @@ export default async function middleware(request: NextRequest) {
     // /admin je vyhradený len pre globálnych adminov
     const pathWithoutLocale = pathname.replace(/^\/(en|de|cs|sk|pl)/, '')
     if (pathWithoutLocale.startsWith('/admin') && !token.isGlobalAdmin) {
-      return NextResponse.redirect(new URL(`/${locale}/login?error=forbidden`, request.url))
+      return NextResponse.redirect(new URL(`/${locale}/login/admin?error=forbidden`, request.url))
     }
   }
 

@@ -2,7 +2,8 @@
 
 /**
  * UserDetailActions — Client Component
- * Renders action buttons for the user detail page and calls the admin API.
+ * Admin-role and delete buttons for the user detail page. Suspend/restore and the
+ * other support actions live in ../_components/help-actions.tsx (with confirmation).
  */
 
 import { useState } from 'react'
@@ -20,21 +21,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Ban, CheckCircle, ShieldCheck, ShieldOff, Trash2, Loader2 } from 'lucide-react'
+import { ShieldCheck, ShieldOff, Trash2, Loader2 } from 'lucide-react'
 
 interface UserDetailActionsProps {
   userId: string
-  isBanned: boolean
   isGlobalAdmin: boolean
   isSelf: boolean
   locale: string
 }
 
-type Action = 'ban' | 'unban' | 'promote_admin' | 'demote_admin'
+type Action = 'promote_admin' | 'demote_admin'
 
 export function UserDetailActions({
   userId,
-  isBanned,
   isGlobalAdmin,
   isSelf,
   locale,
@@ -104,39 +103,6 @@ export function UserDetailActions({
       )}
 
       <div className="flex shrink-0 flex-wrap gap-2">
-        {/* Ban / Unban */}
-        {isBanned ? (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={isLoading || isSelf}
-            onClick={() => performAction('unban')}
-            className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-          >
-            {pending === 'unban' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle className="mr-2 h-4 w-4" />
-            )}
-            {t('users.unban')}
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={isLoading || isSelf}
-            onClick={() => performAction('ban')}
-            className="border-red-200 text-red-600 hover:bg-red-50"
-          >
-            {pending === 'ban' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Ban className="mr-2 h-4 w-4" />
-            )}
-            {t('users.ban')}
-          </Button>
-        )}
-
         {/* Promote / Demote admin */}
         {isGlobalAdmin ? (
           <Button

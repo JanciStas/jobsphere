@@ -1,247 +1,192 @@
 'use client'
 
 /**
- * Admin Users Client Component
- * Handles search navigation, pagination and row-level actions (ban/unban/promote/demote).
+ * Admin Users list: search, role/status filters, sorting and pagination.
+ * All filter state lives in the URL, the server page re-queries on navigation.
  */
 
 import { useState, useTransition } from 'react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SHORT_DATE } from '@/lib/formats'
-import {
-  Search,
-  MoreHorizontal,
-  Eye,
-  ShieldCheck,
-  ShieldOff,
-  Ban,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-} from 'lucide-react'
+import { SHORT_DATE, SHORT_DATE_TIME } from '@/lib/formats'
+import { ADMIN_ROLES } from '@/lib/admin-users/roles'
+import { USER_STATUS_FILTERS } from '@/lib/admin-users/list-query'
+import type { AdminUserRow } from '@/lib/admin-users/list'
+import { RoleBadges, StatusBadge } from './_components/badges'
+import { Search, ChevronLeft, ChevronRight, Users, ArrowDown, ArrowUp } from 'lucide-react'
 
-interface UserRow {
-  id: string
-  name: string | null
-  email: string
-  createdAt: Date | string
-  emailVerified: Date | string | null
-  isGlobalAdmin: boolean
-  lockedUntil: Date | string | null
-  failedAttempts: number
-  _count: { organizations: number }
+export interface UsersFilters {
+  search: string
+  role: string
+  status: string
+  sort: 'createdAt' | 'lastLoginAt'
+  order: 'asc' | 'desc'
 }
 
 interface UsersClientProps {
-  initialUsers: UserRow[]
+  initialUsers: AdminUserRow[]
   total: number
   page: number
   limit: number
-  initialSearch: string
+  filters: UsersFilters
   locale: string
 }
 
-type Action = 'ban' | 'unban' | 'promote_admin' | 'demote_admin'
-
-function isBanned(lockedUntil: Date | string | null): boolean {
-  if (!lockedUntil) return false
-  return new Date(lockedUntil) > new Date()
-}
-
-function UserStatusBadge({ user }: { user: UserRow }) {
-  const t = useTranslations('admin')
-
-  if (user.isGlobalAdmin) {
-    return <Badge className="bg-blue-600 text-xs text-white">{t('common.roleAdmin')}</Badge>
-  }
-  if (isBanned(user.lockedUntil)) {
-    return (
-      <Badge variant="destructive" className="text-xs">
-        {t('users.statusBanned')}
-      </Badge>
-    )
-  }
-  return (
-    <Badge
-      variant="secondary"
-      className="border-emerald-200 bg-emerald-50 text-xs text-emerald-700"
-    >
-      {t('users.statusActive')}
-    </Badge>
-  )
-}
-
-function UserInitials({ name, email }: { name: string | null; email: string }) {
-  const display = name ?? email
-  const initials = display
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('')
-  return (
-    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-      {initials || '?'}
-    </span>
-  )
-}
+const SELECT_CLASS =
+  'h-10 rounded-md border border-input bg-background px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-ring'
 
 export function UsersClient({
   initialUsers,
   total,
   page,
   limit,
-  initialSearch,
+  filters,
   locale,
 }: UsersClientProps) {
   const router = useRouter()
   const format = useFormatter()
-  const t = useTranslations('admin')
+  const t = useTranslations('adminUsers')
   const [isPending, startTransition] = useTransition()
-  const [search, setSearch] = useState(initialSearch)
-  const [actionPending, setActionPending] = useState<string | null>(null)
-  const [users, setUsers] = useState<UserRow[]>(initialUsers)
-  const [toast, setToast] = useState<{ message: string; ok: boolean } | null>(null)
+  const [search, setSearch] = useState(filters.search)
 
-  const totalPages = Math.ceil(total / limit)
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
-  function navigate(newPage: number, newSearch?: string) {
-    const s = newSearch ?? search
+  function navigate(next: Partial<UsersFilters> & { page?: number }) {
+    const merged = { ...filters, search, ...next }
     const params = new URLSearchParams()
-    if (s) params.set('search', s)
-    if (newPage > 1) params.set('page', String(newPage))
+    if (merged.search) params.set('search', merged.search)
+    if (merged.role) params.set('role', merged.role)
+    if (merged.status) params.set('status', merged.status)
+    if (merged.sort !== 'createdAt') params.set('sort', merged.sort)
+    if (merged.order !== 'desc') params.set('order', merged.order)
+    if (next.page && next.page > 1) params.set('page', String(next.page))
+    const qs = params.toString()
     startTransition(() => {
-      router.push(`/${locale}/admin/users${params.size ? `?${params.toString()}` : ''}`)
+      router.push(`/${locale}/admin/users${qs ? `?${qs}` : ''}`)
     })
   }
 
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    navigate(1, search)
-  }
-
-  function showToast(message: string, ok: boolean) {
-    setToast({ message, ok })
-    setTimeout(() => setToast(null), 3500)
-  }
-
-  async function handleAction(userId: string, action: Action) {
-    setActionPending(userId + action)
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, action }),
-      })
-      const data: { user?: UserRow; error?: string } = await res.json()
-      if (!res.ok) {
-        showToast(data.error ?? t('common.actionFailed'), false)
-        return
-      }
-      if (data.user) {
-        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...data.user } : u)))
-      }
-      const labels: Record<Action, string> = {
-        ban: t('users.toast.banned'),
-        unban: t('users.toast.unbanned'),
-        promote_admin: t('users.toast.promoted'),
-        demote_admin: t('users.toast.demoted'),
-      }
-      showToast(labels[action], true)
-    } catch {
-      showToast(t('common.actionError'), false)
-    } finally {
-      setActionPending(null)
+  function toggleSort(column: 'createdAt' | 'lastLoginAt') {
+    if (filters.sort === column) {
+      navigate({ sort: column, order: filters.order === 'desc' ? 'asc' : 'desc' })
+    } else {
+      navigate({ sort: column, order: 'desc' })
     }
   }
 
-  return (
-    <div className="space-y-6 p-8">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all ${
-            toast.ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
-          }`}
+  function SortHeader({ column, label }: { column: 'createdAt' | 'lastLoginAt'; label: string }) {
+    const active = filters.sort === column
+    const Icon = filters.order === 'asc' ? ArrowUp : ArrowDown
+    return (
+      <th
+        scope="col"
+        aria-sort={active ? (filters.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+      >
+        <button
+          type="button"
+          onClick={() => toggleSort(column)}
+          className="inline-flex items-center gap-1 uppercase hover:text-slate-800"
         >
-          {toast.message}
-        </div>
-      )}
+          {label}
+          {active && <Icon className="h-3 w-3" aria-hidden="true" />}
+        </button>
+      </th>
+    )
+  }
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
-            <Users className="h-6 w-6" />
-            {t('users.title')}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {t.rich('users.totalUsers', {
-              count: total,
-              strong: (chunks) => <strong>{chunks}</strong>,
-            })}
-          </p>
-        </div>
+  const th = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500'
+
+  return (
+    <div className="space-y-6 p-4 md:p-8">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
+          <Users className="h-6 w-6" aria-hidden="true" />
+          {t('list.title')}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">{t('list.total', { count: total })}</p>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearchSubmit} className="flex max-w-sm gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          navigate({ search, page: 1 })
+        }}
+        className="flex flex-col gap-2 md:flex-row md:items-center"
+      >
+        <div className="relative md:w-80">
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden="true"
+          />
           <Input
             className="pl-9"
-            placeholder={t('users.searchPlaceholder')}
+            aria-label={t('list.searchLabel')}
+            placeholder={t('list.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          aria-label={t('filters.role')}
+          className={SELECT_CLASS}
+          value={filters.role}
+          onChange={(e) => navigate({ role: e.target.value, page: 1 })}
+        >
+          <option value="">{t('filters.allRoles')}</option>
+          {ADMIN_ROLES.map((r) => (
+            <option key={r} value={r}>
+              {t(`roles.${r}`)}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={t('filters.status')}
+          className={SELECT_CLASS}
+          value={filters.status}
+          onChange={(e) => navigate({ status: e.target.value, page: 1 })}
+        >
+          <option value="">{t('filters.allStatuses')}</option>
+          {USER_STATUS_FILTERS.map((s) => (
+            <option key={s} value={s}>
+              {t(`filters.statusOption.${s}`)}
+            </option>
+          ))}
+        </select>
         <Button type="submit" variant="outline" disabled={isPending}>
-          {t('common.search')}
+          {t('list.search')}
         </Button>
       </form>
 
-      {/* Table */}
       <Card className="border border-slate-200 bg-white shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('users.table.user')}
+                  <th scope="col" className={th}>
+                    {t('table.name')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('common.email')}
+                  <th scope="col" className={th}>
+                    {t('table.email')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('users.table.registered')}
+                  <th scope="col" className={th}>
+                    {t('table.roles')}
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('users.table.verified')}
+                  <th scope="col" className={th}>
+                    {t('table.company')}
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('users.table.organizations')}
+                  <th scope="col" className={th}>
+                    {t('table.status')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('common.state')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t('common.actions')}
-                  </th>
+                  <SortHeader column="createdAt" label={t('table.registered')} />
+                  <SortHeader column="lastLoginAt" label={t('table.lastLogin')} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -249,144 +194,82 @@ export function UsersClient({
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 7 }).map((_, j) => (
-                          <td key={j} className="px-6 py-4">
+                          <td key={j} className="px-4 py-4">
                             <Skeleton className="h-4 w-full" />
                           </td>
                         ))}
                       </tr>
                     ))
-                  : users.map((user) => {
-                      const banned = isBanned(user.lockedUntil)
-                      const isLoading = actionPending?.startsWith(user.id)
-                      return (
-                        <tr
-                          key={user.id}
-                          className={`transition-colors hover:bg-slate-50 ${isLoading ? 'opacity-60' : ''}`}
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <UserInitials name={user.name} email={user.email} />
-                              <span className="max-w-[140px] truncate font-medium text-slate-900">
-                                {user.name ?? <span className="italic text-slate-400">—</span>}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="max-w-[200px] truncate px-6 py-4 text-slate-600">
-                            {user.email}
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-slate-500">
-                            {format.dateTime(new Date(user.createdAt), SHORT_DATE)}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            {user.emailVerified ? (
-                              <CheckCircle className="mx-auto h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <span className="text-slate-300">—</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-center font-medium text-slate-600">
-                            {user._count.organizations}
-                          </td>
-                          <td className="px-6 py-4">
-                            <UserStatusBadge user={user} />
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  disabled={isLoading}
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">{t('common.actions')}</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/${locale}/admin/users/${user.id}`}>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    {t('users.viewDetail')}
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {banned ? (
-                                  <DropdownMenuItem
-                                    onClick={() => handleAction(user.id, 'unban')}
-                                    className="text-emerald-600 focus:text-emerald-600"
-                                  >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    {t('users.unban')}
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() => handleAction(user.id, 'ban')}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Ban className="mr-2 h-4 w-4" />
-                                    {t('users.ban')}
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                {user.isGlobalAdmin ? (
-                                  <DropdownMenuItem
-                                    onClick={() => handleAction(user.id, 'demote_admin')}
-                                    className="text-amber-600 focus:text-amber-600"
-                                  >
-                                    <ShieldOff className="mr-2 h-4 w-4" />
-                                    {t('users.demote')}
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() => handleAction(user.id, 'promote_admin')}
-                                  >
-                                    <ShieldCheck className="mr-2 h-4 w-4" />
-                                    {t('users.promote')}
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      )
-                    })}
+                  : initialUsers.map((user) => (
+                      <tr key={user.id} className="transition-colors hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/${locale}/admin/users/${user.id}`}
+                            className="max-w-[160px] truncate font-medium text-slate-900 hover:underline"
+                          >
+                            {user.name ?? <span className="italic text-slate-400">—</span>}
+                          </Link>
+                        </td>
+                        <td className="max-w-[220px] truncate px-4 py-3 text-slate-600">
+                          {user.email}
+                        </td>
+                        <td className="px-4 py-3">
+                          <RoleBadges roles={user.roles} />
+                        </td>
+                        <td className="max-w-[160px] truncate px-4 py-3 text-slate-600">
+                          {user.company ?? '—'}
+                          {user.orgCount > 1 && (
+                            <span className="ml-1 text-xs text-slate-400">
+                              +{user.orgCount - 1}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={user.status} unverified={!user.emailVerified} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                          {format.dateTime(new Date(user.createdAt), SHORT_DATE)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                          {user.lastLoginAt
+                            ? format.dateTime(new Date(user.lastLoginAt), SHORT_DATE_TIME)
+                            : t('table.never')}
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
 
-            {!isPending && users.length === 0 && (
-              <div className="px-6 py-16 text-center text-sm text-slate-500">
-                {t('users.empty')}
-              </div>
+            {!isPending && initialUsers.length === 0 && (
+              <div className="px-6 py-16 text-center text-sm text-slate-500">{t('list.empty')}</div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            {t('users.pagination', { page, totalPages, total })}
+            {t('list.pagination', { page, totalPages, total })}
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               disabled={page <= 1 || isPending}
-              onClick={() => navigate(page - 1)}
+              onClick={() => navigate({ page: page - 1 })}
             >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              {t('common.previous')}
+              <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+              {t('list.previous')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               disabled={page >= totalPages || isPending}
-              onClick={() => navigate(page + 1)}
+              onClick={() => navigate({ page: page + 1 })}
             >
-              {t('common.next')}
-              <ChevronRight className="ml-1 h-4 w-4" />
+              {t('list.next')}
+              <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

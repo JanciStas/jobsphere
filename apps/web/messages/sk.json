@@ -29,7 +29,16 @@
     "asFreelancer": "Ako freelancer",
     "companySettings": "Nastavenia spoločnosti",
     "company": "Firma",
-    "account": "Účet"
+    "account": "Účet",
+    "myDashboard": "Môj dashboard",
+    "accountSettings": "Nastavenia účtu",
+    "roles": {
+      "admin": "Super admin",
+      "agency": "Personálna agentúra",
+      "employer": "Zamestnávateľ",
+      "freelancer": "Freelancer",
+      "candidate": "Záujemca o prácu"
+    }
   },
   "hero": {
     "title": "Nájdite svoju vysnívanú prácu s AI",
@@ -2757,6 +2766,576 @@
       "noPortfolio": "Tento freelancer zatiaľ nepridal žiadne ukážky.",
       "openProject": "Otvoriť projekt",
       "externalPortfolio": "Externé portfólio"
+    }
+  },
+  "adminBilling": {
+    "metaTitle": "Platby a predplatné",
+    "title": "Platby a predplatné",
+    "subtitle": "Nájdených predplatných: {count}",
+    "kpi": {
+      "active": "Aktívne predplatné",
+      "trialing": "V skúšobnom období",
+      "pastDue": "Po splatnosti",
+      "canceled30": "Zrušené za 30 dní",
+      "mrr": "Odhadované MRR",
+      "mrrNote": "MRR je odhad z aktívnych predplatných cez Stripe a cien v EUR; ručne udelené plány sa nerátajú."
+    },
+    "allSubscriptions": "Všetky predplatné",
+    "filters": {
+      "search": "Organizácia",
+      "status": "Stav",
+      "allStatuses": "Všetky stavy",
+      "apply": "Filtrovať",
+      "reset": "Zrušiť filtre"
+    },
+    "status": {
+      "active": "Aktívne",
+      "trialing": "Skúšobné",
+      "past_due": "Po splatnosti",
+      "canceled": "Zrušené",
+      "unpaid": "Neuhradené"
+    },
+    "table": {
+      "organization": "Organizácia",
+      "plan": "Plán",
+      "status": "Stav",
+      "period": "Obdobie",
+      "cancelAt": "Zrušenie k",
+      "detail": "Detail"
+    },
+    "orgDeleted": "zmazaná organizácia",
+    "manual": "ručne",
+    "empty": "Žiadne predplatné nezodpovedá filtrom.",
+    "pagination": {
+      "label": "Stránkovanie",
+      "prev": "Predošlá",
+      "next": "Ďalšia",
+      "of": "Strana {page} z {pages}"
+    },
+    "unlimited": "Neobmedzené",
+    "back": "← Späť na predplatné",
+    "detail": {
+      "currentPlan": "Aktuálny plán",
+      "actions": "Manuálne akcie",
+      "limitsVsUsage": "Efektívne limity a využitie",
+      "feature": "Funkcia",
+      "limit": "Limit",
+      "usage": "Využitie",
+      "source": "Zdroj limitu",
+      "sourceEntitlement": "záznam organizácie (plán alebo ručná úprava)",
+      "sourceDefault": "predvolený STARTER",
+      "history": "História predplatných",
+      "stripe": "Stripe",
+      "openStripe": "Otvoriť v Stripe",
+      "noHistory": "Organizácia nemá žiadne predplatné."
+    },
+    "features": {
+      "MAX_JOBS": "Publikované inzeráty",
+      "MAX_CANDIDATES": "Kandidáti (prihlášky)",
+      "MAX_TEAM_MEMBERS": "Členovia tímu",
+      "EMAIL_SEQUENCES": "E-mailové sekvencie",
+      "ASSESSMENTS": "Testy zručností",
+      "AI_MATCHING": "AI párovanie",
+      "CUSTOM_BRANDING": "Vlastný branding",
+      "API_ACCESS": "Prístup k API"
+    },
+    "actions": {
+      "manualWarning": "Zmeny sa robia len v databáze JobSphere, nie v Stripe. Zákazníkovi sa nič neúčtuje ani nevracia. Každá akcia sa zapisuje do auditu.",
+      "orgDeleted": "Organizácia je zmazaná, akcie sú zablokované.",
+      "stripeManagedInfo": "Toto predplatné spravuje Stripe. Zmeny rob v Stripe dashboarde, inak by ich webhook prepísal.",
+      "stripeManagedError": "Predplatné spravuje Stripe, zmeň ho v Stripe dashboarde.",
+      "openStripe": "Otvoriť Stripe dashboard",
+      "grant": "Udeliť / zmeniť plán",
+      "extend": "Predĺžiť obdobie",
+      "cancel": "Zrušiť predplatné",
+      "limit": "Upraviť limit",
+      "refundNote": "Vrátenie platby (refund) a zmena fakturácie sa robia len v Stripe dashboarde, nie tu.",
+      "grantTitle": "Udeliť alebo zmeniť plán bez Stripe",
+      "extendTitle": "Predĺžiť obdobie predplatného",
+      "cancelTitle": "Zrušiť predplatné",
+      "limitTitle": "Upraviť limit funkcie",
+      "confirmIntro": "Akciu uvidí audit log aj s tvojím menom a dôvodom.",
+      "plan": "Plán",
+      "until": "Platí do (budúci dátum)",
+      "mode": {
+        "period_end": "Ku koncu obdobia (plán platí do konca zaplateného obdobia)",
+        "immediate": "Okamžite (limity sa hneď vrátia na STARTER)"
+      },
+      "feature": "Funkcia",
+      "newLimit": "Nový limit",
+      "limitHint": "0 = funkcia vypnutá. U funkcií typu zap/vyp je 1 = zapnuté.",
+      "unlimited": "Neobmedzené",
+      "reason": "Dôvod (povinné)",
+      "reasonHint": "Aspoň 5 znakov, max. 500.",
+      "confirmCheckbox": "Rozumiem, že zmena sa prejaví hneď a týka sa len databázy JobSphere.",
+      "close": "Zavrieť",
+      "saving": "Ukladám…",
+      "confirm": "Potvrdiť",
+      "failed": "Akciu sa nepodarilo vykonať."
+    }
+  },
+  "adminMarketplace": {
+    "common": {
+      "actions": "Akcie",
+      "apply": "Použiť",
+      "back": "Späť",
+      "cancel": "Zrušiť",
+      "created": "Vytvorené",
+      "delete": "Zmazať",
+      "deleteFailed": "Zmazanie zlyhalo",
+      "edit": "Upraviť",
+      "next": "Ďalšia",
+      "organization": "Organizácia",
+      "pageOf": "Strana {page} z {totalPages}",
+      "prev": "Predchádzajúca",
+      "reset": "Zrušiť filtre",
+      "save": "Uložiť",
+      "saveFailed": "Uloženie zlyhalo",
+      "saved": "Uložené",
+      "saving": "Ukladám…",
+      "search": "Hľadať",
+      "status": "Stav"
+    },
+    "freelancers": {
+      "allFreelancers": "Všetci freelanceri",
+      "availability": "Dostupnosť",
+      "availabilityAll": "Všetky dostupnosti",
+      "detail": {
+        "bio": "O mne",
+        "deleteItemBody": "Položka „{title}“ bude natrvalo odstránená z portfólia.",
+        "deleteItemTitle": "Zmazať položku portfólia?",
+        "editItem": "Upraviť položku portfólia",
+        "gig": "Zákazka",
+        "hourlyRate": "Hodinová sadzba",
+        "itemDescription": "Popis",
+        "itemTitle": "Názov",
+        "itemUrl": "Odkaz",
+        "listHint": "Hodnoty oddeľte čiarkou",
+        "location": "Lokalita",
+        "noPortfolio": "Žiadne položky portfólia",
+        "noProposals": "Žiadne ponuky",
+        "portfolio": "Portfólio",
+        "portfolioUrl": "Odkaz na portfólio",
+        "profile": "Profil",
+        "proposals": "Ponuky na zákazky",
+        "services": "Služby",
+        "skills": "Zručnosti",
+        "titleField": "Titul / zameranie",
+        "userAccount": "Používateľský účet",
+        "visibleField": "Profil je verejne viditeľný",
+        "visibleHint": "Vypnutím sa profil skryje vo verejnom zozname."
+      },
+      "empty": "Nenašli sa žiadni freelanceri",
+      "hidden": "Skrytý",
+      "metaTitle": "Freelanceri | Admin",
+      "searchPlaceholder": "Meno, e-mail alebo služba…",
+      "table": {
+        "availability": "Dostupnosť",
+        "name": "Freelancer",
+        "proposals": "Ponuky",
+        "rate": "Sadzba",
+        "services": "Zameranie a služby",
+        "visibility": "Viditeľnosť"
+      },
+      "title": "Freelanceri",
+      "totalCount": "Spolu: {count}",
+      "visibility": "Viditeľnosť",
+      "visibilityAll": "Všetky profily",
+      "visible": "Viditeľný"
+    },
+    "gigs": {
+      "agenciesOnly": "Len agentúry",
+      "allGigs": "Všetky zákazky",
+      "detail": {
+        "budget": "Rozpočet",
+        "changeStatus": "Zmeniť stav",
+        "createdBy": "Zadal(a) {name}",
+        "currency": "Mena",
+        "days": "{count} dní",
+        "delete": "Zmazať zákazku",
+        "deleteBody": "Zákazka „{title}“ a všetky jej ponuky ({count}) budú natrvalo zmazané. Akciu nie je možné vrátiť.",
+        "deleteConfirm": "Zmazať natrvalo",
+        "deleteTitle": "Zmazať zákazku?",
+        "description": "Popis",
+        "durationDays": "Trvanie (dni)",
+        "edit": "Úprava zákazky",
+        "freelancer": "Freelancer",
+        "message": "Správa",
+        "noProposals": "Zatiaľ žiadne ponuky",
+        "oneAcceptedRule": "Na jednu zákazku môže byť prijatá najviac jedna ponuka.",
+        "proposals": "Ponuky",
+        "rate": "Sadzba",
+        "titleField": "Názov"
+      },
+      "empty": "Nenašli sa žiadne zákazky",
+      "metaTitle": "Zákazky | Admin",
+      "ownerAll": "Všetci zadávatelia",
+      "ownerType": "Typ zadávateľa",
+      "searchPlaceholder": "Názov zákazky alebo organizácia…",
+      "statusAll": "Všetky stavy",
+      "table": {
+        "budget": "Rozpočet",
+        "proposals": "Ponuky",
+        "title": "Zákazka"
+      },
+      "title": "Zákazky",
+      "totalCount": "Spolu: {count}"
+    },
+    "jobs": {
+      "close": "Zatvoriť inzerát",
+      "closeBody": "Inzerát „{title}“ sa zatvorí a prestane prijímať prihlášky.",
+      "closeTitle": "Zatvoriť inzerát?",
+      "currency": "Mena",
+      "deleteBody": "Inzerát „{title}“ sa odstráni z platformy (je možné ho obnoviť zo zoznamu zmazaných).",
+      "deleteTitle": "Zmazať inzerát?",
+      "description": "Popis",
+      "editTitle": "Úprava inzerátu",
+      "hideDeleted": "Skryť zmazané",
+      "location": "Lokalita",
+      "restore": "Obnoviť",
+      "salaryMax": "Plat do",
+      "salaryMin": "Plat od",
+      "showDeleted": "Zobraziť zmazané",
+      "titleField": "Názov pozície"
+    },
+    "organizations": {
+      "agency": "Agentúra",
+      "allGigs": "Všetky zákazky",
+      "allJobs": "Všetky inzeráty",
+      "company": "Firma",
+      "gigs": "Zákazky",
+      "noGigs": "Žiadne zákazky",
+      "payments": "Platby"
+    },
+    "availabilityLabels": {
+      "AVAILABLE": "Dostupný",
+      "LIMITED": "Obmedzene",
+      "UNAVAILABLE": "Nedostupný"
+    },
+    "gigStatusLabels": {
+      "OPEN": "Otvorená",
+      "IN_PROGRESS": "Rozpracovaná",
+      "CLOSED": "Uzavretá"
+    },
+    "proposalStatusLabels": {
+      "PENDING": "Čaká",
+      "ACCEPTED": "Prijatá",
+      "REJECTED": "Zamietnutá",
+      "WITHDRAWN": "Stiahnutá"
+    }
+  },
+  "adminUsers": {
+    "common": {
+      "cancel": "Zrušiť",
+      "confirm": "Potvrdiť",
+      "save": "Uložiť"
+    },
+    "roles": {
+      "none": "Bez roly",
+      "ADMIN": "Super admin",
+      "EMPLOYER": "Zamestnávateľ",
+      "AGENCY": "Agentúra",
+      "CANDIDATE": "Kandidát",
+      "FREELANCER": "Freelancer"
+    },
+    "status": {
+      "ACTIVE": "Aktívny",
+      "LOCKED": "Dočasne zamknutý",
+      "SUSPENDED": "Pozastavený",
+      "UNVERIFIED": "Neoverený e-mail"
+    },
+    "list": {
+      "metaTitle": "Používatelia | Admin",
+      "title": "Používatelia",
+      "total": "Celkovo {count} používateľov",
+      "searchLabel": "Hľadať používateľa",
+      "searchPlaceholder": "Hľadať podľa mena alebo e-mailu",
+      "search": "Hľadať",
+      "empty": "Žiadni používatelia nezodpovedajú filtru.",
+      "pagination": "Strana {page} z {totalPages} ({total} používateľov)",
+      "previous": "Predchádzajúca",
+      "next": "Ďalšia"
+    },
+    "filters": {
+      "role": "Rola",
+      "status": "Stav",
+      "allRoles": "Všetky roly",
+      "allStatuses": "Všetky stavy",
+      "statusOption": {
+        "active": "Aktívny",
+        "suspended": "Pozastavený",
+        "locked": "Dočasne zamknutý",
+        "unverified": "Neoverený e-mail"
+      }
+    },
+    "table": {
+      "name": "Meno",
+      "email": "E-mail",
+      "roles": "Roly",
+      "company": "Firma",
+      "status": "Stav",
+      "registered": "Registrácia",
+      "lastLogin": "Posledné prihlásenie",
+      "never": "Nikdy"
+    },
+    "detail": {
+      "metaTitle": "Detail používateľa | Admin",
+      "back": "Späť na používateľov",
+      "noName": "Bez mena"
+    },
+    "activity": {
+      "title": "Aktivita",
+      "applications": "Prihlášky",
+      "jobs": "Vytvorené inzeráty",
+      "assignedApplications": "Pridelené prihlášky",
+      "gigs": "Zákazky",
+      "proposals": "Ponuky na zákazky",
+      "none": "Pre túto rolu zatiaľ nie je žiadna aktivita."
+    },
+    "profile": {
+      "title": "Profil",
+      "id": "ID",
+      "name": "Meno",
+      "email": "E-mail",
+      "phone": "Telefón",
+      "language": "Jazyk / časové pásmo",
+      "registered": "Registrovaný"
+    },
+    "memberships": {
+      "title": "Roly a firmy ({count})",
+      "none": "Používateľ nepatrí do žiadnej organizácie.",
+      "manage": "Spravovať členstvo"
+    },
+    "audit": {
+      "title": "Posledné záznamy auditu",
+      "none": "Zatiaľ žiadne záznamy.",
+      "action": "Akcia",
+      "direction": "Typ",
+      "time": "Čas",
+      "on": "Vykonal admin {actor}",
+      "by": "Vykonal používateľ"
+    },
+    "security": {
+      "title": "Bezpečnosť",
+      "emailVerified": "E-mail overený",
+      "no": "Nie",
+      "yes": "Áno",
+      "twoFactor": "Dvojfaktorové overenie",
+      "failedAttempts": "Neúspešné pokusy o prihlásenie",
+      "suspended": "Stav účtu",
+      "lockedUntil": "Zamknutý do",
+      "lastLogin": "Posledné prihlásenie",
+      "lastLoginIp": "IP posledného prihlásenia"
+    },
+    "actions": {
+      "title": "Pomoc s účtom",
+      "adminProtected": "Účet super admina je chránený. Dostupné je len odhlásenie zo všetkých zariadení.",
+      "edit": {
+        "label": "Upraviť profil"
+      },
+      "verifyEmail": {
+        "label": "Overiť e-mail ručne",
+        "title": "Overiť e-mail?",
+        "description": "E-mail {email} sa označí ako overený bez toho, aby používateľ klikol na odkaz.",
+        "done": "E-mail bol overený."
+      },
+      "unlock": {
+        "label": "Odomknúť účet",
+        "title": "Odomknúť účet?",
+        "description": "Vynuluje sa počet neúspešných pokusov a zrušia sa dočasné zamknutie. Používateľ sa môže hneď prihlásiť.",
+        "done": "Účet bol odomknutý."
+      },
+      "passwordReset": {
+        "label": "Poslať reset hesla"
+      },
+      "revokeSessions": {
+        "label": "Odhlásiť zo všetkých zariadení",
+        "title": "Odhlásiť zo všetkých zariadení?",
+        "description": "Všetky aktívne relácie tohto používateľa sa okamžite zneplatnia a bude sa musieť znova prihlásiť.",
+        "done": "Používateľ bol odhlásený zo všetkých zariadení."
+      },
+      "suspend": {
+        "label": "Pozastaviť účet",
+        "title": "Pozastaviť účet?",
+        "description": "Používateľ sa nebude môcť prihlásiť a jeho aktívne relácie sa zneplatnia. Účet môžete kedykoľvek obnoviť.",
+        "done": "Účet bol pozastavený."
+      },
+      "restore": {
+        "label": "Obnoviť účet",
+        "title": "Obnoviť účet?",
+        "description": "Používateľ sa bude môcť opäť prihlásiť.",
+        "done": "Účet bol obnovený."
+      }
+    },
+    "edit": {
+      "title": "Upraviť profil",
+      "description": "Zmeny sa zapíšu do auditu.",
+      "name": "Meno",
+      "email": "E-mail",
+      "emailWarning": "Zmena e-mailu odhlási používateľa zo všetkých zariadení a e-mail bude treba znova overiť.",
+      "markVerified": "Označiť nový e-mail ako overený",
+      "phone": "Telefón",
+      "emailTaken": "Tento e-mail už používa iný účet.",
+      "saved": "Profil bol uložený."
+    },
+    "reset": {
+      "title": "Reset hesla",
+      "description": "Pošle používateľovi na {email} odkaz na nastavenie nového hesla (platí 1 hodinu).",
+      "sendEmail": "Poslať e-mailom",
+      "showLink": "Zobraziť odkaz",
+      "emailSent": "Odkaz na reset hesla bol odoslaný e-mailom.",
+      "fallbackLink": "E-mail sa nepodarilo odoslať. Odkaz môžete používateľovi poslať sami.",
+      "linkReady": "Odkaz je pripravený.",
+      "linkWarning": "Odkaz platí 1 hodinu a umožňuje nastaviť heslo. Posielajte ho iba tomuto používateľovi a nezdieľajte ho.",
+      "linkLabel": "Odkaz na reset hesla",
+      "copy": "Kopírovať"
+    },
+    "errors": {
+      "generic": "Akciu sa nepodarilo vykonať."
+    }
+  },
+  "adminCore": {
+    "nav": {
+      "panelTitle": "Super admin",
+      "overview": "Prehľad",
+      "users": "Používatelia",
+      "organizations": "Organizácie a agentúry",
+      "freelancers": "Freelanceri",
+      "gigs": "Zákazky",
+      "jobs": "Inzeráty",
+      "billing": "Platby",
+      "audit": "Audit",
+      "team": "Tím adminov",
+      "gdpr": "GDPR",
+      "settings": "Nastavenia",
+      "logout": "Odhlásiť sa"
+    },
+    "login": {
+      "title": "Prihlásenie administrátora",
+      "subtitle": "Prístup len pre správcov platformy.",
+      "email": "E-mail",
+      "password": "Heslo",
+      "submit": "Prihlásiť sa",
+      "signingIn": "Prihlasovanie...",
+      "invalidCredentials": "Nesprávny e-mail alebo heslo.",
+      "emailNotVerified": "Najprv overte svoj e-mail.",
+      "error": "Prihlásenie zlyhalo. Skúste to znova.",
+      "forbidden": "Tento účet nemá oprávnenie správcu platformy.",
+      "showPassword": "Zobraziť heslo",
+      "hidePassword": "Skryť heslo"
+    },
+    "overview": {
+      "title": "Prehľad platformy",
+      "subtitle": "Stav celej platformy na jednom mieste.",
+      "unavailable": "Nedostupné",
+      "open": "Otvoriť",
+      "viewAll": "Zobraziť všetko",
+      "newUsers": "+{count} za posledných 7 dní",
+      "companies": "{count} firiem",
+      "kpi": {
+        "users": "Používatelia celkom",
+        "candidates": "Kandidáti",
+        "employers": "Zamestnávatelia",
+        "agencies": "Agentúry",
+        "freelancers": "Freelanceri",
+        "activeJobs": "Aktívne inzeráty",
+        "openGigs": "Otvorené zákazky",
+        "activeSubscriptions": "Aktívne predplatné"
+      },
+      "recentSignups": "Posledné registrácie",
+      "recentActivity": "Posledná aktivita adminov",
+      "noSignups": "Zatiaľ žiadne registrácie.",
+      "noActivity": "Zatiaľ žiadna aktivita.",
+      "attention": {
+        "title": "Vyžaduje pozornosť",
+        "allClear": "Všetko je v poriadku.",
+        "unverified": "Neoverené e-maily staršie ako 3 dni: {count}",
+        "locked": "Zamknuté účty: {count}",
+        "dsar": "DSAR žiadosti čakajúce na vybavenie: {count}",
+        "pastDue": "Predplatné po splatnosti: {count}"
+      },
+      "roles": {
+        "admin": "Admin",
+        "agency": "Agentúra",
+        "freelancer": "Freelancer",
+        "employer": "Zamestnávateľ",
+        "candidate": "Kandidát",
+        "user": "Používateľ"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "intro": "História zmien a akcií na platforme.",
+      "exportCsv": "Exportovať CSV",
+      "exportNote": "Export obsahuje najviac {limit} riadkov, bez user-agent.",
+      "filters": {
+        "action": "Akcia",
+        "entityType": "Typ entity",
+        "user": "Používateľ",
+        "userPlaceholder": "E-mail alebo ID",
+        "from": "Od",
+        "to": "Do",
+        "all": "Všetko",
+        "apply": "Filtrovať",
+        "reset": "Zrušiť filtre"
+      },
+      "recordCount": "{count} záznamov",
+      "empty": "Žiadne záznamy.",
+      "loadError": "Záznamy sa nepodarilo načítať.",
+      "colWhen": "Kedy",
+      "colWho": "Kto",
+      "colAction": "Akcia",
+      "colWhat": "Čo",
+      "colChange": "Zmena",
+      "noChanges": "Bez zmien",
+      "details": "Detail ({count})",
+      "kind": {
+        "added": "pridané",
+        "removed": "odstránené",
+        "changed": "zmenené"
+      },
+      "pagination": "Stránkovanie",
+      "prev": "Predchádzajúca",
+      "next": "Nasledujúca",
+      "pageOf": "Strana {page} z {pages}"
+    },
+    "team": {
+      "title": "Tím adminov",
+      "subtitle": "Používatelia s plným prístupom k platforme.",
+      "add": {
+        "title": "Pridať admina",
+        "hint": "Pridať možno len existujúceho používateľa. Dotknutý používateľ sa musí znova prihlásiť.",
+        "emailLabel": "E-mail používateľa",
+        "placeholder": "meno@priklad.sk",
+        "submit": "Pridať"
+      },
+      "list": {
+        "title": "Admini ({count})"
+      },
+      "colName": "Meno",
+      "colEmail": "E-mail",
+      "colLastLogin": "Posledné prihlásenie",
+      "you": "Vy",
+      "remove": "Odobrať",
+      "never": "Nikdy",
+      "empty": "Žiadni admini.",
+      "added": "Admin bol pridaný.",
+      "removed": "Admin bol odobraný.",
+      "confirm": {
+        "title": "Potvrdiť zmenu",
+        "addBody": "Naozaj chcete používateľovi {email} udeliť práva super admina?",
+        "removeBody": "Naozaj chcete používateľovi {email} odobrať práva super admina? Bude odhlásený.",
+        "cancel": "Zrušiť",
+        "confirm": "Potvrdiť"
+      },
+      "errors": {
+        "notFound": "Používateľ s týmto e-mailom neexistuje.",
+        "alreadyAdmin": "Používateľ už je admin.",
+        "lastAdmin": "Nedá sa odobrať posledný admin.",
+        "self": "Nemôžete odobrať práva sebe.",
+        "invalidEmail": "Neplatný e-mail.",
+        "generic": "Niečo sa pokazilo. Skúste to znova."
+      }
     }
   }
 }

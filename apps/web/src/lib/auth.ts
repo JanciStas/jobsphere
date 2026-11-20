@@ -87,7 +87,8 @@ export const authOptions: NextAuthOptions = {
           // SECURITY: Prevent timing attacks — always perform bcrypt comparison
           // even when user doesn't exist, to maintain constant response time
           // and prevent email enumeration via response time analysis
-          if (!user || !user.password) {
+          // A soft-deleted account must look exactly like a missing one.
+          if (!user || !user.password || user.deletedAt) {
             await bcryptjs.compare(
               credentials.password,
               '$2a$12$UGzP4Z0tFYfNO8YM6g3HE.lN0jC.ueAnEglJpgP.its5zuuMhc7Vm',
@@ -172,6 +173,7 @@ export const authOptions: NextAuthOptions = {
               orgRoles: roles.map((r) => r.role),
               hasCandidate: !!candidate,
               hasFreelancer: !!freelancer,
+              isGlobalAdmin: user.isGlobalAdmin === true,
             }
             if (!userMatchesPortal(rawPortal, identity)) {
               // The password is already proven correct here, so telling the user which
@@ -213,7 +215,10 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           // Re-throw known auth errors so NextAuth can expose them to the client
-          if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') {
+          if (
+            error instanceof Error &&
+            (error.message === 'EMAIL_NOT_VERIFIED' || error.message.startsWith('WRONG_PORTAL:'))
+          ) {
             throw error
           }
           // Re-throw infrastructure errors (DB down, bcrypt crash) so they surface
@@ -235,6 +240,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // Credentials accounts are checked in authorize(); this also covers OAuth sign-ins so a
+    // suspended or soft-deleted account can never obtain a session through Google/Apple.
+    async signIn({ user }) {
+      if (!user?.id) return true
+      try {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { deletedAt: true, lockedUntil: true },
+        })
+        if (!dbUser) return true
+        if (dbUser.deletedAt) return false
+        if (dbUser.lockedUntil && dbUser.lockedUntil > new Date()) return false
+      } catch (error) {
+        logger.error('❌ signIn callback error:', error)
+        return false
+      }
+      return true
+    },
     async jwt({ token, user, trigger, session }) {
       try {
         if (user?.id) {
@@ -324,11 +347,15 @@ export const authOptions: NextAuthOptions = {
           if (shouldCheck) {
             const current = await prisma.user.findUnique({
               where: { id: token.id as string },
-              select: { sessionEpoch: true },
+              select: { sessionEpoch: true, deletedAt: true },
             })
 
-            // User deleted, or epoch bumped (ban / demote / role change / password reset)
-            if (!current || current.sessionEpoch !== (token.sessionEpoch ?? 0)) {
+            // User deleted (hard or soft), or epoch bumped (ban / demote / role change / password reset)
+            if (
+              !current ||
+              current.deletedAt ||
+              current.sessionEpoch !== (token.sessionEpoch ?? 0)
+            ) {
               token.invalid = true
             }
 

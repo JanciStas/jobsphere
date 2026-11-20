@@ -26,6 +26,8 @@ async function listJobs(req: Request) {
     const skip = (page - 1) * limit
 
     const where = {
+      // Opt-in to soft-deleted rows only (explicit deletedAt overrides the middleware).
+      ...(searchParams.get('deleted') === '1' ? { deletedAt: { not: null } } : {}),
       ...(status ? { status } : {}),
       ...(search
         ? {

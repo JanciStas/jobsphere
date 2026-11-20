@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -18,23 +18,66 @@ import { LanguageSwitcher } from './language-switcher'
 import { NotificationBell } from './notification-bell'
 import { NavDrawer } from './nav-drawer'
 
+type AccountRole = 'admin' | 'agency' | 'employer' | 'freelancer' | 'candidate'
+
+interface AccountInfo {
+  role: AccountRole
+  dashboardHref: string
+  settingsHref: string
+}
+
+/** Derives the account's single role (and where its dashboard/settings live) from the session. */
+export function describeAccount(
+  user:
+    | {
+        role?: string
+        orgId?: string
+        isGlobalAdmin?: boolean
+        isFreelancer?: boolean
+      }
+    | undefined,
+  locale: string,
+): AccountInfo {
+  const base = `/${locale}`
+  if (user?.isGlobalAdmin) {
+    return { role: 'admin', dashboardHref: `${base}/admin`, settingsHref: `${base}/admin/settings` }
+  }
+  if (user?.role === 'AGENCY') {
+    return {
+      role: 'agency',
+      dashboardHref: `${base}/agency/dashboard`,
+      settingsHref: `${base}/agency/settings`,
+    }
+  }
+  if (user?.orgId) {
+    return {
+      role: 'employer',
+      dashboardHref: `${base}/employer`,
+      settingsHref: `${base}/employer/settings`,
+    }
+  }
+  if (user?.isFreelancer) {
+    return {
+      role: 'freelancer',
+      dashboardHref: `${base}/freelancer/dashboard`,
+      settingsHref: `${base}/freelancer/profile`,
+    }
+  }
+  return {
+    role: 'candidate',
+    dashboardHref: `${base}/dashboard`,
+    settingsHref: `${base}/dashboard/profile`,
+  }
+}
+
 export function Header() {
   const t = useTranslations()
   const pathname = usePathname()
-  const router = useRouter()
   const locale = pathname.split('/')[1] || 'en'
-  const { data: session, status, update } = useSession()
+  const { data: session, status } = useSession()
 
-  // PR7 dual-role context switch: persist the chosen org into the JWT (server
-  // re-derives role/orgId), then route into the employer workspace. switch-authz
-  // is enforced server-side in the jwt callback — a foreign orgId is ignored.
-  async function switchToOrg(orgId: string) {
-    await update({ activeOrgId: orgId })
-    router.push(`/${locale}/employer`)
-  }
-
-  const orgs = session?.user?.orgs ?? []
-  const activeOrgId = session?.user?.activeOrgId
+  // One clear identity per signed-in user: the role decides the dashboard and the label.
+  const account = describeAccount(session?.user, locale)
 
   const navItems = [
     { href: `/${locale}`, label: t('nav.home') },
@@ -126,54 +169,56 @@ export function Header() {
               {t('nav.loading')}
             </Button>
           ) : session?.user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  {session.user.name || session.user.email || t('nav.account')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {orgs.length > 0 && (
-                  <>
-                    <DropdownMenuLabel>{t('nav.context')}</DropdownMenuLabel>
-                    {orgs.map((org) => (
-                      <DropdownMenuItem key={org.orgId} onClick={() => switchToOrg(org.orgId)}>
-                        <span className="mr-2 w-3">{org.orgId === activeOrgId ? '✓' : ''}</span>
-                        {org.orgName || t('nav.company')}
-                      </DropdownMenuItem>
-                    ))}
-                    {/* MVP: personal contexts are a plain redirect (no active-org
-                        change) — the candidate context has no org. */}
-                    <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/dashboard`}>{t('nav.asCandidate')}</Link>
-                    </DropdownMenuItem>
-                    {session.user.isFreelancer && (
-                      <DropdownMenuItem asChild>
-                        <Link href={`/${locale}/freelancers`}>{t('nav.asFreelancer')}</Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link href={session.user.orgId ? `/${locale}/employer` : `/${locale}/dashboard`}>
-                    {t('nav.dashboard')}
-                  </Link>
-                </DropdownMenuItem>
-                {session.user.orgId && (
-                  <DropdownMenuItem asChild>
-                    <Link href={`/${locale}/employer/settings`}>{t('nav.companySettings')}</Link>
+            <>
+              <Button size="sm" variant="outline" className="hidden md:inline-flex" asChild>
+                <Link href={account.dashboardHref}>{t('nav.myDashboard')}</Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-11 gap-2 px-2">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+                    >
+                      {(session.user.name || session.user.email || '?').charAt(0).toUpperCase()}
+                    </span>
+                    <span className="hidden max-w-[11rem] flex-col items-start text-left leading-tight sm:flex">
+                      <span className="w-full truncate text-sm font-medium">
+                        {session.user.name || session.user.email || t('nav.account')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t(`nav.roles.${account.role}`)}
+                      </span>
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="truncate text-sm font-semibold">
+                      {session.user.name || t('nav.account')}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
+                    <p className="mt-1 text-xs font-medium text-primary">
+                      {t(`nav.roles.${account.role}`)}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="min-h-11 text-base">
+                    <Link href={account.dashboardHref}>{t('nav.myDashboard')}</Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link href={`/${locale}/dashboard/profile`}>{t('nav.profile')}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut({ callbackUrl: `/${locale}` })}>
-                  {t('nav.logout')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem asChild className="min-h-11 text-base">
+                    <Link href={account.settingsHref}>{t('nav.accountSettings')}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="min-h-11 text-base"
+                    onClick={() => signOut({ callbackUrl: `/${locale}` })}
+                  >
+                    {t('nav.logout')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <>
               <Button variant="ghost" size="sm" asChild>

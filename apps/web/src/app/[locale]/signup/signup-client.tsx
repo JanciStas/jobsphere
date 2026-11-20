@@ -20,9 +20,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Eye, EyeOff } from 'lucide-react'
-import { portalHome, type Portal } from '@/lib/portal'
+import { portalHome, type PublicPortal } from '@/lib/portal'
 
-type SignupRole = Portal
+type SignupRole = PublicPortal
 
 const signupSchema = z
   .object({

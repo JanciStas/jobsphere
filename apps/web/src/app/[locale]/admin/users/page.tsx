@@ -1,60 +1,36 @@
 /**
  * Admin Users Page (Server Component)
- * Loads initial data server-side, delegates interactions to UsersClient.
+ * Re-checks isGlobalAdmin itself (the layout guard is not enough on its own),
+ * loads the filtered page server-side and hands it to UsersClient.
  */
 
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
+import { listAdminUsers } from '@/lib/admin-users/list'
+import { listQuerySchema, parseListQuery } from '@/lib/admin-users/list-query'
 import { UsersClient } from './users-client'
 
 interface PageProps {
   params: { locale: string }
-  searchParams: { search?: string; page?: string }
+  searchParams: Record<string, string | string[] | undefined>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const t = await getTranslations({ locale: params.locale, namespace: 'admin' })
-  return { title: t('users.metaTitle') }
+  const t = await getTranslations({ locale: params.locale, namespace: 'adminUsers' })
+  return { title: t('list.metaTitle') }
 }
 
 export default async function AdminUsersPage({ params, searchParams }: PageProps) {
-  const page = Math.max(1, Number(searchParams.page ?? 1))
-  const limit = 20
-  const search = searchParams.search?.trim() ?? ''
+  const session = await auth()
+  if (!session?.user?.isGlobalAdmin) redirect(`/${params.locale}/login?error=forbidden`)
 
-  const whereClause = {
-    deletedAt: null,
-    ...(search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' as const } },
-            { name: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {}),
-  }
+  // Garbage in the URL falls back to the defaults instead of an error page.
+  const parsed = parseListQuery(searchParams)
+  const query = parsed.success ? parsed.data : listQuerySchema.parse({})
 
-  const [users, total] = await Promise.all([
-    prisma.user.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-        emailVerified: true,
-        isGlobalAdmin: true,
-        lockedUntil: true,
-        failedAttempts: true,
-        _count: { select: { organizations: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.user.count({ where: whereClause }),
-  ])
+  const { users, total, page, limit } = await listAdminUsers(query)
 
   return (
     <UsersClient
@@ -62,7 +38,13 @@ export default async function AdminUsersPage({ params, searchParams }: PageProps
       total={total}
       page={page}
       limit={limit}
-      initialSearch={search}
+      filters={{
+        search: query.search ?? '',
+        role: query.role ?? '',
+        status: query.status ?? '',
+        sort: query.sort,
+        order: query.order,
+      }}
       locale={params.locale}
     />
   )

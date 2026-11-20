@@ -62,6 +62,10 @@ export type AuditResource =
   | 'DSAR'
   // Admin-only surfaces
   | 'ORGANIZATION'
+  | 'FREELANCER'
+  | 'PORTFOLIO_ITEM'
+  | 'GIG'
+  | 'GIG_PROPOSAL'
   | 'SETTING'
   | 'FEATURE_FLAG'
   | 'SCRAPER'

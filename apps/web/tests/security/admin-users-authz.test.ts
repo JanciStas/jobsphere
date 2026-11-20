@@ -8,10 +8,8 @@
  *   - on the 403 path, NO prisma read or write happens (the sensitive PATCH
  *     ban/promote actions must never touch the DB for a non-admin).
  *
- * NOTE: `requireGlobalAdmin` returns 403 (not 401) when `session.user` exists
- * but lacks `isGlobalAdmin`, and also 403 when there is no session at all
- * (the check is `!session?.user?.isGlobalAdmin`). We assert the realized
- * status codes from the route below.
+ * NOTE: since the admin-help work the route distinguishes anonymous (401) from a
+ * signed-in non-admin (403), via `adminDenied` in lib/admin-users/guard.ts.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
@@ -62,14 +60,14 @@ describe('QA-012 — admin users route authz', () => {
   })
 
   describe('GET /api/admin/users', () => {
-    it('rejects an unauthenticated caller with 403 and no DB access', async () => {
+    it('rejects an unauthenticated caller with 401 and no DB access', async () => {
       auth.mockResolvedValue(null)
 
       const res = await GET(getReq())
 
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(401)
       const body = await res.json()
-      expect(body.error).toBe('Forbidden')
+      expect(body.error).toBe('Unauthorized')
       assertNoUserDbAccess()
     })
 
@@ -101,14 +99,14 @@ describe('QA-012 — admin users route authz', () => {
   })
 
   describe('PATCH /api/admin/users (ban / promote)', () => {
-    it('rejects an unauthenticated ban attempt with 403 and no write', async () => {
+    it('rejects an unauthenticated ban attempt with 401 and no write', async () => {
       auth.mockResolvedValue(null)
 
       const res = await PATCH(patchReq({ userId: 'victim-1', action: 'ban' }))
 
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(401)
       const body = await res.json()
-      expect(body.error).toBe('Forbidden')
+      expect(body.error).toBe('Unauthorized')
       assertNoUserDbAccess()
     })
 

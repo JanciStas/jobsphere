@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { isPortal, portalHome, type Portal } from '@/lib/portal'
+import { isPublicPortal, portalHome, type Portal, type PublicPortal } from '@/lib/portal'
 import Link from 'next/link'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -50,7 +50,7 @@ export default function LoginClient({
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  const [wrongPortals, setWrongPortals] = useState<Portal[]>([])
+  const [wrongPortals, setWrongPortals] = useState<PublicPortal[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -86,7 +86,7 @@ export default function LoginClient({
       } else if (result?.error?.includes('WRONG_PORTAL:')) {
         const suggested = (result.error.split('WRONG_PORTAL:')[1] ?? '')
           .split(',')
-          .filter((p): p is Portal => isPortal(p))
+          .filter((p): p is PublicPortal => isPublicPortal(p))
         setWrongPortals(suggested)
         setError(t('form.wrongPortal'))
       } else if (result?.error) {

@@ -29,7 +29,16 @@
     "asFreelancer": "As freelancer",
     "companySettings": "Company settings",
     "company": "Company",
-    "account": "Account"
+    "account": "Account",
+    "myDashboard": "My dashboard",
+    "accountSettings": "Account settings",
+    "roles": {
+      "admin": "Super admin",
+      "agency": "Staffing agency",
+      "employer": "Employer",
+      "freelancer": "Freelancer",
+      "candidate": "Job seeker"
+    }
   },
   "hero": {
     "title": "Find Your Dream Job with AI",
@@ -2757,6 +2766,576 @@
       "noPortfolio": "This freelancer hasn't added any samples yet.",
       "openProject": "Open project",
       "externalPortfolio": "External portfolio"
+    }
+  },
+  "adminBilling": {
+    "metaTitle": "Billing and subscriptions",
+    "title": "Billing and subscriptions",
+    "subtitle": "Subscriptions found: {count}",
+    "kpi": {
+      "active": "Active subscriptions",
+      "trialing": "In trial",
+      "pastDue": "Past due",
+      "canceled30": "Canceled in 30 days",
+      "mrr": "Estimated MRR",
+      "mrrNote": "MRR is an estimate from active Stripe subscriptions and EUR prices; manually granted plans are not counted."
+    },
+    "allSubscriptions": "All subscriptions",
+    "filters": {
+      "search": "Organization",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "apply": "Filter",
+      "reset": "Reset filters"
+    },
+    "status": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Past due",
+      "canceled": "Canceled",
+      "unpaid": "Unpaid"
+    },
+    "table": {
+      "organization": "Organization",
+      "plan": "Plan",
+      "status": "Status",
+      "period": "Period",
+      "cancelAt": "Cancels on",
+      "detail": "Details"
+    },
+    "orgDeleted": "deleted organization",
+    "manual": "manual",
+    "empty": "No subscriptions match the filters.",
+    "pagination": {
+      "label": "Pagination",
+      "prev": "Previous",
+      "next": "Next",
+      "of": "Page {page} of {pages}"
+    },
+    "unlimited": "Unlimited",
+    "back": "← Back to subscriptions",
+    "detail": {
+      "currentPlan": "Current plan",
+      "actions": "Manual actions",
+      "limitsVsUsage": "Effective limits and usage",
+      "feature": "Feature",
+      "limit": "Limit",
+      "usage": "Usage",
+      "source": "Limit source",
+      "sourceEntitlement": "organization record (plan or manual override)",
+      "sourceDefault": "default STARTER",
+      "history": "Subscription history",
+      "stripe": "Stripe",
+      "openStripe": "Open in Stripe",
+      "noHistory": "This organization has no subscriptions."
+    },
+    "features": {
+      "MAX_JOBS": "Published jobs",
+      "MAX_CANDIDATES": "Candidates (applications)",
+      "MAX_TEAM_MEMBERS": "Team members",
+      "EMAIL_SEQUENCES": "Email sequences",
+      "ASSESSMENTS": "Assessments",
+      "AI_MATCHING": "AI matching",
+      "CUSTOM_BRANDING": "Custom branding",
+      "API_ACCESS": "API access"
+    },
+    "actions": {
+      "manualWarning": "Changes are made in the JobSphere database only, not in Stripe. Nothing is charged or refunded. Every action is audit-logged.",
+      "orgDeleted": "The organization is deleted; actions are blocked.",
+      "stripeManagedInfo": "This subscription is managed by Stripe. Make changes in the Stripe dashboard, otherwise the webhook would overwrite them.",
+      "stripeManagedError": "The subscription is managed by Stripe; change it in the Stripe dashboard.",
+      "openStripe": "Open Stripe dashboard",
+      "grant": "Grant / change plan",
+      "extend": "Extend period",
+      "cancel": "Cancel subscription",
+      "limit": "Edit limit",
+      "refundNote": "Refunds and invoice changes are done in the Stripe dashboard only, not here.",
+      "grantTitle": "Grant or change plan without Stripe",
+      "extendTitle": "Extend subscription period",
+      "cancelTitle": "Cancel subscription",
+      "limitTitle": "Edit feature limit",
+      "confirmIntro": "The audit log records this action with your name and the reason.",
+      "plan": "Plan",
+      "until": "Valid until (future date)",
+      "mode": {
+        "period_end": "At period end (plan stays until the end of the current period)",
+        "immediate": "Immediately (limits revert to STARTER right away)"
+      },
+      "feature": "Feature",
+      "newLimit": "New limit",
+      "limitHint": "0 = feature disabled. For on/off features, 1 = enabled.",
+      "unlimited": "Unlimited",
+      "reason": "Reason (required)",
+      "reasonHint": "At least 5 characters, max 500.",
+      "confirmCheckbox": "I understand the change takes effect immediately and affects the JobSphere database only.",
+      "close": "Close",
+      "saving": "Saving…",
+      "confirm": "Confirm",
+      "failed": "The action failed."
+    }
+  },
+  "adminMarketplace": {
+    "common": {
+      "actions": "Actions",
+      "apply": "Apply",
+      "back": "Back",
+      "cancel": "Cancel",
+      "created": "Created",
+      "delete": "Delete",
+      "deleteFailed": "Deletion failed",
+      "edit": "Edit",
+      "next": "Next",
+      "organization": "Organization",
+      "pageOf": "Page {page} of {totalPages}",
+      "prev": "Previous",
+      "reset": "Reset filters",
+      "save": "Save",
+      "saveFailed": "Saving failed",
+      "saved": "Saved",
+      "saving": "Saving…",
+      "search": "Search",
+      "status": "Status"
+    },
+    "freelancers": {
+      "allFreelancers": "All freelancers",
+      "availability": "Availability",
+      "availabilityAll": "All availabilities",
+      "detail": {
+        "bio": "Bio",
+        "deleteItemBody": "The item \"{title}\" will be permanently removed from the portfolio.",
+        "deleteItemTitle": "Delete portfolio item?",
+        "editItem": "Edit portfolio item",
+        "gig": "Gig",
+        "hourlyRate": "Hourly rate",
+        "itemDescription": "Description",
+        "itemTitle": "Title",
+        "itemUrl": "Link",
+        "listHint": "Separate values with commas",
+        "location": "Location",
+        "noPortfolio": "No portfolio items",
+        "noProposals": "No proposals",
+        "portfolio": "Portfolio",
+        "portfolioUrl": "Portfolio URL",
+        "profile": "Profile",
+        "proposals": "Gig proposals",
+        "services": "Services",
+        "skills": "Skills",
+        "titleField": "Headline",
+        "userAccount": "User account",
+        "visibleField": "Profile is publicly visible",
+        "visibleHint": "Turning this off hides the profile from the public listing."
+      },
+      "empty": "No freelancers found",
+      "hidden": "Hidden",
+      "metaTitle": "Freelancers | Admin",
+      "searchPlaceholder": "Name, email or service…",
+      "table": {
+        "availability": "Availability",
+        "name": "Freelancer",
+        "proposals": "Proposals",
+        "rate": "Rate",
+        "services": "Headline and services",
+        "visibility": "Visibility"
+      },
+      "title": "Freelancers",
+      "totalCount": "Total: {count}",
+      "visibility": "Visibility",
+      "visibilityAll": "All profiles",
+      "visible": "Visible"
+    },
+    "gigs": {
+      "agenciesOnly": "Agencies only",
+      "allGigs": "All gigs",
+      "detail": {
+        "budget": "Budget",
+        "changeStatus": "Change status",
+        "createdBy": "Created by {name}",
+        "currency": "Currency",
+        "days": "{count} days",
+        "delete": "Delete gig",
+        "deleteBody": "The gig \"{title}\" and all of its proposals ({count}) will be permanently deleted. This cannot be undone.",
+        "deleteConfirm": "Delete permanently",
+        "deleteTitle": "Delete this gig?",
+        "description": "Description",
+        "durationDays": "Duration (days)",
+        "edit": "Edit gig",
+        "freelancer": "Freelancer",
+        "message": "Message",
+        "noProposals": "No proposals yet",
+        "oneAcceptedRule": "At most one proposal can be accepted per gig.",
+        "proposals": "Proposals",
+        "rate": "Rate",
+        "titleField": "Title"
+      },
+      "empty": "No gigs found",
+      "metaTitle": "Gigs | Admin",
+      "ownerAll": "All owners",
+      "ownerType": "Owner type",
+      "searchPlaceholder": "Gig title or organization…",
+      "statusAll": "All statuses",
+      "table": {
+        "budget": "Budget",
+        "proposals": "Proposals",
+        "title": "Gig"
+      },
+      "title": "Gigs",
+      "totalCount": "Total: {count}"
+    },
+    "jobs": {
+      "close": "Close job",
+      "closeBody": "The job \"{title}\" will be closed and stop accepting applications.",
+      "closeTitle": "Close this job?",
+      "currency": "Currency",
+      "deleteBody": "The job \"{title}\" will be removed from the platform (it can be restored from the deleted list).",
+      "deleteTitle": "Delete this job?",
+      "description": "Description",
+      "editTitle": "Edit job",
+      "hideDeleted": "Hide deleted",
+      "location": "Location",
+      "restore": "Restore",
+      "salaryMax": "Salary max",
+      "salaryMin": "Salary min",
+      "showDeleted": "Show deleted",
+      "titleField": "Job title"
+    },
+    "organizations": {
+      "agency": "Agency",
+      "allGigs": "All gigs",
+      "allJobs": "All jobs",
+      "company": "Company",
+      "gigs": "Gigs",
+      "noGigs": "No gigs",
+      "payments": "Payments"
+    },
+    "availabilityLabels": {
+      "AVAILABLE": "Available",
+      "LIMITED": "Limited",
+      "UNAVAILABLE": "Unavailable"
+    },
+    "gigStatusLabels": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "CLOSED": "Closed"
+    },
+    "proposalStatusLabels": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn"
+    }
+  },
+  "adminUsers": {
+    "common": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "save": "Save"
+    },
+    "roles": {
+      "none": "No role",
+      "ADMIN": "Super admin",
+      "EMPLOYER": "Employer",
+      "AGENCY": "Agency",
+      "CANDIDATE": "Candidate",
+      "FREELANCER": "Freelancer"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "LOCKED": "Temporarily locked",
+      "SUSPENDED": "Suspended",
+      "UNVERIFIED": "Email not verified"
+    },
+    "list": {
+      "metaTitle": "Users | Admin",
+      "title": "Users",
+      "total": "{count} users in total",
+      "searchLabel": "Search users",
+      "searchPlaceholder": "Search by name or email",
+      "search": "Search",
+      "empty": "No users match the filters.",
+      "pagination": "Page {page} of {totalPages} ({total} users)",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "filters": {
+      "role": "Role",
+      "status": "Status",
+      "allRoles": "All roles",
+      "allStatuses": "All statuses",
+      "statusOption": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "locked": "Temporarily locked",
+        "unverified": "Email not verified"
+      }
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "roles": "Roles",
+      "company": "Company",
+      "status": "Status",
+      "registered": "Registered",
+      "lastLogin": "Last login",
+      "never": "Never"
+    },
+    "detail": {
+      "metaTitle": "User detail | Admin",
+      "back": "Back to users",
+      "noName": "No name"
+    },
+    "activity": {
+      "title": "Activity",
+      "applications": "Applications",
+      "jobs": "Jobs created",
+      "assignedApplications": "Assigned applications",
+      "gigs": "Gigs",
+      "proposals": "Gig proposals",
+      "none": "No activity for this role yet."
+    },
+    "profile": {
+      "title": "Profile",
+      "id": "ID",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "language": "Language / time zone",
+      "registered": "Registered"
+    },
+    "memberships": {
+      "title": "Roles and companies ({count})",
+      "none": "This user does not belong to any organization.",
+      "manage": "Manage membership"
+    },
+    "audit": {
+      "title": "Latest audit entries",
+      "none": "No entries yet.",
+      "action": "Action",
+      "direction": "Type",
+      "time": "Time",
+      "on": "Done by admin {actor}",
+      "by": "Done by the user"
+    },
+    "security": {
+      "title": "Security",
+      "emailVerified": "Email verified",
+      "no": "No",
+      "yes": "Yes",
+      "twoFactor": "Two-factor authentication",
+      "failedAttempts": "Failed login attempts",
+      "suspended": "Account state",
+      "lockedUntil": "Locked until",
+      "lastLogin": "Last login",
+      "lastLoginIp": "Last login IP"
+    },
+    "actions": {
+      "title": "Account help",
+      "adminProtected": "Super admin accounts are protected. Only signing out of all devices is available.",
+      "edit": {
+        "label": "Edit profile"
+      },
+      "verifyEmail": {
+        "label": "Verify email manually",
+        "title": "Verify email?",
+        "description": "The email {email} will be marked as verified without the user clicking a link.",
+        "done": "The email was verified."
+      },
+      "unlock": {
+        "label": "Unlock account",
+        "title": "Unlock account?",
+        "description": "The failed attempt counter is reset and the temporary lock is removed. The user can sign in right away.",
+        "done": "The account was unlocked."
+      },
+      "passwordReset": {
+        "label": "Send password reset"
+      },
+      "revokeSessions": {
+        "label": "Sign out of all devices",
+        "title": "Sign out of all devices?",
+        "description": "All active sessions of this user are revoked immediately and they will have to sign in again.",
+        "done": "The user was signed out of all devices."
+      },
+      "suspend": {
+        "label": "Suspend account",
+        "title": "Suspend account?",
+        "description": "The user will not be able to sign in and their active sessions are revoked. You can restore the account at any time.",
+        "done": "The account was suspended."
+      },
+      "restore": {
+        "label": "Restore account",
+        "title": "Restore account?",
+        "description": "The user will be able to sign in again.",
+        "done": "The account was restored."
+      }
+    },
+    "edit": {
+      "title": "Edit profile",
+      "description": "Changes are written to the audit log.",
+      "name": "Name",
+      "email": "Email",
+      "emailWarning": "Changing the email signs the user out of all devices and the new address has to be verified again.",
+      "markVerified": "Mark the new email as verified",
+      "phone": "Phone",
+      "emailTaken": "This email is already used by another account.",
+      "saved": "The profile was saved."
+    },
+    "reset": {
+      "title": "Password reset",
+      "description": "Sends a link to {email} for choosing a new password (valid for 1 hour).",
+      "sendEmail": "Send by email",
+      "showLink": "Show link",
+      "emailSent": "The password reset link was sent by email.",
+      "fallbackLink": "The email could not be sent. You can pass the link on to the user yourself.",
+      "linkReady": "The link is ready.",
+      "linkWarning": "The link is valid for 1 hour and lets the holder set a password. Send it only to this user and do not share it.",
+      "linkLabel": "Password reset link",
+      "copy": "Copy"
+    },
+    "errors": {
+      "generic": "The action could not be completed."
+    }
+  },
+  "adminCore": {
+    "nav": {
+      "panelTitle": "Super admin",
+      "overview": "Overview",
+      "users": "Users",
+      "organizations": "Organizations & agencies",
+      "freelancers": "Freelancers",
+      "gigs": "Gigs",
+      "jobs": "Jobs",
+      "billing": "Billing",
+      "audit": "Audit",
+      "team": "Admin team",
+      "gdpr": "GDPR",
+      "settings": "Settings",
+      "logout": "Sign out"
+    },
+    "login": {
+      "title": "Administrator sign-in",
+      "subtitle": "Access for platform administrators only.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "signingIn": "Signing in...",
+      "invalidCredentials": "Incorrect email or password.",
+      "emailNotVerified": "Please verify your email first.",
+      "error": "Sign-in failed. Please try again.",
+      "forbidden": "This account is not a platform administrator.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    },
+    "overview": {
+      "title": "Platform overview",
+      "subtitle": "The state of the whole platform at a glance.",
+      "unavailable": "Unavailable",
+      "open": "Open",
+      "viewAll": "View all",
+      "newUsers": "+{count} in the last 7 days",
+      "companies": "{count} companies",
+      "kpi": {
+        "users": "Total users",
+        "candidates": "Candidates",
+        "employers": "Employers",
+        "agencies": "Agencies",
+        "freelancers": "Freelancers",
+        "activeJobs": "Active jobs",
+        "openGigs": "Open gigs",
+        "activeSubscriptions": "Active subscriptions"
+      },
+      "recentSignups": "Recent sign-ups",
+      "recentActivity": "Recent admin activity",
+      "noSignups": "No sign-ups yet.",
+      "noActivity": "No activity yet.",
+      "attention": {
+        "title": "Needs attention",
+        "allClear": "Everything looks fine.",
+        "unverified": "Unverified emails older than 3 days: {count}",
+        "locked": "Locked accounts: {count}",
+        "dsar": "DSAR requests awaiting action: {count}",
+        "pastDue": "Past-due subscriptions: {count}"
+      },
+      "roles": {
+        "admin": "Admin",
+        "agency": "Agency",
+        "freelancer": "Freelancer",
+        "employer": "Employer",
+        "candidate": "Candidate",
+        "user": "User"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "intro": "History of changes and actions on the platform.",
+      "exportCsv": "Export CSV",
+      "exportNote": "Export contains at most {limit} rows, without user agent.",
+      "filters": {
+        "action": "Action",
+        "entityType": "Entity type",
+        "user": "User",
+        "userPlaceholder": "Email or ID",
+        "from": "From",
+        "to": "To",
+        "all": "All",
+        "apply": "Filter",
+        "reset": "Reset filters"
+      },
+      "recordCount": "{count} records",
+      "empty": "No records.",
+      "loadError": "Records could not be loaded.",
+      "colWhen": "When",
+      "colWho": "Who",
+      "colAction": "Action",
+      "colWhat": "What",
+      "colChange": "Change",
+      "noChanges": "No changes",
+      "details": "Details ({count})",
+      "kind": {
+        "added": "added",
+        "removed": "removed",
+        "changed": "changed"
+      },
+      "pagination": "Pagination",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {pages}"
+    },
+    "team": {
+      "title": "Admin team",
+      "subtitle": "Users with full access to the platform.",
+      "add": {
+        "title": "Add admin",
+        "hint": "Only an existing user can be added. The user must sign in again.",
+        "emailLabel": "User email",
+        "placeholder": "name@example.com",
+        "submit": "Add"
+      },
+      "list": {
+        "title": "Admins ({count})"
+      },
+      "colName": "Name",
+      "colEmail": "Email",
+      "colLastLogin": "Last sign-in",
+      "you": "You",
+      "remove": "Remove",
+      "never": "Never",
+      "empty": "No admins.",
+      "added": "Admin added.",
+      "removed": "Admin removed.",
+      "confirm": {
+        "title": "Confirm change",
+        "addBody": "Are you sure you want to grant super admin rights to {email}?",
+        "removeBody": "Are you sure you want to remove super admin rights from {email}? They will be signed out.",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      },
+      "errors": {
+        "notFound": "No user with this email exists.",
+        "alreadyAdmin": "User is already an admin.",
+        "lastAdmin": "The last admin cannot be removed.",
+        "self": "You cannot remove your own rights.",
+        "invalidEmail": "Invalid email.",
+        "generic": "Something went wrong. Please try again."
+      }
     }
   }
 }

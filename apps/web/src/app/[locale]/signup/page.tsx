@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
-import { isPortal } from '@/lib/portal'
+import { isPublicPortal } from '@/lib/portal'
 import SignupClient from './signup-client'
 
 type Props = {
@@ -16,5 +16,7 @@ export async function generateMetadata({ params: { locale } }: Props): Promise<M
 export default async function SignupPage({ params, searchParams }: Props) {
   const raw = searchParams?.role
   const role = Array.isArray(raw) ? raw[0] : raw
-  return <SignupClient params={await params} initialRole={isPortal(role) ? role : 'candidate'} />
+  return (
+    <SignupClient params={await params} initialRole={isPublicPortal(role) ? role : 'candidate'} />
+  )
 }

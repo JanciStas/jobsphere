@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { userMatchesPortal, portalHome, portalForPath, isPortal } from '../portal'
+import {
+  userMatchesPortal,
+  portalHome,
+  portalForPath,
+  isPortal,
+  isPublicPortal,
+  matchingPortals,
+  PUBLIC_PORTALS,
+} from '../portal'
 
 const none = { orgRoles: [], hasCandidate: false, hasFreelancer: false }
 
@@ -39,10 +47,32 @@ describe('userMatchesPortal', () => {
   })
 })
 
+describe('admin portal', () => {
+  it('requires isGlobalAdmin', () => {
+    expect(userMatchesPortal('admin', { ...none, isGlobalAdmin: true })).toBe(true)
+    expect(userMatchesPortal('admin', none)).toBe(false)
+    expect(userMatchesPortal('admin', { ...none, isGlobalAdmin: false })).toBe(false)
+    expect(userMatchesPortal('admin', { ...none, orgRoles: ['ORG_ADMIN'] })).toBe(false)
+  })
+  it('is never suggested publicly', () => {
+    expect(matchingPortals({ ...none, isGlobalAdmin: true })).not.toContain('admin')
+    expect(PUBLIC_PORTALS).not.toContain('admin')
+    expect(isPublicPortal('admin')).toBe(false)
+    expect(isPublicPortal('agency')).toBe(true)
+  })
+  it('home and path mapping', () => {
+    expect(portalHome('admin', 'sk')).toBe('/sk/admin')
+    expect(portalForPath('/admin')).toBe('admin')
+    expect(portalForPath('/admin/users')).toBe('admin')
+    expect(portalForPath('/administrator')).toBeNull()
+  })
+})
+
 describe('portal helpers', () => {
   it('isPortal', () => {
     expect(isPortal('agency')).toBe(true)
-    expect(isPortal('admin')).toBe(false)
+    expect(isPortal('admin')).toBe(true)
+    expect(isPortal('superuser')).toBe(false)
     expect(isPortal(undefined)).toBe(false)
   })
   it('portalHome', () => {

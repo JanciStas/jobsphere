@@ -35,6 +35,10 @@ const AUTH_GUARD_IDENTIFIERS = new Set([
   // src/lib/auth.ts
   'requireAuth',
   'requireGlobalAdmin',
+  // src/lib/admin-guard.ts — 401 for anonymous, 403 for non-admin
+  'requireAdminApi',
+  // src/lib/admin-billing.ts — guardAdmin() (401/403) runs inside runBillingAction
+  'runBillingAction',
   // src/lib/api-helpers.ts
   'requireOrgAuth',
   'requireRole',

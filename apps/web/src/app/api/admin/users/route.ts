@@ -18,27 +18,24 @@ const AUDIT_ACTION: Record<'ban' | 'unban' | 'promote_admin' | 'demote_admin', A
   demote_admin: 'DEMOTE_ADMIN',
 }
 import * as z from 'zod'
+import { adminDenied, SUSPENDED_DATE } from '@/lib/admin-users/guard'
+import { listAdminUsers } from '@/lib/admin-users/list'
+import { parseListQuery } from '@/lib/admin-users/list-query'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-// Far-future date used as a "banned" sentinel
-const BAN_DATE = new Date('2099-01-01T00:00:00.000Z')
+// Far-future date used as a "banned" (suspended) sentinel
+const BAN_DATE = SUSPENDED_DATE
 
+/** 401 for anonymous, 403 for a signed-in non-admin; otherwise the admin session. */
 async function requireGlobalAdmin() {
   const session = await auth()
-  if (!session?.user?.isGlobalAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-  return session
+  const denied = adminDenied(session)
+  if (denied) return denied
+  return session!
 }
-
-const listQuerySchema = z.object({
-  search: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-})
 
 const patchBodySchema = z.object({
   userId: z.string().min(1),
@@ -56,59 +53,21 @@ const listUsers = async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url)
 
-    const params = listQuerySchema.parse({
-      search: searchParams.get('search') ?? undefined,
-      page: searchParams.get('page') ?? undefined,
-      limit: searchParams.get('limit') ?? undefined,
-    })
-
-    const skip = (params.page - 1) * params.limit
-
-    const whereClause = {
-      deletedAt: null,
-      ...(params.search
-        ? {
-            OR: [
-              { email: { contains: params.search, mode: 'insensitive' as const } },
-              { name: { contains: params.search, mode: 'insensitive' as const } },
-            ],
-          }
-        : {}),
+    const parsed = parseListQuery(Object.fromEntries(searchParams.entries()))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', issues: parsed.error.issues },
+        { status: 400 },
+      )
     }
+    const params = parsed.data
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where: whereClause,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          createdAt: true,
-          emailVerified: true,
-          isGlobalAdmin: true,
-          lockedUntil: true,
-          failedAttempts: true,
-          _count: {
-            select: { organizations: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: params.limit,
-      }),
-      prisma.user.count({ where: whereClause }),
-    ])
+    const { users, total } = await listAdminUsers(params)
 
     logger.info('Admin: listed users', { adminId: authResult.user.id, total, page: params.page })
 
     return NextResponse.json({ users, total, page: params.page, limit: params.limit })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid query parameters', issues: error.issues },
-        { status: 400 },
-      )
-    }
     logger.error('Admin GET /users failed', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -141,11 +100,49 @@ export const PATCH = withCsrfProtection(
           // isGlobalAdmin and lockedUntil come along so the audit entry can say
           // what the user WAS. "Promoted to admin" without the previous value
           // answers half the question.
-          select: { id: true, deletedAt: true, isGlobalAdmin: true, lockedUntil: true },
+          select: {
+            id: true,
+            deletedAt: true,
+            isGlobalAdmin: true,
+            lockedUntil: true,
+            emailVerified: true,
+            password: true,
+          },
         })
 
         if (!target || target.deletedAt !== null) {
           return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+
+        // A super admin cannot be suspended by another one (demote first), and the
+        // platform must never be left without any super admin.
+        if (action === 'ban' && target.isGlobalAdmin) {
+          return NextResponse.json(
+            { error: 'Cannot suspend a super admin. Demote first.' },
+            { status: 403 },
+          )
+        }
+        if (
+          action === 'promote_admin' &&
+          (!target.emailVerified ||
+            !target.password ||
+            (target.lockedUntil && target.lockedUntil > new Date()))
+        ) {
+          return NextResponse.json(
+            { error: 'Account must have a verified e-mail, a password and not be suspended' },
+            { status: 409 },
+          )
+        }
+        if (action === 'demote_admin' && target.isGlobalAdmin) {
+          const admins = await prisma.user.count({
+            where: { isGlobalAdmin: true, deletedAt: null },
+          })
+          if (admins <= 1) {
+            return NextResponse.json(
+              { error: 'Cannot remove the last super admin' },
+              { status: 409 },
+            )
+          }
         }
 
         let updateData: Record<string, unknown>
@@ -159,7 +156,7 @@ export const PATCH = withCsrfProtection(
             updateData = { lockedUntil: null, failedAttempts: 0 }
             break
           case 'promote_admin':
-            updateData = { isGlobalAdmin: true }
+            updateData = { isGlobalAdmin: true, sessionEpoch: { increment: 1 } }
             break
           case 'demote_admin':
             // AUTH-001: revoke active sessions so the demoted admin loses elevated access now

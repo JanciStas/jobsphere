@@ -29,7 +29,16 @@
     "asFreelancer": "Jako freelancer",
     "companySettings": "Ustawienia firmy",
     "company": "Firma",
-    "account": "Konto"
+    "account": "Konto",
+    "myDashboard": "Mój dashboard",
+    "accountSettings": "Ustawienia konta",
+    "roles": {
+      "admin": "Super admin",
+      "agency": "Agencja pracy",
+      "employer": "Pracodawca",
+      "freelancer": "Freelancer",
+      "candidate": "Osoba szukająca pracy"
+    }
   },
   "hero": {
     "title": "Znajdź wymarzoną pracę z AI",
@@ -2757,6 +2766,576 @@
       "noPortfolio": "Ten freelancer nie dodał jeszcze żadnych próbek prac.",
       "openProject": "Otwórz projekt",
       "externalPortfolio": "Zewnętrzne portfolio"
+    }
+  },
+  "adminBilling": {
+    "metaTitle": "Płatności i subskrypcje",
+    "title": "Płatności i subskrypcje",
+    "subtitle": "Znalezionych subskrypcji: {count}",
+    "kpi": {
+      "active": "Aktywne subskrypcje",
+      "trialing": "W okresie próbnym",
+      "pastDue": "Zaległe",
+      "canceled30": "Anulowane w 30 dni",
+      "mrr": "Szacowany MRR",
+      "mrrNote": "MRR to szacunek z aktywnych subskrypcji Stripe i cen w EUR; ręcznie przyznane plany nie są liczone."
+    },
+    "allSubscriptions": "Wszystkie subskrypcje",
+    "filters": {
+      "search": "Organizacja",
+      "status": "Status",
+      "allStatuses": "Wszystkie statusy",
+      "apply": "Filtruj",
+      "reset": "Resetuj filtry"
+    },
+    "status": {
+      "active": "Aktywna",
+      "trialing": "Próbna",
+      "past_due": "Zaległa",
+      "canceled": "Anulowana",
+      "unpaid": "Nieopłacona"
+    },
+    "table": {
+      "organization": "Organizacja",
+      "plan": "Plan",
+      "status": "Status",
+      "period": "Okres",
+      "cancelAt": "Anulowanie z dniem",
+      "detail": "Szczegóły"
+    },
+    "orgDeleted": "usunięta organizacja",
+    "manual": "ręcznie",
+    "empty": "Brak subskrypcji pasujących do filtrów.",
+    "pagination": {
+      "label": "Paginacja",
+      "prev": "Poprzednia",
+      "next": "Następna",
+      "of": "Strona {page} z {pages}"
+    },
+    "unlimited": "Bez limitu",
+    "back": "← Wróć do subskrypcji",
+    "detail": {
+      "currentPlan": "Bieżący plan",
+      "actions": "Akcje ręczne",
+      "limitsVsUsage": "Efektywne limity i wykorzystanie",
+      "feature": "Funkcja",
+      "limit": "Limit",
+      "usage": "Wykorzystanie",
+      "source": "Źródło limitu",
+      "sourceEntitlement": "rekord organizacji (plan lub ręczna zmiana)",
+      "sourceDefault": "domyślny STARTER",
+      "history": "Historia subskrypcji",
+      "stripe": "Stripe",
+      "openStripe": "Otwórz w Stripe",
+      "noHistory": "Ta organizacja nie ma subskrypcji."
+    },
+    "features": {
+      "MAX_JOBS": "Opublikowane ogłoszenia",
+      "MAX_CANDIDATES": "Kandydaci (aplikacje)",
+      "MAX_TEAM_MEMBERS": "Członkowie zespołu",
+      "EMAIL_SEQUENCES": "Sekwencje e-mail",
+      "ASSESSMENTS": "Testy umiejętności",
+      "AI_MATCHING": "Dopasowanie AI",
+      "CUSTOM_BRANDING": "Własny branding",
+      "API_ACCESS": "Dostęp do API"
+    },
+    "actions": {
+      "manualWarning": "Zmiany są wprowadzane tylko w bazie JobSphere, nie w Stripe. Nic nie jest pobierane ani zwracane. Każda akcja jest zapisywana w audycie.",
+      "orgDeleted": "Organizacja jest usunięta; akcje są zablokowane.",
+      "stripeManagedInfo": "Ta subskrypcja jest zarządzana przez Stripe. Zmieniaj ją w panelu Stripe, w przeciwnym razie webhook ją nadpisze.",
+      "stripeManagedError": "Subskrypcja jest zarządzana przez Stripe; zmień ją w panelu Stripe.",
+      "openStripe": "Otwórz panel Stripe",
+      "grant": "Przyznaj / zmień plan",
+      "extend": "Przedłuż okres",
+      "cancel": "Anuluj subskrypcję",
+      "limit": "Edytuj limit",
+      "refundNote": "Zwroty i zmiany faktur wykonuje się wyłącznie w panelu Stripe, nie tutaj.",
+      "grantTitle": "Przyznaj lub zmień plan bez Stripe",
+      "extendTitle": "Przedłuż okres subskrypcji",
+      "cancelTitle": "Anuluj subskrypcję",
+      "limitTitle": "Edytuj limit funkcji",
+      "confirmIntro": "Dziennik audytu zapisze tę akcję z Twoim imieniem i powodem.",
+      "plan": "Plan",
+      "until": "Ważne do (data w przyszłości)",
+      "mode": {
+        "period_end": "Na koniec okresu (plan obowiązuje do końca bieżącego okresu)",
+        "immediate": "Natychmiast (limity wracają od razu do STARTER)"
+      },
+      "feature": "Funkcja",
+      "newLimit": "Nowy limit",
+      "limitHint": "0 = funkcja wyłączona. Dla funkcji wł./wył. 1 = włączona.",
+      "unlimited": "Bez limitu",
+      "reason": "Powód (wymagany)",
+      "reasonHint": "Co najmniej 5 znaków, maks. 500.",
+      "confirmCheckbox": "Rozumiem, że zmiana działa natychmiast i dotyczy tylko bazy JobSphere.",
+      "close": "Zamknij",
+      "saving": "Zapisywanie…",
+      "confirm": "Potwierdź",
+      "failed": "Nie udało się wykonać akcji."
+    }
+  },
+  "adminMarketplace": {
+    "common": {
+      "actions": "Akcje",
+      "apply": "Zastosuj",
+      "back": "Wstecz",
+      "cancel": "Anuluj",
+      "created": "Utworzono",
+      "delete": "Usuń",
+      "deleteFailed": "Usuwanie nie powiodło się",
+      "edit": "Edytuj",
+      "next": "Dalej",
+      "organization": "Organizacja",
+      "pageOf": "Strona {page} z {totalPages}",
+      "prev": "Poprzednia",
+      "reset": "Wyczyść filtry",
+      "save": "Zapisz",
+      "saveFailed": "Zapis nie powiódł się",
+      "saved": "Zapisano",
+      "saving": "Zapisywanie…",
+      "search": "Szukaj",
+      "status": "Status"
+    },
+    "freelancers": {
+      "allFreelancers": "Wszyscy freelancerzy",
+      "availability": "Dostępność",
+      "availabilityAll": "Wszystkie dostępności",
+      "detail": {
+        "bio": "O mnie",
+        "deleteItemBody": "Pozycja „{title}” zostanie trwale usunięta z portfolio.",
+        "deleteItemTitle": "Usunąć pozycję portfolio?",
+        "editItem": "Edytuj pozycję portfolio",
+        "gig": "Zlecenie",
+        "hourlyRate": "Stawka godzinowa",
+        "itemDescription": "Opis",
+        "itemTitle": "Tytuł",
+        "itemUrl": "Link",
+        "listHint": "Wartości oddziel przecinkami",
+        "location": "Lokalizacja",
+        "noPortfolio": "Brak pozycji portfolio",
+        "noProposals": "Brak ofert",
+        "portfolio": "Portfolio",
+        "portfolioUrl": "Link do portfolio",
+        "profile": "Profil",
+        "proposals": "Oferty na zlecenia",
+        "services": "Usługi",
+        "skills": "Umiejętności",
+        "titleField": "Nagłówek / specjalizacja",
+        "userAccount": "Konto użytkownika",
+        "visibleField": "Profil jest publicznie widoczny",
+        "visibleHint": "Wyłączenie ukrywa profil na liście publicznej."
+      },
+      "empty": "Nie znaleziono freelancerów",
+      "hidden": "Ukryty",
+      "metaTitle": "Freelancerzy | Admin",
+      "searchPlaceholder": "Imię, e-mail lub usługa…",
+      "table": {
+        "availability": "Dostępność",
+        "name": "Freelancer",
+        "proposals": "Oferty",
+        "rate": "Stawka",
+        "services": "Specjalizacja i usługi",
+        "visibility": "Widoczność"
+      },
+      "title": "Freelancerzy",
+      "totalCount": "Razem: {count}",
+      "visibility": "Widoczność",
+      "visibilityAll": "Wszystkie profile",
+      "visible": "Widoczny"
+    },
+    "gigs": {
+      "agenciesOnly": "Tylko agencje",
+      "allGigs": "Wszystkie zlecenia",
+      "detail": {
+        "budget": "Budżet",
+        "changeStatus": "Zmień status",
+        "createdBy": "Utworzył(a) {name}",
+        "currency": "Waluta",
+        "days": "{count} dni",
+        "delete": "Usuń zlecenie",
+        "deleteBody": "Zlecenie „{title}” i wszystkie jego oferty ({count}) zostaną trwale usunięte. Tej operacji nie można cofnąć.",
+        "deleteConfirm": "Usuń trwale",
+        "deleteTitle": "Usunąć zlecenie?",
+        "description": "Opis",
+        "durationDays": "Czas trwania (dni)",
+        "edit": "Edycja zlecenia",
+        "freelancer": "Freelancer",
+        "message": "Wiadomość",
+        "noProposals": "Brak ofert",
+        "oneAcceptedRule": "Na jedno zlecenie można zaakceptować najwyżej jedną ofertę.",
+        "proposals": "Oferty",
+        "rate": "Stawka",
+        "titleField": "Tytuł"
+      },
+      "empty": "Nie znaleziono zleceń",
+      "metaTitle": "Zlecenia | Admin",
+      "ownerAll": "Wszyscy zleceniodawcy",
+      "ownerType": "Typ zleceniodawcy",
+      "searchPlaceholder": "Tytuł zlecenia lub organizacja…",
+      "statusAll": "Wszystkie statusy",
+      "table": {
+        "budget": "Budżet",
+        "proposals": "Oferty",
+        "title": "Zlecenie"
+      },
+      "title": "Zlecenia",
+      "totalCount": "Razem: {count}"
+    },
+    "jobs": {
+      "close": "Zamknij ogłoszenie",
+      "closeBody": "Ogłoszenie „{title}” zostanie zamknięte i przestanie przyjmować zgłoszenia.",
+      "closeTitle": "Zamknąć ogłoszenie?",
+      "currency": "Waluta",
+      "deleteBody": "Ogłoszenie „{title}” zostanie usunięte z platformy (można je przywrócić z listy usuniętych).",
+      "deleteTitle": "Usunąć ogłoszenie?",
+      "description": "Opis",
+      "editTitle": "Edycja ogłoszenia",
+      "hideDeleted": "Ukryj usunięte",
+      "location": "Lokalizacja",
+      "restore": "Przywróć",
+      "salaryMax": "Płaca do",
+      "salaryMin": "Płaca od",
+      "showDeleted": "Pokaż usunięte",
+      "titleField": "Nazwa stanowiska"
+    },
+    "organizations": {
+      "agency": "Agencja",
+      "allGigs": "Wszystkie zlecenia",
+      "allJobs": "Wszystkie ogłoszenia",
+      "company": "Firma",
+      "gigs": "Zlecenia",
+      "noGigs": "Brak zleceń",
+      "payments": "Płatności"
+    },
+    "availabilityLabels": {
+      "AVAILABLE": "Dostępny",
+      "LIMITED": "Ograniczona",
+      "UNAVAILABLE": "Niedostępny"
+    },
+    "gigStatusLabels": {
+      "OPEN": "Otwarte",
+      "IN_PROGRESS": "W toku",
+      "CLOSED": "Zamknięte"
+    },
+    "proposalStatusLabels": {
+      "PENDING": "Oczekuje",
+      "ACCEPTED": "Zaakceptowana",
+      "REJECTED": "Odrzucona",
+      "WITHDRAWN": "Wycofana"
+    }
+  },
+  "adminUsers": {
+    "common": {
+      "cancel": "Anuluj",
+      "confirm": "Potwierdź",
+      "save": "Zapisz"
+    },
+    "roles": {
+      "none": "Brak roli",
+      "ADMIN": "Super admin",
+      "EMPLOYER": "Pracodawca",
+      "AGENCY": "Agencja",
+      "CANDIDATE": "Kandydat",
+      "FREELANCER": "Freelancer"
+    },
+    "status": {
+      "ACTIVE": "Aktywny",
+      "LOCKED": "Tymczasowo zablokowany",
+      "SUSPENDED": "Zawieszony",
+      "UNVERIFIED": "Niezweryfikowany e-mail"
+    },
+    "list": {
+      "metaTitle": "Użytkownicy | Admin",
+      "title": "Użytkownicy",
+      "total": "Łącznie {count} użytkowników",
+      "searchLabel": "Szukaj użytkownika",
+      "searchPlaceholder": "Szukaj według imienia lub e-maila",
+      "search": "Szukaj",
+      "empty": "Żaden użytkownik nie pasuje do filtrów.",
+      "pagination": "Strona {page} z {totalPages} ({total} użytkowników)",
+      "previous": "Poprzednia",
+      "next": "Następna"
+    },
+    "filters": {
+      "role": "Rola",
+      "status": "Status",
+      "allRoles": "Wszystkie role",
+      "allStatuses": "Wszystkie statusy",
+      "statusOption": {
+        "active": "Aktywny",
+        "suspended": "Zawieszony",
+        "locked": "Tymczasowo zablokowany",
+        "unverified": "Niezweryfikowany e-mail"
+      }
+    },
+    "table": {
+      "name": "Imię i nazwisko",
+      "email": "E-mail",
+      "roles": "Role",
+      "company": "Firma",
+      "status": "Status",
+      "registered": "Rejestracja",
+      "lastLogin": "Ostatnie logowanie",
+      "never": "Nigdy"
+    },
+    "detail": {
+      "metaTitle": "Szczegóły użytkownika | Admin",
+      "back": "Wróć do użytkowników",
+      "noName": "Brak nazwy"
+    },
+    "activity": {
+      "title": "Aktywność",
+      "applications": "Aplikacje",
+      "jobs": "Utworzone ogłoszenia",
+      "assignedApplications": "Przypisane aplikacje",
+      "gigs": "Zlecenia",
+      "proposals": "Oferty na zlecenia",
+      "none": "Dla tej roli nie ma jeszcze aktywności."
+    },
+    "profile": {
+      "title": "Profil",
+      "id": "ID",
+      "name": "Imię i nazwisko",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "language": "Język / strefa czasowa",
+      "registered": "Zarejestrowany"
+    },
+    "memberships": {
+      "title": "Role i firmy ({count})",
+      "none": "Użytkownik nie należy do żadnej organizacji.",
+      "manage": "Zarządzaj członkostwem"
+    },
+    "audit": {
+      "title": "Ostatnie wpisy audytu",
+      "none": "Brak wpisów.",
+      "action": "Akcja",
+      "direction": "Typ",
+      "time": "Czas",
+      "on": "Wykonał admin {actor}",
+      "by": "Wykonał użytkownik"
+    },
+    "security": {
+      "title": "Bezpieczeństwo",
+      "emailVerified": "E-mail zweryfikowany",
+      "no": "Nie",
+      "yes": "Tak",
+      "twoFactor": "Uwierzytelnianie dwuskładnikowe",
+      "failedAttempts": "Nieudane próby logowania",
+      "suspended": "Stan konta",
+      "lockedUntil": "Zablokowany do",
+      "lastLogin": "Ostatnie logowanie",
+      "lastLoginIp": "IP ostatniego logowania"
+    },
+    "actions": {
+      "title": "Pomoc z kontem",
+      "adminProtected": "Konto super admina jest chronione. Dostępne jest tylko wylogowanie ze wszystkich urządzeń.",
+      "edit": {
+        "label": "Edytuj profil"
+      },
+      "verifyEmail": {
+        "label": "Zweryfikuj e-mail ręcznie",
+        "title": "Zweryfikować e-mail?",
+        "description": "Adres {email} zostanie oznaczony jako zweryfikowany bez klikania w link przez użytkownika.",
+        "done": "E-mail został zweryfikowany."
+      },
+      "unlock": {
+        "label": "Odblokuj konto",
+        "title": "Odblokować konto?",
+        "description": "Licznik nieudanych prób zostanie wyzerowany, a tymczasowa blokada zniesiona. Użytkownik może się od razu zalogować.",
+        "done": "Konto zostało odblokowane."
+      },
+      "passwordReset": {
+        "label": "Wyślij reset hasła"
+      },
+      "revokeSessions": {
+        "label": "Wyloguj ze wszystkich urządzeń",
+        "title": "Wylogować ze wszystkich urządzeń?",
+        "description": "Wszystkie aktywne sesje tego użytkownika zostaną natychmiast unieważnione i będzie musiał zalogować się ponownie.",
+        "done": "Użytkownik został wylogowany ze wszystkich urządzeń."
+      },
+      "suspend": {
+        "label": "Zawieś konto",
+        "title": "Zawiesić konto?",
+        "description": "Użytkownik nie będzie mógł się zalogować, a jego aktywne sesje zostaną unieważnione. Konto można w każdej chwili przywrócić.",
+        "done": "Konto zostało zawieszone."
+      },
+      "restore": {
+        "label": "Przywróć konto",
+        "title": "Przywrócić konto?",
+        "description": "Użytkownik będzie mógł się ponownie zalogować.",
+        "done": "Konto zostało przywrócone."
+      }
+    },
+    "edit": {
+      "title": "Edytuj profil",
+      "description": "Zmiany są zapisywane w dzienniku audytu.",
+      "name": "Imię i nazwisko",
+      "email": "E-mail",
+      "emailWarning": "Zmiana e-maila wyloguje użytkownika ze wszystkich urządzeń, a nowy adres trzeba będzie ponownie zweryfikować.",
+      "markVerified": "Oznacz nowy e-mail jako zweryfikowany",
+      "phone": "Telefon",
+      "emailTaken": "Ten e-mail jest już używany przez inne konto.",
+      "saved": "Profil został zapisany."
+    },
+    "reset": {
+      "title": "Reset hasła",
+      "description": "Wyśle na adres {email} link do ustawienia nowego hasła (ważny 1 godzinę).",
+      "sendEmail": "Wyślij e-mailem",
+      "showLink": "Pokaż link",
+      "emailSent": "Link do resetu hasła został wysłany e-mailem.",
+      "fallbackLink": "Nie udało się wysłać e-maila. Możesz przekazać link użytkownikowi samodzielnie.",
+      "linkReady": "Link jest gotowy.",
+      "linkWarning": "Link jest ważny 1 godzinę i pozwala ustawić hasło. Wyślij go tylko temu użytkownikowi i nie udostępniaj go.",
+      "linkLabel": "Link do resetu hasła",
+      "copy": "Kopiuj"
+    },
+    "errors": {
+      "generic": "Nie udało się wykonać akcji."
+    }
+  },
+  "adminCore": {
+    "nav": {
+      "panelTitle": "Super admin",
+      "overview": "Przegląd",
+      "users": "Użytkownicy",
+      "organizations": "Organizacje i agencje",
+      "freelancers": "Freelancerzy",
+      "gigs": "Zlecenia",
+      "jobs": "Ogłoszenia",
+      "billing": "Płatności",
+      "audit": "Audyt",
+      "team": "Zespół adminów",
+      "gdpr": "RODO",
+      "settings": "Ustawienia",
+      "logout": "Wyloguj się"
+    },
+    "login": {
+      "title": "Logowanie administratora",
+      "subtitle": "Dostęp tylko dla administratorów platformy.",
+      "email": "E-mail",
+      "password": "Hasło",
+      "submit": "Zaloguj się",
+      "signingIn": "Logowanie...",
+      "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+      "emailNotVerified": "Najpierw zweryfikuj swój e-mail.",
+      "error": "Logowanie nie powiodło się. Spróbuj ponownie.",
+      "forbidden": "To konto nie jest administratorem platformy.",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło"
+    },
+    "overview": {
+      "title": "Przegląd platformy",
+      "subtitle": "Stan całej platformy w jednym miejscu.",
+      "unavailable": "Niedostępne",
+      "open": "Otwórz",
+      "viewAll": "Pokaż wszystko",
+      "newUsers": "+{count} w ostatnich 7 dniach",
+      "companies": "{count} firm",
+      "kpi": {
+        "users": "Użytkownicy łącznie",
+        "candidates": "Kandydaci",
+        "employers": "Pracodawcy",
+        "agencies": "Agencje",
+        "freelancers": "Freelancerzy",
+        "activeJobs": "Aktywne ogłoszenia",
+        "openGigs": "Otwarte zlecenia",
+        "activeSubscriptions": "Aktywne subskrypcje"
+      },
+      "recentSignups": "Ostatnie rejestracje",
+      "recentActivity": "Ostatnia aktywność adminów",
+      "noSignups": "Brak rejestracji.",
+      "noActivity": "Brak aktywności.",
+      "attention": {
+        "title": "Wymaga uwagi",
+        "allClear": "Wszystko w porządku.",
+        "unverified": "Niezweryfikowane e-maile starsze niż 3 dni: {count}",
+        "locked": "Zablokowane konta: {count}",
+        "dsar": "Oczekujące wnioski DSAR: {count}",
+        "pastDue": "Zaległe subskrypcje: {count}"
+      },
+      "roles": {
+        "admin": "Admin",
+        "agency": "Agencja",
+        "freelancer": "Freelancer",
+        "employer": "Pracodawca",
+        "candidate": "Kandydat",
+        "user": "Użytkownik"
+      }
+    },
+    "audit": {
+      "title": "Dziennik audytu",
+      "intro": "Historia zmian i działań na platformie.",
+      "exportCsv": "Eksportuj CSV",
+      "exportNote": "Eksport zawiera najwyżej {limit} wierszy, bez user-agent.",
+      "filters": {
+        "action": "Akcja",
+        "entityType": "Typ encji",
+        "user": "Użytkownik",
+        "userPlaceholder": "E-mail lub ID",
+        "from": "Od",
+        "to": "Do",
+        "all": "Wszystko",
+        "apply": "Filtruj",
+        "reset": "Resetuj filtry"
+      },
+      "recordCount": "{count} wpisów",
+      "empty": "Brak wpisów.",
+      "loadError": "Nie udało się wczytać wpisów.",
+      "colWhen": "Kiedy",
+      "colWho": "Kto",
+      "colAction": "Akcja",
+      "colWhat": "Co",
+      "colChange": "Zmiana",
+      "noChanges": "Bez zmian",
+      "details": "Szczegóły ({count})",
+      "kind": {
+        "added": "dodano",
+        "removed": "usunięto",
+        "changed": "zmieniono"
+      },
+      "pagination": "Paginacja",
+      "prev": "Poprzednia",
+      "next": "Następna",
+      "pageOf": "Strona {page} z {pages}"
+    },
+    "team": {
+      "title": "Zespół adminów",
+      "subtitle": "Użytkownicy z pełnym dostępem do platformy.",
+      "add": {
+        "title": "Dodaj admina",
+        "hint": "Można dodać tylko istniejącego użytkownika. Musi on zalogować się ponownie.",
+        "emailLabel": "E-mail użytkownika",
+        "placeholder": "imie@przyklad.pl",
+        "submit": "Dodaj"
+      },
+      "list": {
+        "title": "Admini ({count})"
+      },
+      "colName": "Imię",
+      "colEmail": "E-mail",
+      "colLastLogin": "Ostatnie logowanie",
+      "you": "Ty",
+      "remove": "Usuń",
+      "never": "Nigdy",
+      "empty": "Brak adminów.",
+      "added": "Admin dodany.",
+      "removed": "Admin usunięty.",
+      "confirm": {
+        "title": "Potwierdź zmianę",
+        "addBody": "Czy na pewno nadać {email} uprawnienia super admina?",
+        "removeBody": "Czy na pewno odebrać {email} uprawnienia super admina? Użytkownik zostanie wylogowany.",
+        "cancel": "Anuluj",
+        "confirm": "Potwierdź"
+      },
+      "errors": {
+        "notFound": "Użytkownik z tym e-mailem nie istnieje.",
+        "alreadyAdmin": "Użytkownik jest już adminem.",
+        "lastAdmin": "Nie można usunąć ostatniego admina.",
+        "self": "Nie możesz odebrać uprawnień sobie.",
+        "invalidEmail": "Nieprawidłowy e-mail.",
+        "generic": "Coś poszło nie tak. Spróbuj ponownie."
+      }
     }
   }
 }

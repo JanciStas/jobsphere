@@ -1,10 +1,28 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { getFormatter, getTranslations } from 'next-intl/server'
-import { prisma } from '@/lib/prisma'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Users, Building2, Briefcase, CreditCard } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import {
+  Users,
+  UserCheck,
+  Building2,
+  Briefcase,
+  UserCog,
+  FileText,
+  ClipboardList,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle2,
+} from 'lucide-react'
+import { auth } from '@/lib/auth'
 import { SHORT_DATE } from '@/lib/formats'
+import { AdminKpiCard } from '@/components/admin/kpi-card'
+import {
+  getAdminKpis,
+  getAttentionCounts,
+  getRecentAdminActivity,
+  getRecentSignups,
+} from '@/lib/admin/overview'
 
 export async function generateMetadata({
   params: { locale },
@@ -12,190 +30,176 @@ export async function generateMetadata({
   params: { locale: string }
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'pageMetadata' })
-  return {
-    title: t('adminDashboard.title'),
-  }
+  return { title: t('adminDashboard.title') }
 }
 
-export default async function AdminDashboardPage() {
-  const format = await getFormatter()
-  const t = await getTranslations('admin')
-  const [totalUsers, totalOrgs, totalJobs, totalApplications, recentUsers, activeSubscriptions] =
-    await Promise.all([
-      prisma.user.count({ where: { deletedAt: null } }),
-      prisma.organization.count({ where: { deletedAt: null } }),
-      prisma.job.count({ where: { deletedAt: null } }),
-      prisma.application.count({ where: { deletedAt: null } }),
-      prisma.user.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          createdAt: true,
-          isGlobalAdmin: true,
-        },
-      }),
-      prisma.subscription.count({
-        where: { status: { in: ['ACTIVE', 'TRIALING'] } },
-      }),
-    ])
+export default async function AdminOverviewPage({ params }: { params: { locale: string } }) {
+  // The layout already guards, but a page must never rely on that alone.
+  const session = await auth()
+  if (!session?.user?.isGlobalAdmin) redirect(`/${params.locale}/login/admin?error=forbidden`)
 
-  const stats = [
+  const t = await getTranslations('adminCore.overview')
+  const format = await getFormatter()
+  const base = `/${params.locale}/admin`
+
+  const [kpis, attention, signups, activity] = await Promise.all([
+    getAdminKpis(),
+    getAttentionCounts(),
+    getRecentSignups(),
+    getRecentAdminActivity(),
+  ])
+
+  const n = (v: number | null) => (v === null ? null : format.number(v))
+
+  const cards = [
     {
-      label: t('dashboard.stats.users'),
-      value: totalUsers,
+      key: 'users',
+      value: n(kpis.users),
       icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
+      hint: kpis.newUsers7d === null ? null : t('newUsers', { count: kpis.newUsers7d }),
     },
+    { key: 'candidates', value: n(kpis.candidates), icon: UserCheck },
     {
-      label: t('dashboard.stats.organizations'),
-      value: totalOrgs,
+      key: 'employers',
+      value: n(kpis.employers),
       icon: Building2,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      hint: kpis.organizations === null ? null : t('companies', { count: kpis.organizations }),
     },
-    {
-      label: t('dashboard.stats.jobs'),
-      value: totalJobs,
-      icon: Briefcase,
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
-    },
-    {
-      label: t('dashboard.stats.activeSubscriptions'),
-      value: activeSubscriptions,
-      icon: CreditCard,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-    },
+    { key: 'agencies', value: n(kpis.agencies), icon: Briefcase },
+    { key: 'freelancers', value: n(kpis.freelancers), icon: UserCog },
+    { key: 'activeJobs', value: n(kpis.activeJobs), icon: FileText },
+    { key: 'openGigs', value: n(kpis.openGigs), icon: ClipboardList },
+    { key: 'activeSubscriptions', value: n(kpis.activeSubscriptions), icon: CreditCard },
   ]
 
+  const alerts = [
+    { key: 'unverified', count: attention.unverifiedOld, href: `${base}/users` },
+    { key: 'locked', count: attention.locked, href: `${base}/users` },
+    { key: 'dsar', count: attention.dsarPending, href: `${base}/gdpr` },
+    { key: 'pastDue', count: attention.pastDue, href: `${base}/billing` },
+  ].filter((a) => (a.count ?? 0) > 0)
+  const attentionFailed = Object.values(attention).every((v) => v === null)
+
   return (
-    <div className="space-y-8 p-8">
-      {/* Header */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.title')}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t('dashboard.subtitle')}</p>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.label} className="border border-slate-200 bg-white shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
-                      {format.number(stat.value)}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((c) => (
+          <AdminKpiCard
+            key={c.key}
+            value={c.value}
+            label={t(`kpi.${c.key}`)}
+            icon={c.icon}
+            hint={c.hint}
+          />
+        ))}
+      </div>
+
+      <section aria-labelledby="attention-title" className="rounded-lg border bg-card p-4">
+        <h2 id="attention-title" className="flex items-center gap-2 text-base font-semibold">
+          <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+          {t('attention.title')}
+        </h2>
+        {attentionFailed ? (
+          <p className="mt-3 text-sm text-muted-foreground">{t('unavailable')}</p>
+        ) : alerts.length === 0 ? (
+          <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+            {t('attention.allClear')}
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y">
+            {alerts.map((a) => (
+              <li key={a.key}>
+                <Link
+                  href={a.href}
+                  className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm hover:text-primary"
+                >
+                  <span>{t(`attention.${a.key}`, { count: a.count ?? 0 })}</span>
+                  <span className="text-xs text-primary">{t('open')}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="signups-title" className="rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h2 id="signups-title" className="text-base font-semibold">
+              {t('recentSignups')}
+            </h2>
+            <Link href={`${base}/users`} className="text-xs text-primary hover:underline">
+              {t('viewAll')}
+            </Link>
+          </div>
+          {signups === null ? (
+            <p className="mt-3 text-sm text-muted-foreground">{t('unavailable')}</p>
+          ) : signups.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">{t('noSignups')}</p>
+          ) : (
+            <ul className="mt-3 divide-y">
+              {signups.map((u) => (
+                <li key={u.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <Link
+                      href={`${base}/users/${u.id}`}
+                      className="block truncate font-medium hover:text-primary"
+                    >
+                      {u.name || u.email}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {u.name ? `${u.email} · ` : ''}
+                      {t(`roles.${u.role}`)}
                     </p>
                   </div>
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg}`}
-                  >
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* Recent users table */}
-      <Card className="border border-slate-200 bg-white shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-900">
-            {t('dashboard.recentSignups')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {recentUsers.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-slate-500">{t('dashboard.noUsers')}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      {t('dashboard.table.name')}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      {t('common.email')}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      {t('common.role')}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      {t('dashboard.table.registeredAt')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentUsers.map((user) => (
-                    <tr key={user.id} className="transition-colors hover:bg-slate-50">
-                      <td className="px-6 py-4 font-medium text-slate-900">
-                        {user.name ?? <span className="italic text-slate-400">—</span>}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">{user.email}</td>
-                      <td className="px-6 py-4">
-                        {user.isGlobalAdmin ? (
-                          <Badge variant="default" className="bg-blue-600 text-xs text-white">
-                            {t('common.roleAdmin')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">
-                            {t('common.roleUser')}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-slate-500">
-                        {format.dateTime(user.createdAt, SHORT_DATE)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {format.dateTime(u.createdAt, SHORT_DATE)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Additional summary */}
-      <Card className="border border-slate-200 bg-white shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-slate-900">
-                {format.number(totalApplications)}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{t('dashboard.totalApplications')}</p>
-            </div>
-            <div className="w-px self-stretch bg-slate-200" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-slate-900">
-                {totalUsers > 0 ? ((activeSubscriptions / totalOrgs) * 100).toFixed(0) : 0}%
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{t('dashboard.orgsWithSubscription')}</p>
-            </div>
-            <div className="w-px self-stretch bg-slate-200" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-slate-900">
-                {totalJobs > 0 && totalApplications > 0
-                  ? (totalApplications / totalJobs).toFixed(1)
-                  : '0'}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{t('dashboard.applicationsPerJob')}</p>
-            </div>
+        <section aria-labelledby="activity-title" className="rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h2 id="activity-title" className="text-base font-semibold">
+              {t('recentActivity')}
+            </h2>
+            <Link href={`${base}/audit`} className="text-xs text-primary hover:underline">
+              {t('viewAll')}
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+          {activity === null ? (
+            <p className="mt-3 text-sm text-muted-foreground">{t('unavailable')}</p>
+          ) : activity.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">{t('noActivity')}</p>
+          ) : (
+            <ul className="mt-3 divide-y">
+              {activity.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{a.action}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {a.actorName ?? '—'}
+                      {a.entityType ? ` · ${a.entityType}` : ''}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {format.dateTime(a.createdAt, SHORT_DATE)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

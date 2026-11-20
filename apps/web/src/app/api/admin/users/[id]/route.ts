@@ -12,15 +12,16 @@ import { logger } from '@/lib/logger'
 import { createAuditLog, getRequestMetadata } from '@/lib/audit-log'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
+import { adminDenied, loadTarget, protectedAdminResponse } from '@/lib/admin-users/guard'
+import { loadUserDetail } from '@/lib/admin-users/detail'
 
 export const runtime = 'nodejs'
 
 async function requireGlobalAdmin() {
   const session = await auth()
-  if (!session?.user?.isGlobalAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-  return session
+  const denied = adminDenied(session)
+  if (denied) return denied
+  return session!
 }
 
 /**
@@ -36,53 +37,7 @@ const getUserDetail = async (_req: Request, context?: { params?: Record<string, 
   if (authResult instanceof NextResponse) return authResult
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: params.id, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-        phone: true,
-        locale: true,
-        timezone: true,
-        emailVerified: true,
-        isGlobalAdmin: true,
-        lockedUntil: true,
-        failedAttempts: true,
-        lastLoginAt: true,
-        lastLoginIp: true,
-        createdAt: true,
-        updatedAt: true,
-        organizations: {
-          where: { deletedAt: null },
-          include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: { assignedApps: true },
-        },
-        auditLogs: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          select: {
-            id: true,
-            action: true,
-            entityType: true,
-            entityId: true,
-            ipAddress: true,
-            createdAt: true,
-          },
-        },
-      },
-    })
+    const user = await loadUserDetail(params.id)
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -97,28 +52,28 @@ const getUserDetail = async (_req: Request, context?: { params?: Record<string, 
   }
 }
 
-/**
- * DELETE /api/admin/users/[id]
- * Soft-deletes a user by setting deletedAt. Cannot delete yourself or another admin.
- */
-const updateUserSchema = z.object({
-  name: z.string().min(1).max(200).optional().nullable(),
-  phone: z.string().max(50).optional().nullable(),
-  locale: z.string().max(10).optional(),
-})
+const updateUserSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional().nullable(),
+    phone: z.string().trim().max(50).optional().nullable(),
+    locale: z.enum(['sk', 'en', 'de', 'cs', 'pl']).optional(),
+    email: z.string().trim().toLowerCase().email().max(254).optional(),
+    /** With an e-mail change: keep the account verified instead of requiring re-verification. */
+    markVerified: z.boolean().optional(),
+  })
+  .strict()
 
 /**
- * Edit a user's profile from the admin panel.
+ * Edit a user's profile from the admin panel: name, phone, locale and e-mail.
  *
- * There was no way to change anything about a user except banning, promoting and
- * deleting them — not even a typo in a name. `User.phone` has existed in the
- * schema with no editor anywhere.
+ * E-mail is the login identifier with a unique constraint, so changing it:
+ *  - answers 409 when the address is already taken,
+ *  - drops the old address's outstanding tokens and revokes every session,
+ *  - resets verification (unless `markVerified`), because the new address has not
+ *    proven ownership. Production login requires a verified address, so the admin
+ *    either ticks `markVerified` or uses the "verify e-mail" action afterwards.
  *
- * `email` is deliberately absent. It is the login identifier, it carries a
- * unique constraint, and changing it means handling the collision, invalidating
- * sessions and re-running verification — otherwise an admin fixing a typo
- * silently creates an account nobody can sign in to. That belongs in its own
- * change with its own tests, not smuggled into a profile PATCH.
+ * Super admin accounts cannot be edited here.
  */
 export const PATCH = withCsrfProtection(
   withRateLimit(
@@ -132,50 +87,93 @@ export const PATCH = withCsrfProtection(
       if (authResult instanceof NextResponse) return authResult
 
       try {
-        const data = updateUserSchema.parse(await req.json())
+        const parsed = updateUserSchema.safeParse(await req.json())
+        if (!parsed.success) {
+          return NextResponse.json(
+            { error: 'Invalid request', issues: parsed.error.issues },
+            { status: 400 },
+          )
+        }
+        const data = parsed.data
 
-        const target = await prisma.user.findUnique({
-          where: { id: params.id },
-          select: { id: true, name: true, phone: true, locale: true, deletedAt: true },
-        })
-
-        if (!target || target.deletedAt !== null) {
+        const target = await loadTarget(params.id)
+        if (!target) {
           return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
+        const blocked = protectedAdminResponse(target)
+        if (blocked) return blocked
 
-        const updated = await prisma.user.update({
-          where: { id: params.id },
-          data: {
-            ...(data.name !== undefined && { name: data.name }),
-            ...(data.phone !== undefined && { phone: data.phone }),
-            ...(data.locale !== undefined && { locale: data.locale }),
-          },
-          select: { id: true, name: true, email: true, phone: true, locale: true },
-        })
+        const emailChanged = data.email !== undefined && data.email !== target.email
+        if (emailChanged) {
+          const taken = await prisma.user.findUnique({
+            where: { email: data.email },
+            select: { id: true },
+          })
+          if (taken && taken.id !== target.id) {
+            return NextResponse.json({ error: 'Email already in use' }, { status: 409 })
+          }
+        }
+
+        let updated
+        try {
+          updated = await prisma.user.update({
+            where: { id: params.id },
+            data: {
+              ...(data.name !== undefined && { name: data.name }),
+              ...(data.phone !== undefined && { phone: data.phone }),
+              ...(data.locale !== undefined && { locale: data.locale }),
+              ...(emailChanged && {
+                email: data.email,
+                emailVerified: data.markVerified ? new Date() : null,
+                sessionEpoch: { increment: 1 },
+              }),
+            },
+            select: { id: true, name: true, email: true, phone: true, locale: true },
+          })
+        } catch (error) {
+          // Lost a race with another account taking the same address.
+          if ((error as { code?: string })?.code === 'P2002') {
+            return NextResponse.json({ error: 'Email already in use' }, { status: 409 })
+          }
+          throw error
+        }
+
+        if (emailChanged) {
+          await prisma.verificationToken.deleteMany({ where: { identifier: target.email } })
+        }
 
         logger.info('Admin: updated user profile', {
           adminId: authResult.user.id,
           targetId: params.id,
+          emailChanged,
         })
 
         await createAuditLog({
           userId: authResult.user.id,
-          action: 'USER_UPDATED',
+          action: emailChanged ? 'EMAIL_CHANGED' : 'USER_UPDATED',
           resource: 'USER',
           resourceId: params.id,
-          previous: { name: target.name, phone: target.phone, locale: target.locale },
-          metadata: { name: updated.name, phone: updated.phone, locale: updated.locale },
+          previous: {
+            name: target.name,
+            phone: target.phone,
+            locale: target.locale,
+            email: target.email,
+          },
+          metadata: {
+            name: updated.name,
+            phone: updated.phone,
+            locale: updated.locale,
+            email: updated.email,
+            ...(emailChanged && {
+              emailVerified: data.markVerified === true,
+              sessionsRevoked: true,
+            }),
+          },
           ...getRequestMetadata(req),
         })
 
         return NextResponse.json({ user: updated })
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          return NextResponse.json(
-            { error: 'Invalid request', issues: error.issues },
-            { status: 400 },
-          )
-        }
         logger.error('Admin PATCH /users/[id] failed', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
       }
@@ -184,6 +182,10 @@ export const PATCH = withCsrfProtection(
   ),
 )
 
+/**
+ * DELETE /api/admin/users/[id]
+ * Soft-deletes a user by setting deletedAt. Cannot delete yourself or another admin.
+ */
 export const DELETE = withCsrfProtection(
   withRateLimit(
     async (req: Request, context?: { params?: Record<string, string> }) => {

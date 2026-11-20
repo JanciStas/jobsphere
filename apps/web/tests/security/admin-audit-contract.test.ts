@@ -50,7 +50,13 @@ function writesAuditLog(file: string): boolean {
   const source = readFileSync(join(WEB_ROOT, file), 'utf8')
   const sf = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS)
 
-  const AUDIT_CALLS = new Set(['createAuditLog', 'logSensitiveAction', 'logDataExport'])
+  // runBillingAction (lib/admin-billing.ts) writes the audit entry itself — it knows before/after.
+  const AUDIT_CALLS = new Set([
+    'createAuditLog',
+    'logSensitiveAction',
+    'logDataExport',
+    'runBillingAction',
+  ])
   let found = false
 
   const visit = (node: ts.Node) => {

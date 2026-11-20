@@ -32,11 +32,15 @@ export default async function AdminOrganizationsPage({ params }: { params: { loc
   const session = await auth()
   const format = await getFormatter()
   const t = await getTranslations('admin')
+  const tm = await getTranslations('adminMarketplace')
   if (!session?.user?.isGlobalAdmin) {
     redirect(`/${params.locale}/login?error=forbidden`)
   }
 
   const orgs = await prisma.organization.findMany({
+    // Explicit `undefined` opts out of the soft-delete middleware default so
+    // suspended organisations stay listed (otherwise they could never be re-activated).
+    where: { deletedAt: undefined },
     select: {
       id: true,
       name: true,
@@ -46,6 +50,8 @@ export default async function AdminOrganizationsPage({ params }: { params: { loc
       website: true,
       createdAt: true,
       deletedAt: true,
+      // Agency = at least one active member with the AGENCY role.
+      users: { where: { role: 'AGENCY', deletedAt: null }, select: { userId: true }, take: 1 },
       _count: {
         select: {
           users: true,
@@ -103,6 +109,15 @@ export default async function AdminOrganizationsPage({ params }: { params: { loc
                       >
                         {org.name}
                       </Link>
+                      {org.users.length > 0 ? (
+                        <Badge variant="outline" className="ml-2">
+                          {tm('organizations.agency')}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="ml-2">
+                          {tm('organizations.company')}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-slate-500">{org.slug}</TableCell>
                     <TableCell className="text-sm text-slate-500">{org.industry ?? '—'}</TableCell>

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { SHORT_DATE, SHORT_DATE_TIME } from '@/lib/formats'
@@ -14,6 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { OrgActionButton } from '../_components/org-action-button'
+import { EditOrgDialog } from '../_components/edit-org-dialog'
 
 export default async function AdminOrganizationDetailPage({
   params,
@@ -23,6 +25,7 @@ export default async function AdminOrganizationDetailPage({
   const session = await auth()
   const format = await getFormatter()
   const t = await getTranslations('admin')
+  const tm = await getTranslations('adminMarketplace')
   if (!session?.user?.isGlobalAdmin) {
     redirect(`/${params.locale}/login?error=forbidden`)
   }
@@ -47,6 +50,19 @@ export default async function AdminOrganizationDetailPage({
         take: 20,
         orderBy: { createdAt: 'desc' },
       },
+      gigs: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          budget: true,
+          currency: true,
+          createdAt: true,
+          _count: { select: { proposals: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
       subscriptions: {
         include: { product: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
@@ -58,12 +74,18 @@ export default async function AdminOrganizationDetailPage({
   if (!org) notFound()
 
   const suspended = org.deletedAt !== null
+  const isAgency = org.users.some((m) => m.role === 'AGENCY')
 
   return (
     <div className="space-y-6 p-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{org.name}</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
+            {org.name}
+            <Badge variant="outline">
+              {isAgency ? tm('organizations.agency') : tm('organizations.company')}
+            </Badge>
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             slug: <span className="font-mono">{org.slug}</span>
             {org.industry && ` · ${org.industry}`}
@@ -77,6 +99,20 @@ export default async function AdminOrganizationDetailPage({
               {t('organizations.active')}
             </Badge>
           )}
+          <Link
+            href={`/${params.locale}/admin/subscriptions?orgId=${org.id}`}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-slate-100"
+          >
+            {tm('organizations.payments')}
+          </Link>
+          <EditOrgDialog
+            orgId={org.id}
+            slug={org.slug}
+            name={org.name}
+            industry={org.industry}
+            size={org.size}
+            website={org.website}
+          />
           <OrgActionButton orgId={org.id} suspended={suspended} />
         </div>
       </div>
@@ -158,7 +194,14 @@ export default async function AdminOrganizationDetailPage({
             <TableBody>
               {org.jobs.map((job) => (
                 <TableRow key={job.id}>
-                  <TableCell className="font-medium">{job.title}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link
+                      href={`/${params.locale}/admin/jobs?search=${encodeURIComponent(job.title)}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {job.title}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{job.status}</Badge>
                   </TableCell>
@@ -172,6 +215,70 @@ export default async function AdminOrganizationDetailPage({
                 <TableRow>
                   <TableCell colSpan={4} className="py-6 text-center text-slate-500">
                     {t('organizations.detail.noJobs')}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">{tm('organizations.gigs')}</CardTitle>
+          <div className="flex gap-3 text-sm">
+            <Link
+              href={`/${params.locale}/admin/jobs?search=${encodeURIComponent(org.name)}`}
+              className="text-blue-600 hover:underline"
+            >
+              {tm('organizations.allJobs')}
+            </Link>
+            <Link
+              href={`/${params.locale}/admin/gigs?orgId=${org.id}`}
+              className="text-blue-600 hover:underline"
+            >
+              {tm('organizations.allGigs')}
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{tm('gigs.table.title')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{tm('gigs.table.budget')}</TableHead>
+                <TableHead className="text-right">{tm('gigs.table.proposals')}</TableHead>
+                <TableHead>{t('common.date')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {org.gigs.map((g) => (
+                <TableRow key={g.id}>
+                  <TableCell>
+                    <Link
+                      href={`/${params.locale}/admin/gigs/${g.id}`}
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      {g.title}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{tm(`gigStatusLabels.${g.status}`)}</Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {g.budget != null ? `${g.budget} ${g.currency}` : '—'}
+                  </TableCell>
+                  <TableCell className="text-right text-sm">{g._count.proposals}</TableCell>
+                  <TableCell className="text-sm text-slate-500">
+                    {format.dateTime(g.createdAt, SHORT_DATE)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {org.gigs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center text-slate-500">
+                    {tm('organizations.noGigs')}
                   </TableCell>
                 </TableRow>
               )}
