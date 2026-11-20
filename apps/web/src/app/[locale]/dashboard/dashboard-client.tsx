@@ -2,11 +2,12 @@
 
 import { useFormatter, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileText, Hourglass, Heart, UserCheck, Briefcase } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/dashboard/stat-card'
 import { SHORT_DATE } from '@/lib/formats'
-import { Briefcase, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 interface DashboardData {
   user: {
@@ -16,6 +17,8 @@ interface DashboardData {
   }
   stats: {
     total: number
+    inProcess: number
+    saved: number
     pending: number
     reviewing: number
     accepted: number
@@ -58,274 +61,115 @@ interface DashboardClientProps {
   notice?: React.ReactNode
 }
 
+const KNOWN_STAGES = ['NEW', 'SCREENING', 'PHONE', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED']
+
 export default function DashboardClient({ locale, initialData, notice }: DashboardClientProps) {
-  const t = useTranslations()
+  const t = useTranslations('candidateDashboard')
   const format = useFormatter()
-  const { user, stats, profileCompletion, profileSteps, applications, recommendedJobs } =
-    initialData
+  const { user, stats, profileCompletion, applications, recommendedJobs } = initialData
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return (
-          <Badge variant="secondary" className="gap-1">
-            <Clock className="h-3 w-3" /> {t('dashboard.status.pending')}
-          </Badge>
-        )
-      case 'REVIEWING':
-        return (
-          <Badge variant="default" className="gap-1">
-            <AlertCircle className="h-3 w-3" /> {t('dashboard.status.reviewing')}
-          </Badge>
-        )
-      case 'ACCEPTED':
-        return (
-          <Badge variant="default" className="gap-1 bg-green-600">
-            <CheckCircle2 className="h-3 w-3" /> {t('dashboard.status.accepted')}
-          </Badge>
-        )
-      case 'REJECTED':
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <XCircle className="h-3 w-3" /> {t('dashboard.status.rejected')}
-          </Badge>
-        )
-      default:
-        return <Badge>{status}</Badge>
-    }
-  }
-
-  const formatDate = (dateString: string) => format.dateTime(new Date(dateString), SHORT_DATE)
+  const stageLabel = (stage: string) => (KNOWN_STAGES.includes(stage) ? t(`stage.${stage}`) : stage)
+  const stageVariant = (stage: string) =>
+    stage === 'REJECTED' ? 'destructive' : stage === 'HIRED' ? 'default' : 'secondary'
 
   const formatSalary = (min?: number | null, max?: number | null) => {
-    if (!min && !max) return t('dashboard.salary.negotiable')
+    if (!min && !max) return t('salaryNegotiable')
     if (min && max) return `${min} - ${max} €`
     if (min) return `${min}+ €`
-    if (max) return `do ${max} €`
-    return ''
+    return `${t('salaryUpTo')} ${max} €`
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto px-4 py-8">
-        {/* Why-are-you-here notice (e.g. bounced out of /employer) */}
-        {notice ? <div className="mb-6">{notice}</div> : null}
+    <div className="space-y-6">
+      {notice ? <div>{notice}</div> : null}
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">{t('dashboard.welcome', { name: user.name })}</h1>
-          <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">{t('welcome', { name: user.name })}</h1>
+        <p className="text-muted-foreground">{t('subtitle')}</p>
+      </div>
 
-        {/* Stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>{t('dashboard.stats.total')}</CardDescription>
-              <CardTitle className="text-3xl">{stats.total}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>{t('dashboard.stats.pending')}</CardDescription>
-              <CardTitle className="text-3xl text-muted-foreground">{stats.pending}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>{t('dashboard.stats.reviewing')}</CardDescription>
-              <CardTitle className="text-3xl text-blue-600">{stats.reviewing}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>{t('dashboard.stats.accepted')}</CardDescription>
-              <CardTitle className="text-3xl text-green-600">{stats.accepted}</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard value={stats.total} label={t('kpi.sent')} icon={FileText} />
+        <StatCard value={stats.inProcess} label={t('kpi.inProcess')} icon={Hourglass} />
+        <StatCard value={stats.saved} label={t('kpi.saved')} icon={Heart} />
+        <StatCard value={`${profileCompletion} %`} label={t('kpi.profile')} icon={UserCheck} />
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="space-y-6 lg:col-span-2">
-            {/* Applications */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{t('dashboard.applications.title')}</CardTitle>
-                    <CardDescription>{t('dashboard.applications.subtitle')}</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/${locale}/jobs`}>{t('dashboard.applications.searchJobs')}</Link>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {applications.map((app) => (
-                    <div
-                      key={app.id}
-                      className="flex items-start justify-between gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex-1">
-                        <div className="mb-2 flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-semibold">{app.jobTitle}</h3>
-                            <p className="text-sm text-muted-foreground">{app.company}</p>
-                          </div>
-                          {getStatusBadge(app.status)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{app.location}</span>
-                          <span>•</span>
-                          <span>
-                            {t('dashboard.applications.appliedOn', {
-                              date: formatDate(app.appliedAt),
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/${locale}/jobs/${app.jobId}`}>
-                          {t('dashboard.applications.viewJob')}
-                        </Link>
-                      </Button>
-                    </div>
-                  ))}
-
-                  {applications.length === 0 && (
-                    <div className="py-8 text-center">
-                      <Briefcase className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                      <p className="mb-4 text-muted-foreground">
-                        {t('dashboard.applications.empty')}
-                      </p>
-                      <Button asChild>
-                        <Link href={`/${locale}/jobs`}>
-                          {t('dashboard.applications.browseJobs')}
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Profile Completion */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('dashboard.profile.title')}</CardTitle>
-                <CardDescription>{t('dashboard.profile.subtitle')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>{t('dashboard.profile.completion')}</span>
-                    <span className="font-semibold">{profileCompletion}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${profileCompletion}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    {profileSteps.basicInfo ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className={profileSteps.basicInfo ? '' : 'text-muted-foreground'}>
-                      {t('dashboard.profile.steps.basicInfo')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    {profileSteps.cvUploaded ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className={profileSteps.cvUploaded ? '' : 'text-muted-foreground'}>
-                      {t('dashboard.profile.steps.cv')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    {profileSteps.skills ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className={profileSteps.skills ? '' : 'text-muted-foreground'}>
-                      {t('dashboard.profile.steps.skills')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    {profileSteps.preferences ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className={profileSteps.preferences ? '' : 'text-muted-foreground'}>
-                      {t('dashboard.profile.steps.preferences')}
-                    </span>
-                  </div>
-                </div>
-                <Button className="w-full" asChild>
-                  <Link href={`/${locale}/dashboard/cv`}>Moje CV</Link>
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">{t('recentApplications')}</CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/${locale}/dashboard/applications`}>{t('viewAll')}</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {applications.length === 0 ? (
+              <div className="py-8 text-center">
+                <Briefcase
+                  className="mx-auto mb-3 h-10 w-10 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <p className="mb-4 text-muted-foreground">{t('noApplications')}</p>
+                <Button asChild>
+                  <Link href={`/${locale}/jobs`}>{t('browseJobs')}</Link>
                 </Button>
-                <Button className="w-full" variant="outline" asChild>
-                  <Link href={`/${locale}/dashboard/profile`}>
-                    {t('dashboard.profile.complete')}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Recommended Jobs */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('dashboard.recommended.title')}</CardTitle>
-                <CardDescription>{t('dashboard.recommended.subtitle')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recommendedJobs.map((job) => (
-                  <div key={job.id} className="space-y-2 border-b pb-4 last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-semibold">{job.title}</h4>
-                        <p className="text-xs text-muted-foreground">{job.company}</p>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {job.match}% match
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {job.location} • {formatSalary(job.salaryMin, job.salaryMax)}
-                    </p>
-                    <Button size="sm" variant="outline" className="w-full" asChild>
-                      <Link href={`/${locale}/jobs/${job.id}`}>
-                        {t('dashboard.recommended.view')}
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {applications.slice(0, 5).map((app) => (
+                  <li
+                    key={app.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-3"
+                  >
+                    <div className="min-w-0">
+                      <Link
+                        href={`/${locale}/dashboard/applications/${app.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {app.jobTitle}
                       </Link>
-                    </Button>
-                  </div>
+                      <p className="text-sm text-muted-foreground">
+                        {app.company}
+                        {app.location && ` · ${app.location}`}
+                        {' · '}
+                        {t('appliedOn', {
+                          date: format.dateTime(new Date(app.appliedAt), SHORT_DATE),
+                        })}
+                      </p>
+                    </div>
+                    <Badge variant={stageVariant(app.status)}>{stageLabel(app.status)}</Badge>
+                  </li>
                 ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-                {recommendedJobs.length === 0 && (
-                  <div className="py-4 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      {t('dashboard.recommended.empty')}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {recommendedJobs.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t('recommended')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {recommendedJobs.map((job) => (
+                <div key={job.id} className="space-y-1 border-b pb-3 last:border-0 last:pb-0">
+                  <Link
+                    href={`/${locale}/jobs/${job.id}`}
+                    className="text-sm font-semibold hover:underline"
+                  >
+                    {job.title}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">{job.company}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {job.location && `${job.location} · `}
+                    {formatSalary(job.salaryMin, job.salaryMax)}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

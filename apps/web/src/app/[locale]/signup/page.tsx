@@ -1,9 +1,11 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
+import { isPortal } from '@/lib/portal'
 import SignupClient from './signup-client'
 
 type Props = {
   params: { locale: string }
+  searchParams?: Record<string, string | string[] | undefined>
 }
 
 export async function generateMetadata({ params: { locale } }: Props): Promise<Metadata> {
@@ -11,6 +13,8 @@ export async function generateMetadata({ params: { locale } }: Props): Promise<M
   return { title: t('signup.title'), description: t('signup.description') }
 }
 
-export default async function SignupPage({ params }: Props) {
-  return <SignupClient params={await params} />
+export default async function SignupPage({ params, searchParams }: Props) {
+  const raw = searchParams?.role
+  const role = Array.isArray(raw) ? raw[0] : raw
+  return <SignupClient params={await params} initialRole={isPortal(role) ? role : 'candidate'} />
 }

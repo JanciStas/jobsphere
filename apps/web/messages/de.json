@@ -2407,5 +2407,355 @@
     "candidateNoPermission": "Sie haben keine Berechtigung, dieses Kandidatenprofil anzusehen.",
     "backToApplicants": "Zurück zu den Bewerbern",
     "backToDashboard": "Zurück zum Dashboard"
+  },
+  "agencyDashboard": {
+    "roleLabel": "Agentur",
+    "nav": {
+      "overview": "Übersicht",
+      "gigs": "Aufträge",
+      "newGig": "Neuer Auftrag",
+      "proposals": "Angebote von Freelancern",
+      "freelancers": "Freelancer",
+      "settings": "Agenturprofil"
+    },
+    "common": {
+      "freelancer": "Freelancer",
+      "days": "{count, plural, one {# Tag} other {# Tage}}",
+      "cancel": "Abbrechen"
+    },
+    "status": {
+      "OPEN": "Offen",
+      "IN_PROGRESS": "Vergeben",
+      "CLOSED": "Geschlossen"
+    },
+    "proposalStatus": {
+      "PENDING": "Ausstehend",
+      "ACCEPTED": "Angenommen",
+      "REJECTED": "Abgelehnt",
+      "WITHDRAWN": "Zurückgezogen"
+    },
+    "dashboard": {
+      "title": "Agenturübersicht",
+      "subtitle": "Ihre Aufträge und Freelancer-Angebote auf einen Blick",
+      "newGig": "Neuer Auftrag",
+      "viewAll": "Alle anzeigen",
+      "recentProposals": "Neueste Angebote",
+      "noProposals": "Sie haben noch keine Angebote erhalten.",
+      "kpi": {
+        "activeGigs": "Aktive Aufträge",
+        "receivedProposals": "Erhaltene Angebote",
+        "pendingProposals": "Ausstehende Angebote",
+        "filledGigs": "Vergebene Aufträge"
+      }
+    },
+    "gigs": {
+      "title": "Meine Aufträge",
+      "subtitle": "Aufträge, auf die sich Freelancer bewerben können",
+      "empty": "Sie haben noch keine Aufträge.",
+      "createFirst": "Ersten Auftrag erstellen",
+      "proposalsCount": "{count, plural, =0 {Keine Angebote} one {# Angebot} other {# Angebote}}",
+      "changeStatus": "Status ändern",
+      "detail": "Details und Angebote",
+      "delete": "Löschen",
+      "deleteConfirm": "Wirklich löschen?",
+      "deleteYes": "Ja, löschen",
+      "failed": "Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+    },
+    "newGig": {
+      "title": "Neuer Auftrag",
+      "subtitle": "Beschreiben Sie die Arbeit und Freelancer senden Ihnen Angebote",
+      "name": "Titel des Auftrags",
+      "description": "Beschreibung",
+      "budget": "Budget",
+      "currency": "Währung",
+      "duration": "Dauer (Tage)",
+      "submit": "Auftrag veröffentlichen",
+      "submitting": "Wird veröffentlicht...",
+      "error": "Der Auftrag konnte nicht erstellt werden. Bitte prüfen Sie die Angaben."
+    },
+    "gigDetail": {
+      "title": "Auftragsdetails",
+      "back": "Zurück zu den Aufträgen",
+      "proposals": "Angebote von Freelancern",
+      "noProposals": "Auf diesen Auftrag hat noch niemand reagiert.",
+      "accept": "Annehmen",
+      "reject": "Ablehnen"
+    },
+    "proposalsPage": {
+      "title": "Angebote von Freelancern",
+      "subtitle": "Alle Angebote zu Ihren Aufträgen",
+      "empty": "Noch keine Angebote.",
+      "forGig": "Auftrag:"
+    },
+    "settings": {
+      "title": "Agentureinstellungen",
+      "agencyProfile": "Agenturprofil",
+      "name": "Name",
+      "website": "Website",
+      "hint": "Die Agenturdaten können Sie in den Organisationseinstellungen bearbeiten.",
+      "edit": "Einstellungen bearbeiten"
+    },
+    "public": {
+      "title": "Aufträge für Freelancer",
+      "subtitle": "Offene Aufträge von Agenturen und Unternehmen — senden Sie ein Angebot und einigen Sie sich auf Preis und Zeitrahmen",
+      "searchPlaceholder": "Nach Titel suchen",
+      "minBudget": "Budget ab",
+      "maxBudget": "Budget bis",
+      "filter": "Filtern",
+      "reset": "Filter zurücksetzen",
+      "empty": "Derzeit gibt es keine offenen Aufträge. Sind Sie Freelancer?",
+      "emptyFiltered": "Kein Auftrag entspricht Ihrem Filter.",
+      "completeProfile": "Profil vervollständigen",
+      "viewDetail": "Details ansehen",
+      "back": "Zurück zu den Aufträgen",
+      "notFreelancer": "Nur Freelancer können Angebote senden. Erstellen Sie zuerst ein Freelancer-Profil.",
+      "becomeFreelancer": "Freelancer-Profil erstellen",
+      "loginPrompt": "Melden Sie sich als Freelancer an, um ein Angebot zu senden.",
+      "loginButton": "Als Freelancer anmelden"
+    }
+  },
+  "candidateDashboard": {
+    "roleLabel": "Jobsuchende",
+    "nav": {
+      "overview": "Übersicht",
+      "applications": "Meine Bewerbungen",
+      "cv": "Lebenslauf",
+      "saved": "Gespeichert",
+      "profile": "Profil"
+    },
+    "welcome": "Willkommen, {name}",
+    "subtitle": "Ein Überblick über Ihre Bewerbungen und Ihr Profil",
+    "kpi": {
+      "sent": "Gesendete Bewerbungen",
+      "inProcess": "In Bearbeitung",
+      "saved": "Gespeicherte Stellen",
+      "profile": "Profilvollständigkeit"
+    },
+    "recentApplications": "Letzte Bewerbungen",
+    "viewAll": "Alle anzeigen",
+    "noApplications": "Sie haben noch keine Bewerbung gesendet.",
+    "browseJobs": "Stellen durchsuchen",
+    "appliedOn": "Beworben am {date}",
+    "recommended": "Empfohlene Stellen",
+    "salaryNegotiable": "Gehalt verhandelbar",
+    "salaryUpTo": "bis",
+    "stage": {
+      "NEW": "Neu",
+      "SCREENING": "Prüfung",
+      "PHONE": "Telefonat",
+      "INTERVIEW": "Vorstellungsgespräch",
+      "OFFER": "Angebot",
+      "HIRED": "Eingestellt",
+      "REJECTED": "Abgelehnt"
+    },
+    "applicationsPage": {
+      "title": "Meine Bewerbungen",
+      "subtitle": "Alle Bewerbungen und ihr aktueller Status"
+    }
+  },
+  "authPortals": {
+    "chooser": {
+      "title": "Bei JobSphere anmelden",
+      "subtitle": "Wählen Sie, wie Sie fortfahren möchten",
+      "employerPrompt": "Sie suchen Mitarbeiter?",
+      "employerLink": "Ich bin Arbeitgeber"
+    },
+    "roles": {
+      "candidate": {
+        "name": "Jobsuchende",
+        "cardDesc": "Ich suche einen Job und möchte meine Bewerbungen verfolgen",
+        "loginTitle": "Anmeldung für Jobsuchende",
+        "loginSubtitle": "Melden Sie sich an und setzen Sie Ihre Jobsuche fort"
+      },
+      "agency": {
+        "name": "Personalagentur",
+        "cardDesc": "Ich verwalte Kunden, Kandidaten und Besetzungen",
+        "loginTitle": "Anmeldung für Personalagenturen",
+        "loginSubtitle": "Melden Sie sich bei Ihrem Agenturkonto an"
+      },
+      "freelancer": {
+        "name": "Freelancer",
+        "cardDesc": "Ich biete meine Dienstleistungen an und suche Aufträge",
+        "loginTitle": "Anmeldung für Freelancer",
+        "loginSubtitle": "Melden Sie sich an, um Profil und Aufträge zu verwalten"
+      },
+      "employer": {
+        "name": "Arbeitgeber",
+        "cardDesc": "Ich veröffentliche Stellen und suche Fachkräfte",
+        "loginTitle": "Anmeldung für Arbeitgeber",
+        "loginSubtitle": "Melden Sie sich bei Ihrem Firmenkonto an und verwalten Sie Ihr Recruiting"
+      }
+    },
+    "form": {
+      "email": "E-Mail",
+      "password": "Passwort",
+      "showPassword": "Passwort anzeigen",
+      "hidePassword": "Passwort verbergen",
+      "rememberMe": "Angemeldet bleiben",
+      "forgotPassword": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "signingIn": "Anmeldung läuft...",
+      "invalidCredentials": "Ungültige Anmeldedaten",
+      "emailNotVerified": "Bitte bestätigen Sie vor der Anmeldung Ihre E-Mail-Adresse. Prüfen Sie Ihren Posteingang.",
+      "error": "Anmeldung fehlgeschlagen",
+      "noAccount": "Noch kein Konto?",
+      "signupLink": "Registrieren",
+      "backToRoles": "Anderer Kontotyp",
+      "orContinueWith": "Weiter mit",
+      "divider": "Oder weiter mit E-Mail",
+      "google": "Google",
+      "apple": "Apple"
+    },
+    "signup": {
+      "roleAgency": "Personalagentur",
+      "roleAgencyDesc": "Ich besetze Stellen für Kunden und verwalte Kandidaten",
+      "roleFreelancer": "Freelancer",
+      "roleFreelancerDesc": "Ich biete Unternehmen meine Dienstleistungen an (Grafik, Web, Marketing …)",
+      "agencyName": "Name der Agentur",
+      "companyRequiredAgency": "Der Name der Agentur ist erforderlich",
+      "verifyEmail": "Ihr Konto wurde erstellt. Bitte bestätigen Sie vor der Anmeldung Ihre E-Mail-Adresse über den Link in Ihrem Posteingang."
+    }
+  },
+  "freelancerDashboard": {
+    "roleLabel": "Freelancer",
+    "nav": {
+      "overview": "Übersicht",
+      "profile": "Profil",
+      "portfolio": "Portfolio",
+      "gigs": "Aufträge",
+      "proposals": "Meine Angebote",
+      "settings": "Einstellungen"
+    },
+    "guard": {
+      "title": "Freelancer-Konto nicht gefunden",
+      "description": "Dieses Konto hat kein Freelancer-Profil. Registriere dich als Freelancer und präsentiere deine Leistungen.",
+      "cta": "Als Freelancer registrieren"
+    },
+    "overview": {
+      "title": "Übersicht",
+      "subtitle": "Deine Angebote, dein Portfolio und neue Aufträge an einem Ort.",
+      "viewPublic": "Öffentliche Seite",
+      "kpiProposals": "Angebote gesamt",
+      "kpiPending": "Ausstehend",
+      "kpiAccepted": "Angenommen",
+      "kpiPortfolio": "Portfolio-Einträge",
+      "recentProposals": "Letzte Angebote",
+      "openGigs": "Offene Aufträge",
+      "viewAll": "Alle anzeigen",
+      "noProposals": "Du hast noch keine Angebote gesendet.",
+      "noGigs": "Derzeit gibt es keine offenen Aufträge."
+    },
+    "profile": {
+      "title": "Mein Profil",
+      "subtitle": "Unternehmen sehen diese Angaben auf deiner öffentlichen Seite.",
+      "cardTitle": "Profil",
+      "cardDesc": "Wird im öffentlichen Verzeichnis und auf deiner Präsentationsseite angezeigt.",
+      "fieldTitle": "Beruf / Titel",
+      "titlePh": "z. B. Grafiker und DTP-Operator",
+      "bio": "Über mich",
+      "bioPh": "Kurz über dich und deine Arbeit…",
+      "services": "Leistungen (eine pro Zeile)",
+      "servicesPh": "Logo-Design\nWebdesign\nFlyer und Visitenkarten",
+      "skills": "Fähigkeiten (eine pro Zeile)",
+      "skillsPh": "Adobe Photoshop\nIllustrator\nFigma",
+      "rate": "Stundensatz (€)",
+      "ratePh": "z. B. 25",
+      "availability": "Verfügbarkeit",
+      "availAvailable": "Verfügbar",
+      "availLimited": "Eingeschränkt",
+      "availUnavailable": "Nicht verfügbar",
+      "location": "Standort",
+      "locationPh": "z. B. Wien",
+      "portfolioUrl": "Externes Portfolio (URL)",
+      "visible": "Mein Profil im öffentlichen Verzeichnis anzeigen",
+      "save": "Profil speichern",
+      "saving": "Wird gespeichert…",
+      "saved": "Profil gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+      "loadFailed": "Das Profil konnte nicht geladen werden.",
+      "viewPublicPage": "Öffentliche Seite ansehen"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "subtitle": "Zeige Unternehmen deine besten Arbeiten. Bilder werden per Link (URL) hinzugefügt.",
+      "add": "Eintrag hinzufügen",
+      "edit": "Eintrag bearbeiten",
+      "empty": "Du hast noch keine Portfolio-Einträge.",
+      "fieldTitle": "Titel",
+      "description": "Beschreibung",
+      "url": "Projektlink (URL)",
+      "imageUrl": "Bild (https-URL)",
+      "tags": "Tags",
+      "tagsHint": "Mit Komma trennen, maximal 10 Tags.",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "confirmDelete": "Möchtest du diesen Eintrag wirklich löschen?",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "limit": "Du hast das Limit von 24 Einträgen erreicht.",
+      "unavailable": "Das Portfolio ist vorübergehend nicht verfügbar. Bitte versuche es später erneut.",
+      "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+      "deleteFailed": "Löschen fehlgeschlagen. Bitte versuche es erneut.",
+      "needProfile": "Speichere zuerst dein Profil.",
+      "count": "Einträge: {count}"
+    },
+    "proposals": {
+      "title": "Meine Angebote",
+      "subtitle": "Übersicht der Angebote, die du auf Aufträge von Unternehmen gesendet hast.",
+      "empty": "Du hast noch keine Angebote gesendet.",
+      "browseGigs": "Aufträge ansehen",
+      "days": "Tage",
+      "status": {
+        "PENDING": "Ausstehend",
+        "ACCEPTED": "Angenommen",
+        "REJECTED": "Abgelehnt",
+        "WITHDRAWN": "Zurückgezogen"
+      },
+      "withdraw": "Zurückziehen",
+      "withdrawConfirm": "Möchtest du dieses Angebot wirklich zurückziehen?",
+      "withdrawFailed": "Das Angebot konnte nicht zurückgezogen werden."
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "subtitle": "Sichtbarkeit und weitere Einstellungen deiner Präsentation.",
+      "visibleLabel": "Profil öffentlich anzeigen",
+      "visibleHelp": "Wenn deaktiviert, werden deine Seite und dein Eintrag im Verzeichnis ausgeblendet.",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "saved": "Einstellungen gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+      "viewPublic": "Öffentliche Seite ansehen"
+    },
+    "availability": {
+      "AVAILABLE": "Verfügbar",
+      "LIMITED": "Eingeschränkt",
+      "UNAVAILABLE": "Nicht verfügbar"
+    },
+    "list": {
+      "title": "Freelancer",
+      "subtitle": "Finde freiberufliche Fachleute und ihre Leistungen",
+      "empty": "Noch keine Freelancer vorhanden. Bist du einer?",
+      "signup": "Jetzt registrieren",
+      "anonymous": "Freelancer",
+      "perHour": "{rate} {currency}/Std.",
+      "viewProfile": "Profil ansehen"
+    },
+    "public": {
+      "notFoundTitle": "Freelancer nicht gefunden",
+      "anonymous": "Freelancer",
+      "metaFallback": "Freelancer-Profil von {name}",
+      "back": "Zurück zur Liste",
+      "perHour": "{rate} {currency}/Std.",
+      "contact": "Kontaktieren",
+      "about": "Über mich",
+      "services": "Leistungen",
+      "skills": "Fähigkeiten",
+      "portfolio": "Portfolio",
+      "noPortfolio": "Dieser Freelancer hat noch keine Arbeitsproben hinzugefügt.",
+      "openProject": "Projekt öffnen",
+      "externalPortfolio": "Externes Portfolio"
+    }
   }
 }

@@ -90,4 +90,77 @@ describe('AUTH-008/009 signup', () => {
     // Response must not reveal that the account exists
     expect(JSON.stringify(json)).not.toMatch(/already exists/i)
   })
+
+  it('agency signup creates an Organization and an AGENCY membership', async () => {
+    let roleData: any
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) =>
+      cb({
+        user: { create: vi.fn().mockResolvedValue({ id: 'u2' }) },
+        organization: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'o1' }),
+        },
+        userOrgRole: {
+          create: vi.fn().mockImplementation((opts) => {
+            roleData = opts.data
+          }),
+        },
+      }),
+    )
+
+    const res = await POST(
+      req({
+        name: 'Ann',
+        email: 'ann@agency.com',
+        password: VALID_PASSWORD,
+        role: 'agency',
+        companyName: 'Talent Partners',
+      }) as any,
+    )
+    expect(res.status).toBe(201)
+    expect(roleData).toMatchObject({ userId: 'u2', orgId: 'o1', role: 'AGENCY' })
+  })
+
+  it('agency signup without company name is rejected', async () => {
+    const res = await POST(
+      req({
+        name: 'Ann',
+        email: 'ann@agency.com',
+        password: VALID_PASSWORD,
+        role: 'agency',
+      }) as any,
+    )
+    expect(res.status).toBe(400)
+    expect(prisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('employer signup keeps the ORG_ADMIN role', async () => {
+    let roleData: any
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) =>
+      cb({
+        user: { create: vi.fn().mockResolvedValue({ id: 'u3' }) },
+        organization: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'o2' }),
+        },
+        userOrgRole: {
+          create: vi.fn().mockImplementation((opts) => {
+            roleData = opts.data
+          }),
+        },
+      }),
+    )
+    await POST(
+      req({
+        name: 'Bob',
+        email: 'bob@corp.com',
+        password: VALID_PASSWORD,
+        role: 'employer',
+        companyName: 'Corp',
+      }) as any,
+    )
+    expect(roleData.role).toBe('ORG_ADMIN')
+  })
 })

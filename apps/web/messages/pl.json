@@ -2407,5 +2407,355 @@
     "candidateNoPermission": "Nie masz uprawnień do wyświetlenia tego profilu kandydata.",
     "backToApplicants": "Wróć do kandydatów",
     "backToDashboard": "Powrót do panelu"
+  },
+  "agencyDashboard": {
+    "roleLabel": "Agencja",
+    "nav": {
+      "overview": "Przegląd",
+      "gigs": "Zlecenia",
+      "newGig": "Nowe zlecenie",
+      "proposals": "Oferty freelancerów",
+      "freelancers": "Freelancerzy",
+      "settings": "Profil agencji"
+    },
+    "common": {
+      "freelancer": "Freelancer",
+      "days": "{count, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+      "cancel": "Anuluj"
+    },
+    "status": {
+      "OPEN": "Otwarte",
+      "IN_PROGRESS": "Obsadzone",
+      "CLOSED": "Zamknięte"
+    },
+    "proposalStatus": {
+      "PENDING": "Oczekuje",
+      "ACCEPTED": "Przyjęta",
+      "REJECTED": "Odrzucona",
+      "WITHDRAWN": "Wycofana"
+    },
+    "dashboard": {
+      "title": "Przegląd agencji",
+      "subtitle": "Zlecenia i oferty freelancerów w jednym miejscu",
+      "newGig": "Nowe zlecenie",
+      "viewAll": "Zobacz wszystkie",
+      "recentProposals": "Ostatnie oferty",
+      "noProposals": "Nie otrzymano jeszcze żadnych ofert.",
+      "kpi": {
+        "activeGigs": "Aktywne zlecenia",
+        "receivedProposals": "Otrzymane oferty",
+        "pendingProposals": "Oczekujące oferty",
+        "filledGigs": "Obsadzone zlecenia"
+      }
+    },
+    "gigs": {
+      "title": "Moje zlecenia",
+      "subtitle": "Zlecenia, o które mogą ubiegać się freelancerzy",
+      "empty": "Nie masz jeszcze żadnych zleceń.",
+      "createFirst": "Dodaj pierwsze zlecenie",
+      "proposalsCount": "{count, plural, =0 {Brak ofert} one {# oferta} few {# oferty} many {# ofert} other {# oferty}}",
+      "changeStatus": "Zmień status",
+      "detail": "Szczegóły i oferty",
+      "delete": "Usuń",
+      "deleteConfirm": "Na pewno usunąć?",
+      "deleteYes": "Tak, usuń",
+      "failed": "Nie udało się wykonać akcji. Spróbuj ponownie."
+    },
+    "newGig": {
+      "title": "Nowe zlecenie",
+      "subtitle": "Opisz pracę, a freelancerzy wyślą Ci oferty",
+      "name": "Tytuł zlecenia",
+      "description": "Opis",
+      "budget": "Budżet",
+      "currency": "Waluta",
+      "duration": "Czas trwania (dni)",
+      "submit": "Opublikuj zlecenie",
+      "submitting": "Publikowanie...",
+      "error": "Nie udało się utworzyć zlecenia. Sprawdź dane."
+    },
+    "gigDetail": {
+      "title": "Szczegóły zlecenia",
+      "back": "Wróć do zleceń",
+      "proposals": "Oferty freelancerów",
+      "noProposals": "Nikt jeszcze nie odpowiedział na to zlecenie.",
+      "accept": "Przyjmij",
+      "reject": "Odrzuć"
+    },
+    "proposalsPage": {
+      "title": "Oferty freelancerów",
+      "subtitle": "Wszystkie oferty do Twoich zleceń",
+      "empty": "Brak ofert.",
+      "forGig": "Zlecenie:"
+    },
+    "settings": {
+      "title": "Ustawienia agencji",
+      "agencyProfile": "Profil agencji",
+      "name": "Nazwa",
+      "website": "Strona internetowa",
+      "hint": "Dane agencji możesz edytować w ustawieniach organizacji.",
+      "edit": "Edytuj ustawienia"
+    },
+    "public": {
+      "title": "Zlecenia dla freelancerów",
+      "subtitle": "Otwarte zlecenia od agencji i firm — wyślij ofertę i ustal cenę oraz termin",
+      "searchPlaceholder": "Szukaj po tytule",
+      "minBudget": "Budżet od",
+      "maxBudget": "Budżet do",
+      "filter": "Filtruj",
+      "reset": "Wyczyść filtr",
+      "empty": "Nie ma jeszcze otwartych zleceń. Jesteś freelancerem?",
+      "emptyFiltered": "Żadne zlecenie nie pasuje do filtra.",
+      "completeProfile": "Uzupełnij profil",
+      "viewDetail": "Zobacz szczegóły",
+      "back": "Wróć do zleceń",
+      "notFreelancer": "Oferty mogą wysyłać tylko freelancerzy. Najpierw utwórz profil freelancera.",
+      "becomeFreelancer": "Utwórz profil freelancera",
+      "loginPrompt": "Zaloguj się jako freelancer, aby wysłać ofertę.",
+      "loginButton": "Zaloguj się jako freelancer"
+    }
+  },
+  "candidateDashboard": {
+    "roleLabel": "Osoba szukająca pracy",
+    "nav": {
+      "overview": "Przegląd",
+      "applications": "Moje aplikacje",
+      "cv": "CV",
+      "saved": "Zapisane",
+      "profile": "Profil"
+    },
+    "welcome": "Witaj, {name}",
+    "subtitle": "Przegląd Twoich aplikacji i profilu",
+    "kpi": {
+      "sent": "Wysłane aplikacje",
+      "inProcess": "W toku",
+      "saved": "Zapisane oferty",
+      "profile": "Kompletność profilu"
+    },
+    "recentApplications": "Ostatnie aplikacje",
+    "viewAll": "Zobacz wszystkie",
+    "noApplications": "Nie wysłano jeszcze żadnej aplikacji.",
+    "browseJobs": "Przeglądaj oferty pracy",
+    "appliedOn": "Wysłano {date}",
+    "recommended": "Polecane oferty",
+    "salaryNegotiable": "Wynagrodzenie do uzgodnienia",
+    "salaryUpTo": "do",
+    "stage": {
+      "NEW": "Nowa",
+      "SCREENING": "Weryfikacja",
+      "PHONE": "Rozmowa telefoniczna",
+      "INTERVIEW": "Rozmowa kwalifikacyjna",
+      "OFFER": "Oferta",
+      "HIRED": "Zatrudniony",
+      "REJECTED": "Odrzucona"
+    },
+    "applicationsPage": {
+      "title": "Moje aplikacje",
+      "subtitle": "Wszystkie aplikacje i ich aktualny status"
+    }
+  },
+  "authPortals": {
+    "chooser": {
+      "title": "Zaloguj się do JobSphere",
+      "subtitle": "Wybierz, jak chcesz kontynuować",
+      "employerPrompt": "Szukasz pracowników?",
+      "employerLink": "Jestem pracodawcą"
+    },
+    "roles": {
+      "candidate": {
+        "name": "Osoba szukająca pracy",
+        "cardDesc": "Szukam pracy i chcę śledzić swoje aplikacje",
+        "loginTitle": "Logowanie dla osób szukających pracy",
+        "loginSubtitle": "Zaloguj się i kontynuuj poszukiwanie pracy"
+      },
+      "agency": {
+        "name": "Agencja rekrutacyjna",
+        "cardDesc": "Zarządzam klientami, kandydatami i obsadą stanowisk",
+        "loginTitle": "Logowanie dla agencji rekrutacyjnych",
+        "loginSubtitle": "Zaloguj się na konto agencji"
+      },
+      "freelancer": {
+        "name": "Freelancer",
+        "cardDesc": "Oferuję swoje usługi i szukam zleceń",
+        "loginTitle": "Logowanie dla freelancerów",
+        "loginSubtitle": "Zaloguj się, aby zarządzać profilem i zleceniami"
+      },
+      "employer": {
+        "name": "Pracodawca",
+        "cardDesc": "Publikuję oferty i szukam pracowników",
+        "loginTitle": "Logowanie dla pracodawców",
+        "loginSubtitle": "Zaloguj się na konto firmowe i zarządzaj rekrutacją"
+      }
+    },
+    "form": {
+      "email": "E-mail",
+      "password": "Hasło",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
+      "rememberMe": "Zapamiętaj mnie",
+      "forgotPassword": "Zapomniałeś hasła?",
+      "submit": "Zaloguj się",
+      "signingIn": "Logowanie...",
+      "invalidCredentials": "Nieprawidłowe dane logowania",
+      "emailNotVerified": "Przed zalogowaniem potwierdź swój adres e-mail. Sprawdź skrzynkę odbiorczą.",
+      "error": "Logowanie nie powiodło się",
+      "noAccount": "Nie masz konta?",
+      "signupLink": "Zarejestruj się",
+      "backToRoles": "Inny typ konta",
+      "orContinueWith": "Kontynuuj przez",
+      "divider": "Lub kontynuuj przez e-mail",
+      "google": "Google",
+      "apple": "Apple"
+    },
+    "signup": {
+      "roleAgency": "Agencja rekrutacyjna",
+      "roleAgencyDesc": "Obsadzam stanowiska dla klientów i zarządzam kandydatami",
+      "roleFreelancer": "Freelancer",
+      "roleFreelancerDesc": "Oferuję firmom swoje usługi (grafika, www, marketing…)",
+      "agencyName": "Nazwa agencji",
+      "companyRequiredAgency": "Nazwa agencji jest wymagana",
+      "verifyEmail": "Konto zostało utworzone. Przed zalogowaniem potwierdź adres e-mail za pomocą linku w skrzynce odbiorczej."
+    }
+  },
+  "freelancerDashboard": {
+    "roleLabel": "Freelancer",
+    "nav": {
+      "overview": "Przegląd",
+      "profile": "Profil",
+      "portfolio": "Portfolio",
+      "gigs": "Zlecenia",
+      "proposals": "Moje oferty",
+      "settings": "Ustawienia"
+    },
+    "guard": {
+      "title": "Nie znaleziono konta freelancera",
+      "description": "To konto nie ma profilu freelancera. Zarejestruj się jako freelancer i zacznij prezentować swoje usługi.",
+      "cta": "Rejestracja freelancera"
+    },
+    "overview": {
+      "title": "Przegląd",
+      "subtitle": "Twoje oferty, portfolio i nowe zlecenia w jednym miejscu.",
+      "viewPublic": "Strona publiczna",
+      "kpiProposals": "Wszystkie oferty",
+      "kpiPending": "Oczekujące",
+      "kpiAccepted": "Przyjęte",
+      "kpiPortfolio": "Pozycje portfolio",
+      "recentProposals": "Ostatnie oferty",
+      "openGigs": "Otwarte zlecenia",
+      "viewAll": "Zobacz wszystkie",
+      "noProposals": "Nie wysłano jeszcze żadnej oferty.",
+      "noGigs": "Obecnie nie ma otwartych zleceń."
+    },
+    "profile": {
+      "title": "Mój profil",
+      "subtitle": "Firmy zobaczą te dane na Twojej stronie publicznej.",
+      "cardTitle": "Profil",
+      "cardDesc": "Wyświetlane na liście publicznej i na Twojej stronie prezentacyjnej.",
+      "fieldTitle": "Zawód / nagłówek",
+      "titlePh": "np. Grafik i operator DTP",
+      "bio": "O mnie",
+      "bioPh": "Krótko o Tobie i Twojej pracy…",
+      "services": "Usługi (jedna w wierszu)",
+      "servicesPh": "projektowanie logo\nprojektowanie stron\nulotki i wizytówki",
+      "skills": "Umiejętności (jedna w wierszu)",
+      "skillsPh": "Adobe Photoshop\nIllustrator\nFigma",
+      "rate": "Stawka godzinowa (€)",
+      "ratePh": "np. 25",
+      "availability": "Dostępność",
+      "availAvailable": "Dostępny",
+      "availLimited": "Ograniczona",
+      "availUnavailable": "Niedostępny",
+      "location": "Lokalizacja",
+      "locationPh": "np. Kraków",
+      "portfolioUrl": "Zewnętrzne portfolio (URL)",
+      "visible": "Pokazuj mój profil na liście publicznej",
+      "save": "Zapisz profil",
+      "saving": "Zapisywanie…",
+      "saved": "Profil został zapisany.",
+      "saveFailed": "Zapis nie powiódł się. Spróbuj ponownie.",
+      "loadFailed": "Nie udało się wczytać profilu.",
+      "viewPublicPage": "Zobacz stronę publiczną"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "subtitle": "Pokaż firmom swoje najlepsze prace. Obrazy dodajesz za pomocą linku (URL).",
+      "add": "Dodaj pozycję",
+      "edit": "Edytuj pozycję",
+      "empty": "Nie masz jeszcze żadnych pozycji w portfolio.",
+      "fieldTitle": "Tytuł",
+      "description": "Opis",
+      "url": "Link do projektu (URL)",
+      "imageUrl": "Obraz (adres https)",
+      "tags": "Tagi",
+      "tagsHint": "Oddziel przecinkami, maks. 10 tagów.",
+      "save": "Zapisz",
+      "saving": "Zapisywanie…",
+      "cancel": "Anuluj",
+      "delete": "Usuń",
+      "confirmDelete": "Czy na pewno chcesz usunąć tę pozycję?",
+      "moveUp": "Przesuń wyżej",
+      "moveDown": "Przesuń niżej",
+      "limit": "Osiągnięto limit 24 pozycji.",
+      "unavailable": "Portfolio jest tymczasowo niedostępne. Spróbuj później.",
+      "saveFailed": "Zapis nie powiódł się. Spróbuj ponownie.",
+      "deleteFailed": "Usuwanie nie powiodło się. Spróbuj ponownie.",
+      "needProfile": "Najpierw zapisz swój profil.",
+      "count": "Liczba pozycji: {count}"
+    },
+    "proposals": {
+      "title": "Moje oferty",
+      "subtitle": "Przegląd ofert wysłanych na zlecenia firm.",
+      "empty": "Nie wysłano jeszcze żadnej oferty.",
+      "browseGigs": "Przeglądaj zlecenia",
+      "days": "dni",
+      "status": {
+        "PENDING": "Oczekuje",
+        "ACCEPTED": "Przyjęta",
+        "REJECTED": "Odrzucona",
+        "WITHDRAWN": "Wycofana"
+      },
+      "withdraw": "Wycofaj",
+      "withdrawConfirm": "Czy na pewno chcesz wycofać tę ofertę?",
+      "withdrawFailed": "Nie udało się wycofać oferty."
+    },
+    "settings": {
+      "title": "Ustawienia",
+      "subtitle": "Widoczność i pozostałe ustawienia Twojej prezentacji.",
+      "visibleLabel": "Pokazuj profil publicznie",
+      "visibleHelp": "Po wyłączeniu Twoja strona i wpis na liście freelancerów zostaną ukryte.",
+      "save": "Zapisz",
+      "saving": "Zapisywanie…",
+      "saved": "Ustawienia zostały zapisane.",
+      "saveFailed": "Zapis nie powiódł się. Spróbuj ponownie.",
+      "viewPublic": "Zobacz stronę publiczną"
+    },
+    "availability": {
+      "AVAILABLE": "Dostępny",
+      "LIMITED": "Ograniczona",
+      "UNAVAILABLE": "Niedostępny"
+    },
+    "list": {
+      "title": "Freelancerzy",
+      "subtitle": "Znajdź niezależnych specjalistów i ich usługi",
+      "empty": "Nie ma jeszcze żadnych freelancerów. Jesteś freelancerem?",
+      "signup": "Zarejestruj się",
+      "anonymous": "Freelancer",
+      "perHour": "{rate} {currency}/godz.",
+      "viewProfile": "Zobacz profil"
+    },
+    "public": {
+      "notFoundTitle": "Nie znaleziono freelancera",
+      "anonymous": "Freelancer",
+      "metaFallback": "Profil freelancera {name}",
+      "back": "Wróć do listy",
+      "perHour": "{rate} {currency}/godz.",
+      "contact": "Skontaktuj się",
+      "about": "O mnie",
+      "services": "Usługi",
+      "skills": "Umiejętności",
+      "portfolio": "Portfolio",
+      "noPortfolio": "Ten freelancer nie dodał jeszcze żadnych próbek prac.",
+      "openProject": "Otwórz projekt",
+      "externalPortfolio": "Zewnętrzne portfolio"
+    }
   }
 }

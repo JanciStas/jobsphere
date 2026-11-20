@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { portalHome, type Portal } from '@/lib/portal'
 import Link from 'next/link'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -27,11 +28,14 @@ const loginSchema = z.object({
 
 export default function LoginClient({
   params,
+  portal,
   notice,
   providersAvailable,
   callbackUrl = null,
 }: {
   params: { locale: string }
+  /** Role-specific entry point; enforced server-side by `authorize` in lib/auth.ts. */
+  portal: Portal
   /** Pre-validated (lib/safe-callback.ts) in-app path to return to after login. */
   callbackUrl?: string | null
   /** Server-rendered explanation for a redirect (e.g. `?error=forbidden`). */
@@ -39,7 +43,7 @@ export default function LoginClient({
   /** Which OAuth providers lib/auth.ts actually registered (env keys present). */
   providersAvailable: { google: boolean; apple: boolean }
 }) {
-  const t = useTranslations('auth.login')
+  const t = useTranslations('authPortals')
   const router = useRouter()
   const locale = params.locale
   const [email, setEmail] = useState('')
@@ -49,13 +53,19 @@ export default function LoginClient({
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // OAuth accounts carry no agency/freelancer identity, so social login is offered only on
+  // the candidate and employer portals (and only for providers lib/auth.ts registered).
+  const oauthAllowed = portal === 'candidate' || portal === 'employer'
+  const showGoogle = oauthAllowed && providersAvailable.google
+  const showApple = oauthAllowed && providersAvailable.apple
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     const result = loginSchema.safeParse({ email, password })
     if (!result.success) {
-      setError(t('invalidCredentials'))
+      setError(t('form.invalidCredentials'))
       return
     }
 
@@ -65,30 +75,21 @@ export default function LoginClient({
       const result = await signIn('credentials', {
         email,
         password,
+        portal,
         redirect: false,
       })
 
       if (result?.error === 'EMAIL_NOT_VERIFIED') {
-        setError(t('emailNotVerified'))
+        setError(t('form.emailNotVerified'))
       } else if (result?.error) {
-        setError(t('invalidCredentials'))
+        setError(t('form.invalidCredentials'))
       } else {
-        // Get session to determine redirect based on role
-        const session = await getSession()
-
-        // Return to the page the user originally wanted; otherwise employers go to the
-        // employer dashboard and candidates to the regular dashboard
-        if (callbackUrl) {
-          router.push(callbackUrl)
-        } else if (session?.user?.orgId) {
-          router.push(`/${locale}/employer`)
-        } else {
-          router.push(`/${locale}/dashboard`)
-        }
+        // Return to the page the user originally wanted; otherwise to the role's dashboard.
+        router.push(callbackUrl ?? portalHome(portal, locale))
         router.refresh()
       }
     } catch {
-      setError(t('error'))
+      setError(t('form.error'))
     } finally {
       setLoading(false)
     }
@@ -96,24 +97,31 @@ export default function LoginClient({
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    await signIn('google', { callbackUrl: callbackUrl ?? `/${locale}/dashboard` })
+    await signIn('google', { callbackUrl: callbackUrl ?? portalHome(portal, locale) })
   }
 
   const handleAppleSignIn = async () => {
     setLoading(true)
-    await signIn('apple', { callbackUrl: callbackUrl ?? `/${locale}/dashboard` })
+    await signIn('apple', { callbackUrl: callbackUrl ?? portalHome(portal, locale) })
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">{t('title')}</CardTitle>
-          <CardDescription>{t('subtitle')}</CardDescription>
+          <Link
+            href={`/${locale}/login`}
+            className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            {t('form.backToRoles')}
+          </Link>
+          <CardTitle className="text-2xl font-bold">{t(`roles.${portal}.loginTitle`)}</CardTitle>
+          <CardDescription>{t(`roles.${portal}.loginSubtitle`)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {notice}
-          {providersAvailable.google && (
+          {showGoogle && (
             <Button
               variant="outline"
               className="w-full"
@@ -138,11 +146,11 @@ export default function LoginClient({
                   fill="#EA4335"
                 />
               </svg>
-              {t('orContinueWith')} {t('google')}
+              {t('form.orContinueWith')} {t('form.google')}
             </Button>
           )}
 
-          {providersAvailable.apple && (
+          {showApple && (
             <Button
               variant="outline"
               className="w-full"
@@ -157,24 +165,26 @@ export default function LoginClient({
               >
                 <path d="M16.365 1.43c0 1.14-.42 2.2-1.12 2.98-.76.84-1.96 1.49-3.05 1.4-.13-1.09.42-2.24 1.1-2.97.76-.83 2.05-1.45 3.07-1.41zM20.5 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.78-4.04-3.34C-.07 16.6-.36 11.42 1.6 8.7c1.16-1.62 2.99-2.57 4.71-2.57 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.29-1 1.53 0 3.16.84 4.32 2.28-3.79 2.08-3.18 7.49.28 8.79z" />
               </svg>
-              {t('orContinueWith')} Apple
+              {t('form.orContinueWith')} {t('form.apple')}
             </Button>
           )}
 
-          {(providersAvailable.google || providersAvailable.apple) && (
+          {(showGoogle || showApple) && (
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">{t('divider')}</span>
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t('form.divider')}
+                </span>
               </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
+              <Label htmlFor="email">{t('form.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -190,12 +200,12 @@ export default function LoginClient({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t('password')}</Label>
+                <Label htmlFor="password">{t('form.password')}</Label>
                 <Link
                   href={`/${locale}/forgot-password`}
                   className="text-sm text-primary hover:underline"
                 >
-                  {t('forgotPassword')}
+                  {t('form.forgotPassword')}
                 </Link>
               </div>
               <div className="relative">
@@ -212,7 +222,7 @@ export default function LoginClient({
                 />
                 <button
                   type="button"
-                  aria-label={t('password')}
+                  aria-label={showPassword ? t('form.hidePassword') : t('form.showPassword')}
                   aria-pressed={showPassword}
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
@@ -236,7 +246,7 @@ export default function LoginClient({
                 htmlFor="remember"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                {t('rememberMe')}
+                {t('form.rememberMe')}
               </label>
             </div>
 
@@ -251,15 +261,18 @@ export default function LoginClient({
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t('signingIn') : t('submit')}
+              {loading ? t('form.signingIn') : t('form.submit')}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-wrap items-center justify-center gap-2">
           <div className="text-sm text-muted-foreground">
-            {t('noAccount')}{' '}
-            <Link href={`/${locale}/signup`} className="text-primary hover:underline">
-              {t('signupLink')}
+            {t('form.noAccount')}{' '}
+            <Link
+              href={`/${locale}/signup?role=${portal}`}
+              className="text-primary hover:underline"
+            >
+              {t('form.signupLink')}
             </Link>
           </div>
         </CardFooter>

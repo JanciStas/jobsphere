@@ -2407,5 +2407,355 @@
     "candidateNoPermission": "Nemáte oprávnenie zobraziť tento profil kandidáta.",
     "backToApplicants": "Späť na uchádzačov",
     "backToDashboard": "Späť na dashboard"
+  },
+  "agencyDashboard": {
+    "roleLabel": "Agentúra",
+    "nav": {
+      "overview": "Prehľad",
+      "gigs": "Zákazky",
+      "newGig": "Nová zákazka",
+      "proposals": "Ponuky freelancerov",
+      "freelancers": "Freelanceri",
+      "settings": "Profil agentúry"
+    },
+    "common": {
+      "freelancer": "Freelancer",
+      "days": "{count, plural, one {# deň} few {# dni} other {# dní}}",
+      "cancel": "Zrušiť"
+    },
+    "status": {
+      "OPEN": "Otvorená",
+      "IN_PROGRESS": "Obsadená",
+      "CLOSED": "Uzavretá"
+    },
+    "proposalStatus": {
+      "PENDING": "Čaká",
+      "ACCEPTED": "Prijatá",
+      "REJECTED": "Odmietnutá",
+      "WITHDRAWN": "Stiahnutá"
+    },
+    "dashboard": {
+      "title": "Prehľad agentúry",
+      "subtitle": "Zákazky a ponuky freelancerov na jednom mieste",
+      "newGig": "Nová zákazka",
+      "viewAll": "Zobraziť všetky",
+      "recentProposals": "Posledné ponuky",
+      "noProposals": "Zatiaľ vám neprišla žiadna ponuka.",
+      "kpi": {
+        "activeGigs": "Aktívne zákazky",
+        "receivedProposals": "Prijaté ponuky",
+        "pendingProposals": "Čakajúce ponuky",
+        "filledGigs": "Obsadené zákazky"
+      }
+    },
+    "gigs": {
+      "title": "Moje zákazky",
+      "subtitle": "Zákazky, na ktoré sa môžu uchádzať freelanceri",
+      "empty": "Zatiaľ nemáte žiadne zákazky.",
+      "createFirst": "Zadať prvú zákazku",
+      "proposalsCount": "{count, plural, =0 {Žiadne ponuky} one {# ponuka} few {# ponuky} other {# ponúk}}",
+      "changeStatus": "Zmeniť stav",
+      "detail": "Detail a ponuky",
+      "delete": "Zmazať",
+      "deleteConfirm": "Naozaj zmazať?",
+      "deleteYes": "Áno, zmazať",
+      "failed": "Akciu sa nepodarilo vykonať. Skúste to znova."
+    },
+    "newGig": {
+      "title": "Nová zákazka",
+      "subtitle": "Popíšte prácu a freelanceri vám pošlú ponuku",
+      "name": "Názov zákazky",
+      "description": "Popis",
+      "budget": "Rozpočet",
+      "currency": "Mena",
+      "duration": "Trvanie (dni)",
+      "submit": "Zverejniť zákazku",
+      "submitting": "Zverejňujem...",
+      "error": "Zákazku sa nepodarilo vytvoriť. Skontrolujte údaje."
+    },
+    "gigDetail": {
+      "title": "Detail zákazky",
+      "back": "Späť na zákazky",
+      "proposals": "Ponuky freelancerov",
+      "noProposals": "Na túto zákazku zatiaľ nikto nereagoval.",
+      "accept": "Prijať",
+      "reject": "Odmietnuť"
+    },
+    "proposalsPage": {
+      "title": "Ponuky freelancerov",
+      "subtitle": "Všetky ponuky naprieč vašimi zákazkami",
+      "empty": "Zatiaľ žiadne ponuky.",
+      "forGig": "Zákazka:"
+    },
+    "settings": {
+      "title": "Nastavenia agentúry",
+      "agencyProfile": "Profil agentúry",
+      "name": "Názov",
+      "website": "Web",
+      "hint": "Údaje agentúry upravíte v nastaveniach organizácie.",
+      "edit": "Upraviť nastavenia"
+    },
+    "public": {
+      "title": "Zákazky pre freelancerov",
+      "subtitle": "Otvorené zákazky od agentúr a firiem — pošli ponuku a dohodni sa na cene a termíne",
+      "searchPlaceholder": "Hľadať podľa názvu",
+      "minBudget": "Rozpočet od",
+      "maxBudget": "Rozpočet do",
+      "filter": "Filtrovať",
+      "reset": "Zrušiť filter",
+      "empty": "Zatiaľ tu nie sú žiadne otvorené zákazky. Si freelancer?",
+      "emptyFiltered": "Žiadna zákazka nezodpovedá filtru.",
+      "completeProfile": "Doplň si profil",
+      "viewDetail": "Zobraziť detail",
+      "back": "Späť na zákazky",
+      "notFreelancer": "Ponuku môžu posielať len freelanceri. Vytvorte si freelancerský profil.",
+      "becomeFreelancer": "Vytvoriť freelancerský profil",
+      "loginPrompt": "Prihláste sa ako freelancer a pošlite ponuku.",
+      "loginButton": "Prihlásiť sa ako freelancer"
+    }
+  },
+  "candidateDashboard": {
+    "roleLabel": "Záujemca o prácu",
+    "nav": {
+      "overview": "Prehľad",
+      "applications": "Moje prihlášky",
+      "cv": "Životopis",
+      "saved": "Uložené",
+      "profile": "Profil"
+    },
+    "welcome": "Vitajte, {name}",
+    "subtitle": "Prehľad vašich prihlášok a profilu",
+    "kpi": {
+      "sent": "Odoslané prihlášky",
+      "inProcess": "V procese",
+      "saved": "Uložené inzeráty",
+      "profile": "Vyplnenie profilu"
+    },
+    "recentApplications": "Posledné prihlášky",
+    "viewAll": "Zobraziť všetky",
+    "noApplications": "Zatiaľ ste neodoslali žiadnu prihlášku.",
+    "browseJobs": "Prezrieť ponuky práce",
+    "appliedOn": "Odoslané {date}",
+    "recommended": "Odporúčané inzeráty",
+    "salaryNegotiable": "Plat dohodou",
+    "salaryUpTo": "do",
+    "stage": {
+      "NEW": "Nová",
+      "SCREENING": "Preverovanie",
+      "PHONE": "Telefonát",
+      "INTERVIEW": "Pohovor",
+      "OFFER": "Ponuka",
+      "HIRED": "Prijatý",
+      "REJECTED": "Zamietnutá"
+    },
+    "applicationsPage": {
+      "title": "Moje prihlášky",
+      "subtitle": "Všetky prihlášky a ich aktuálny stav"
+    }
+  },
+  "authPortals": {
+    "chooser": {
+      "title": "Prihláste sa do JobSphere",
+      "subtitle": "Vyberte, ako chcete pokračovať",
+      "employerPrompt": "Hľadáte zamestnancov?",
+      "employerLink": "Som zamestnávateľ"
+    },
+    "roles": {
+      "candidate": {
+        "name": "Záujemca o prácu",
+        "cardDesc": "Hľadám prácu a chcem sledovať svoje prihlášky",
+        "loginTitle": "Prihlásenie pre záujemcov o prácu",
+        "loginSubtitle": "Prihláste sa a pokračujte vo svojom hľadaní práce"
+      },
+      "agency": {
+        "name": "Personálna agentúra",
+        "cardDesc": "Spravujem klientov, kandidátov a obsadzovanie pozícií",
+        "loginTitle": "Prihlásenie pre personálne agentúry",
+        "loginSubtitle": "Prihláste sa do svojho agentúrneho účtu"
+      },
+      "freelancer": {
+        "name": "Freelancer",
+        "cardDesc": "Ponúkam svoje služby a hľadám zákazky",
+        "loginTitle": "Prihlásenie pre freelancerov",
+        "loginSubtitle": "Prihláste sa a spravujte svoj profil a zákazky"
+      },
+      "employer": {
+        "name": "Zamestnávateľ",
+        "cardDesc": "Zverejňujem pozície a hľadám zamestnancov",
+        "loginTitle": "Prihlásenie pre zamestnávateľov",
+        "loginSubtitle": "Prihláste sa do firemného účtu a spravujte nábor"
+      }
+    },
+    "form": {
+      "email": "E-mail",
+      "password": "Heslo",
+      "showPassword": "Zobraziť heslo",
+      "hidePassword": "Skryť heslo",
+      "rememberMe": "Zapamätať si ma",
+      "forgotPassword": "Zabudli ste heslo?",
+      "submit": "Prihlásiť sa",
+      "signingIn": "Prihlasovanie...",
+      "invalidCredentials": "Neplatné prihlasovacie údaje",
+      "emailNotVerified": "Pred prihlásením overte svoju e-mailovú adresu. Skontrolujte si doručenú poštu.",
+      "error": "Prihlásenie zlyhalo",
+      "noAccount": "Nemáte účet?",
+      "signupLink": "Registrovať sa",
+      "backToRoles": "Iný typ účtu",
+      "orContinueWith": "Pokračovať cez",
+      "divider": "Alebo pokračovať e-mailom",
+      "google": "Google",
+      "apple": "Apple"
+    },
+    "signup": {
+      "roleAgency": "Personálna agentúra",
+      "roleAgencyDesc": "Obsadzujem pozície pre klientov a spravujem kandidátov",
+      "roleFreelancer": "Freelancer",
+      "roleFreelancerDesc": "Ponúkam svoje služby (grafika, web, marketing…) firmám",
+      "agencyName": "Názov agentúry",
+      "companyRequiredAgency": "Názov agentúry je povinný",
+      "verifyEmail": "Účet bol vytvorený. Pred prihlásením overte svoju e-mailovú adresu cez odkaz v doručenej pošte."
+    }
+  },
+  "freelancerDashboard": {
+    "roleLabel": "Freelancer",
+    "nav": {
+      "overview": "Prehľad",
+      "profile": "Profil",
+      "portfolio": "Portfólio",
+      "gigs": "Zákazky",
+      "proposals": "Moje ponuky",
+      "settings": "Nastavenia"
+    },
+    "guard": {
+      "title": "Freelancer účet sa nenašiel",
+      "description": "Tento účet nemá freelancer profil. Zaregistruj sa ako freelancer a začni prezentovať svoje služby.",
+      "cta": "Registrácia freelancera"
+    },
+    "overview": {
+      "title": "Prehľad",
+      "subtitle": "Tvoje ponuky, portfólio a nové zákazky na jednom mieste.",
+      "viewPublic": "Verejná stránka",
+      "kpiProposals": "Moje ponuky celkom",
+      "kpiPending": "Čakajúce",
+      "kpiAccepted": "Prijaté",
+      "kpiPortfolio": "Položky portfólia",
+      "recentProposals": "Posledné ponuky",
+      "openGigs": "Otvorené zákazky",
+      "viewAll": "Zobraziť všetko",
+      "noProposals": "Zatiaľ si neposlal žiadnu ponuku.",
+      "noGigs": "Momentálne nie sú otvorené žiadne zákazky."
+    },
+    "profile": {
+      "title": "Môj profil",
+      "subtitle": "Tieto údaje uvidia firmy na tvojej verejnej stránke.",
+      "cardTitle": "Profil",
+      "cardDesc": "Zobrazia sa vo verejnom zozname aj na tvojej prezentačnej stránke.",
+      "fieldTitle": "Profesia / titulok",
+      "titlePh": "napr. Grafik a DTP operátor",
+      "bio": "O mne",
+      "bioPh": "Krátko o tebe a tvojej práci…",
+      "services": "Služby (jedna na riadok)",
+      "servicesPh": "tvorba loga\nwebdizajn\nletáky a vizitky",
+      "skills": "Zručnosti (jedna na riadok)",
+      "skillsPh": "Adobe Photoshop\nIllustrator\nFigma",
+      "rate": "Hodinová sadzba (€)",
+      "ratePh": "napr. 25",
+      "availability": "Dostupnosť",
+      "availAvailable": "Dostupný",
+      "availLimited": "Obmedzene",
+      "availUnavailable": "Nedostupný",
+      "location": "Lokalita",
+      "locationPh": "napr. Žilina",
+      "portfolioUrl": "Externé portfólio (URL)",
+      "visible": "Zobrazovať môj profil vo verejnom zozname",
+      "save": "Uložiť profil",
+      "saving": "Ukladám…",
+      "saved": "Profil bol uložený.",
+      "saveFailed": "Uloženie zlyhalo. Skús to znova.",
+      "loadFailed": "Profil sa nepodarilo načítať.",
+      "viewPublicPage": "Zobraziť verejnú stránku"
+    },
+    "portfolio": {
+      "title": "Portfólio",
+      "subtitle": "Ukáž firmám svoje najlepšie práce. Obrázky pridávaš odkazom (URL).",
+      "add": "Pridať položku",
+      "edit": "Upraviť položku",
+      "empty": "Zatiaľ nemáš žiadne položky portfólia.",
+      "fieldTitle": "Názov",
+      "description": "Popis",
+      "url": "Odkaz na projekt (URL)",
+      "imageUrl": "Obrázok (https URL)",
+      "tags": "Štítky",
+      "tagsHint": "Oddeľ čiarkou, max. 10 štítkov.",
+      "save": "Uložiť",
+      "saving": "Ukladám…",
+      "cancel": "Zrušiť",
+      "delete": "Zmazať",
+      "confirmDelete": "Naozaj chceš túto položku zmazať?",
+      "moveUp": "Posunúť vyššie",
+      "moveDown": "Posunúť nižšie",
+      "limit": "Dosiahol si limit 24 položiek.",
+      "unavailable": "Portfólio je dočasne nedostupné. Skús to neskôr.",
+      "saveFailed": "Uloženie zlyhalo. Skús to znova.",
+      "deleteFailed": "Zmazanie zlyhalo. Skús to znova.",
+      "needProfile": "Najprv si ulož profil.",
+      "count": "Počet položiek: {count}"
+    },
+    "proposals": {
+      "title": "Moje ponuky",
+      "subtitle": "Prehľad ponúk, ktoré si poslal na zákazky firiem.",
+      "empty": "Zatiaľ si neposlal žiadnu ponuku.",
+      "browseGigs": "Prezrieť zákazky",
+      "days": "dní",
+      "status": {
+        "PENDING": "Čaká",
+        "ACCEPTED": "Prijatá",
+        "REJECTED": "Zamietnutá",
+        "WITHDRAWN": "Stiahnutá"
+      },
+      "withdraw": "Stiahnuť",
+      "withdrawConfirm": "Naozaj chceš stiahnuť túto ponuku?",
+      "withdrawFailed": "Ponuku sa nepodarilo stiahnuť."
+    },
+    "settings": {
+      "title": "Nastavenia",
+      "subtitle": "Viditeľnosť a ďalšie nastavenia tvojej prezentácie.",
+      "visibleLabel": "Zobrazovať profil verejne",
+      "visibleHelp": "Keď je vypnuté, tvoja stránka a záznam v zozname freelancerov sa skryjú.",
+      "save": "Uložiť",
+      "saving": "Ukladám…",
+      "saved": "Nastavenia boli uložené.",
+      "saveFailed": "Uloženie zlyhalo. Skús to znova.",
+      "viewPublic": "Zobraziť verejnú stránku"
+    },
+    "availability": {
+      "AVAILABLE": "Dostupný",
+      "LIMITED": "Obmedzene",
+      "UNAVAILABLE": "Nedostupný"
+    },
+    "list": {
+      "title": "Freelanceri",
+      "subtitle": "Nájdite odborníkov na voľnej nohe a ich služby",
+      "empty": "Zatiaľ tu nie sú žiadni freelanceri. Si freelancer?",
+      "signup": "Zaregistruj sa",
+      "anonymous": "Freelancer",
+      "perHour": "{rate} {currency}/hod",
+      "viewProfile": "Zobraziť profil"
+    },
+    "public": {
+      "notFoundTitle": "Freelancer nenájdený",
+      "anonymous": "Freelancer",
+      "metaFallback": "Profil freelancera {name}",
+      "back": "Späť na zoznam",
+      "perHour": "{rate} {currency}/hod",
+      "contact": "Kontaktovať",
+      "about": "O mne",
+      "services": "Služby",
+      "skills": "Zručnosti",
+      "portfolio": "Portfólio",
+      "noPortfolio": "Tento freelancer zatiaľ nepridal žiadne ukážky.",
+      "openProject": "Otvoriť projekt",
+      "externalPortfolio": "Externé portfólio"
+    }
   }
 }

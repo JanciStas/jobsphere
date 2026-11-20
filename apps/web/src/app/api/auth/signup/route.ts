@@ -13,7 +13,7 @@ const signupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
   password: strongPasswordSchema,
-  role: z.enum(['candidate', 'employer', 'freelancer']).optional().default('candidate'),
+  role: z.enum(['candidate', 'employer', 'agency', 'freelancer']).optional().default('candidate'),
   companyName: z.string().optional(),
 })
 
@@ -33,10 +33,16 @@ export const POST = withRateLimit(
       const data = await validateRequest(req, signupSchema)
       data.email = data.email.toLowerCase()
 
-      // Validate employer-specific fields
-      if (data.role === 'employer' && !data.companyName?.trim()) {
+      // Employers and agencies both own an Organization -> company name is mandatory
+      const createsOrg = data.role === 'employer' || data.role === 'agency'
+      if (createsOrg && !data.companyName?.trim()) {
         return NextResponse.json(
-          { error: 'Company name is required for employers' },
+          {
+            error:
+              data.role === 'agency'
+                ? 'Company name is required for agencies'
+                : 'Company name is required for employers',
+          },
           { status: 400 },
         )
       }
@@ -68,8 +74,8 @@ export const POST = withRateLimit(
           },
         })
 
-        // If employer, create organization and link user
-        if (data.role === 'employer' && data.companyName) {
+        // Employer / agency: create the organization and link the user to it
+        if (createsOrg && data.companyName) {
           // Generate unique slug
           const baseSlug = data.companyName
             .toLowerCase()
@@ -95,7 +101,8 @@ export const POST = withRateLimit(
             data: {
               userId: newUser.id,
               orgId: organization.id,
-              role: 'ORG_ADMIN',
+              // Agencies get the dedicated AGENCY role, employers stay ORG_ADMIN
+              role: data.role === 'agency' ? 'AGENCY' : 'ORG_ADMIN',
             },
           })
         }

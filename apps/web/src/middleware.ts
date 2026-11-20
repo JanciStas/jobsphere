@@ -2,6 +2,7 @@ import createMiddleware from 'next-intl/middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { locales } from './i18n'
+import { portalForPath } from './lib/portal'
 
 const intlMiddleware = createMiddleware({
   locales,
@@ -13,7 +14,17 @@ export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/employer', '/profile', '/admin', '/settings']
+  // NOTE: '/freelancer/dashboard' (not '/freelancer'): the public /freelancers directory and
+  // /freelancer-profile pages must stay public.
+  const protectedRoutes = [
+    '/dashboard',
+    '/employer',
+    '/agency',
+    '/freelancer/dashboard',
+    '/profile',
+    '/admin',
+    '/settings',
+  ]
   const isProtectedRoute = protectedRoutes.some((route) => {
     const pathWithoutLocale = pathname.replace(/^\/(en|de|cs|sk|pl)/, '')
     return pathWithoutLocale.startsWith(route)
@@ -30,7 +41,12 @@ export default async function middleware(request: NextRequest) {
     if (!token) {
       // Remember where the user was headed. The login page re-validates this value
       // (lib/safe-callback.ts) before using it, so it cannot be abused as an open redirect.
-      const loginUrl = new URL(`/${locale}/login`, request.url)
+      // A path that clearly belongs to a role sends the user to that role's login page.
+      const portal = portalForPath(pathname.replace(/^\/(en|de|cs|sk|pl)(?=\/|$)/, ''))
+      const loginUrl = new URL(
+        portal ? `/${locale}/login/${portal}` : `/${locale}/login`,
+        request.url,
+      )
       if (firstSegment === locale) {
         loginUrl.searchParams.set('callbackUrl', `${pathname}${request.nextUrl.search}`)
       }

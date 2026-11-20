@@ -2407,5 +2407,355 @@
     "candidateNoPermission": "You do not have permission to view this candidate profile.",
     "backToApplicants": "Back to Applicants",
     "backToDashboard": "Back to dashboard"
+  },
+  "agencyDashboard": {
+    "roleLabel": "Agency",
+    "nav": {
+      "overview": "Overview",
+      "gigs": "Gigs",
+      "newGig": "New gig",
+      "proposals": "Freelancer proposals",
+      "freelancers": "Freelancers",
+      "settings": "Agency profile"
+    },
+    "common": {
+      "freelancer": "Freelancer",
+      "days": "{count, plural, one {# day} other {# days}}",
+      "cancel": "Cancel"
+    },
+    "status": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "Filled",
+      "CLOSED": "Closed"
+    },
+    "proposalStatus": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "dashboard": {
+      "title": "Agency overview",
+      "subtitle": "Your gigs and freelancer proposals in one place",
+      "newGig": "New gig",
+      "viewAll": "View all",
+      "recentProposals": "Latest proposals",
+      "noProposals": "You have not received any proposals yet.",
+      "kpi": {
+        "activeGigs": "Active gigs",
+        "receivedProposals": "Proposals received",
+        "pendingProposals": "Pending proposals",
+        "filledGigs": "Filled gigs"
+      }
+    },
+    "gigs": {
+      "title": "My gigs",
+      "subtitle": "Gigs freelancers can apply for",
+      "empty": "You have no gigs yet.",
+      "createFirst": "Post your first gig",
+      "proposalsCount": "{count, plural, =0 {No proposals} one {# proposal} other {# proposals}}",
+      "changeStatus": "Change status",
+      "detail": "Details and proposals",
+      "delete": "Delete",
+      "deleteConfirm": "Really delete?",
+      "deleteYes": "Yes, delete",
+      "failed": "The action failed. Please try again."
+    },
+    "newGig": {
+      "title": "New gig",
+      "subtitle": "Describe the work and freelancers will send you proposals",
+      "name": "Gig title",
+      "description": "Description",
+      "budget": "Budget",
+      "currency": "Currency",
+      "duration": "Duration (days)",
+      "submit": "Publish gig",
+      "submitting": "Publishing...",
+      "error": "The gig could not be created. Please check the details."
+    },
+    "gigDetail": {
+      "title": "Gig details",
+      "back": "Back to gigs",
+      "proposals": "Freelancer proposals",
+      "noProposals": "Nobody has responded to this gig yet.",
+      "accept": "Accept",
+      "reject": "Reject"
+    },
+    "proposalsPage": {
+      "title": "Freelancer proposals",
+      "subtitle": "All proposals across your gigs",
+      "empty": "No proposals yet.",
+      "forGig": "Gig:"
+    },
+    "settings": {
+      "title": "Agency settings",
+      "agencyProfile": "Agency profile",
+      "name": "Name",
+      "website": "Website",
+      "hint": "You can edit your agency details in the organization settings.",
+      "edit": "Edit settings"
+    },
+    "public": {
+      "title": "Gigs for freelancers",
+      "subtitle": "Open gigs from agencies and companies — send a proposal and agree on price and timeline",
+      "searchPlaceholder": "Search by title",
+      "minBudget": "Budget from",
+      "maxBudget": "Budget to",
+      "filter": "Filter",
+      "reset": "Clear filter",
+      "empty": "There are no open gigs yet. Are you a freelancer?",
+      "emptyFiltered": "No gig matches your filter.",
+      "completeProfile": "Complete your profile",
+      "viewDetail": "View details",
+      "back": "Back to gigs",
+      "notFreelancer": "Only freelancers can send proposals. Create a freelancer profile first.",
+      "becomeFreelancer": "Create freelancer profile",
+      "loginPrompt": "Sign in as a freelancer to send a proposal.",
+      "loginButton": "Sign in as freelancer"
+    }
+  },
+  "candidateDashboard": {
+    "roleLabel": "Job seeker",
+    "nav": {
+      "overview": "Overview",
+      "applications": "My applications",
+      "cv": "Resume",
+      "saved": "Saved",
+      "profile": "Profile"
+    },
+    "welcome": "Welcome, {name}",
+    "subtitle": "An overview of your applications and profile",
+    "kpi": {
+      "sent": "Applications sent",
+      "inProcess": "In progress",
+      "saved": "Saved jobs",
+      "profile": "Profile completion"
+    },
+    "recentApplications": "Latest applications",
+    "viewAll": "View all",
+    "noApplications": "You have not sent any applications yet.",
+    "browseJobs": "Browse jobs",
+    "appliedOn": "Applied {date}",
+    "recommended": "Recommended jobs",
+    "salaryNegotiable": "Salary negotiable",
+    "salaryUpTo": "up to",
+    "stage": {
+      "NEW": "New",
+      "SCREENING": "Screening",
+      "PHONE": "Phone call",
+      "INTERVIEW": "Interview",
+      "OFFER": "Offer",
+      "HIRED": "Hired",
+      "REJECTED": "Rejected"
+    },
+    "applicationsPage": {
+      "title": "My applications",
+      "subtitle": "All applications and their current status"
+    }
+  },
+  "authPortals": {
+    "chooser": {
+      "title": "Sign in to JobSphere",
+      "subtitle": "Choose how you want to continue",
+      "employerPrompt": "Looking to hire?",
+      "employerLink": "I'm an employer"
+    },
+    "roles": {
+      "candidate": {
+        "name": "Job seeker",
+        "cardDesc": "I'm looking for a job and want to track my applications",
+        "loginTitle": "Job seeker sign in",
+        "loginSubtitle": "Sign in to continue your job search"
+      },
+      "agency": {
+        "name": "Recruitment agency",
+        "cardDesc": "I manage clients, candidates and placements",
+        "loginTitle": "Recruitment agency sign in",
+        "loginSubtitle": "Sign in to your agency account"
+      },
+      "freelancer": {
+        "name": "Freelancer",
+        "cardDesc": "I offer my services and look for projects",
+        "loginTitle": "Freelancer sign in",
+        "loginSubtitle": "Sign in to manage your profile and projects"
+      },
+      "employer": {
+        "name": "Employer",
+        "cardDesc": "I post jobs and hire talent",
+        "loginTitle": "Employer sign in",
+        "loginSubtitle": "Sign in to your company account and manage hiring"
+      }
+    },
+    "form": {
+      "email": "Email",
+      "password": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "signingIn": "Signing in...",
+      "invalidCredentials": "Invalid credentials",
+      "emailNotVerified": "Please verify your email address before signing in. Check your inbox.",
+      "error": "Sign in failed",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up",
+      "backToRoles": "Different account type",
+      "orContinueWith": "Continue with",
+      "divider": "Or continue with email",
+      "google": "Google",
+      "apple": "Apple"
+    },
+    "signup": {
+      "roleAgency": "Recruitment agency",
+      "roleAgencyDesc": "I fill positions for clients and manage candidates",
+      "roleFreelancer": "Freelancer",
+      "roleFreelancerDesc": "I offer my services (design, web, marketing…) to companies",
+      "agencyName": "Agency name",
+      "companyRequiredAgency": "Agency name is required",
+      "verifyEmail": "Your account has been created. Please verify your email address using the link in your inbox before signing in."
+    }
+  },
+  "freelancerDashboard": {
+    "roleLabel": "Freelancer",
+    "nav": {
+      "overview": "Overview",
+      "profile": "Profile",
+      "portfolio": "Portfolio",
+      "gigs": "Gigs",
+      "proposals": "My proposals",
+      "settings": "Settings"
+    },
+    "guard": {
+      "title": "Freelancer account not found",
+      "description": "This account has no freelancer profile. Sign up as a freelancer to start showcasing your services.",
+      "cta": "Sign up as a freelancer"
+    },
+    "overview": {
+      "title": "Overview",
+      "subtitle": "Your proposals, portfolio and new gigs in one place.",
+      "viewPublic": "Public page",
+      "kpiProposals": "Total proposals",
+      "kpiPending": "Pending",
+      "kpiAccepted": "Accepted",
+      "kpiPortfolio": "Portfolio items",
+      "recentProposals": "Latest proposals",
+      "openGigs": "Open gigs",
+      "viewAll": "View all",
+      "noProposals": "You haven't sent any proposals yet.",
+      "noGigs": "There are no open gigs right now."
+    },
+    "profile": {
+      "title": "My profile",
+      "subtitle": "Companies will see this on your public page.",
+      "cardTitle": "Profile",
+      "cardDesc": "Shown in the public directory and on your showcase page.",
+      "fieldTitle": "Profession / headline",
+      "titlePh": "e.g. Graphic designer & DTP operator",
+      "bio": "About me",
+      "bioPh": "A short intro about you and your work…",
+      "services": "Services (one per line)",
+      "servicesPh": "logo design\nweb design\nflyers and business cards",
+      "skills": "Skills (one per line)",
+      "skillsPh": "Adobe Photoshop\nIllustrator\nFigma",
+      "rate": "Hourly rate (€)",
+      "ratePh": "e.g. 25",
+      "availability": "Availability",
+      "availAvailable": "Available",
+      "availLimited": "Limited",
+      "availUnavailable": "Unavailable",
+      "location": "Location",
+      "locationPh": "e.g. Vienna",
+      "portfolioUrl": "External portfolio (URL)",
+      "visible": "Show my profile in the public directory",
+      "save": "Save profile",
+      "saving": "Saving…",
+      "saved": "Profile saved.",
+      "saveFailed": "Saving failed. Please try again.",
+      "loadFailed": "Could not load your profile.",
+      "viewPublicPage": "View public page"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "subtitle": "Show companies your best work. Images are added by link (URL).",
+      "add": "Add item",
+      "edit": "Edit item",
+      "empty": "You have no portfolio items yet.",
+      "fieldTitle": "Title",
+      "description": "Description",
+      "url": "Project link (URL)",
+      "imageUrl": "Image (https URL)",
+      "tags": "Tags",
+      "tagsHint": "Separate with commas, up to 10 tags.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this item?",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "limit": "You have reached the limit of 24 items.",
+      "unavailable": "The portfolio is temporarily unavailable. Please try again later.",
+      "saveFailed": "Saving failed. Please try again.",
+      "deleteFailed": "Deleting failed. Please try again.",
+      "needProfile": "Save your profile first.",
+      "count": "Items: {count}"
+    },
+    "proposals": {
+      "title": "My proposals",
+      "subtitle": "Proposals you have sent to company gigs.",
+      "empty": "You haven't sent any proposals yet.",
+      "browseGigs": "Browse gigs",
+      "days": "days",
+      "status": {
+        "PENDING": "Pending",
+        "ACCEPTED": "Accepted",
+        "REJECTED": "Rejected",
+        "WITHDRAWN": "Withdrawn"
+      },
+      "withdraw": "Withdraw",
+      "withdrawConfirm": "Are you sure you want to withdraw this proposal?",
+      "withdrawFailed": "Could not withdraw the proposal."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Visibility and other settings for your showcase.",
+      "visibleLabel": "Show my profile publicly",
+      "visibleHelp": "When turned off, your page and your directory listing are hidden.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Settings saved.",
+      "saveFailed": "Saving failed. Please try again.",
+      "viewPublic": "View public page"
+    },
+    "availability": {
+      "AVAILABLE": "Available",
+      "LIMITED": "Limited",
+      "UNAVAILABLE": "Unavailable"
+    },
+    "list": {
+      "title": "Freelancers",
+      "subtitle": "Find independent professionals and their services",
+      "empty": "There are no freelancers yet. Are you one?",
+      "signup": "Sign up",
+      "anonymous": "Freelancer",
+      "perHour": "{rate} {currency}/h",
+      "viewProfile": "View profile"
+    },
+    "public": {
+      "notFoundTitle": "Freelancer not found",
+      "anonymous": "Freelancer",
+      "metaFallback": "Freelancer profile of {name}",
+      "back": "Back to the list",
+      "perHour": "{rate} {currency}/h",
+      "contact": "Contact",
+      "about": "About",
+      "services": "Services",
+      "skills": "Skills",
+      "portfolio": "Portfolio",
+      "noPortfolio": "This freelancer hasn't added any samples yet.",
+      "openProject": "Open project",
+      "externalPortfolio": "External portfolio"
+    }
   }
 }

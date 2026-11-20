@@ -111,9 +111,22 @@ async function getDashboardData() {
     take: 5,
   })
 
+  const savedCount = await prisma.savedJob.count({ where: { userId: session.user.id } })
+  const totalApplications = await prisma.application.count({
+    where: { candidate: { userId: session.user.id } },
+  })
+  const inProcessApplications = await prisma.application.count({
+    where: {
+      candidate: { userId: session.user.id },
+      stage: { notIn: ['HIRED', 'REJECTED'] },
+    },
+  })
+
   // Calculate stats
   const stats = {
-    total: applications.length,
+    saved: savedCount,
+    inProcess: inProcessApplications,
+    total: totalApplications,
     pending: applications.filter((a) => a.stage === 'NEW').length,
     reviewing: applications.filter((a) => a.stage === 'SCREENING' || a.stage === 'INTERVIEW')
       .length,

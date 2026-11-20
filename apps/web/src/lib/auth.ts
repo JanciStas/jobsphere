@@ -8,6 +8,7 @@ import * as bcryptjs from 'bcryptjs'
 import { getServerSession } from 'next-auth/next'
 import { logger } from './logger'
 import { maskEmail } from './mask-email'
+import { isPortal, userMatchesPortal } from './portal'
 import { deriveActiveContext, isMemberOfOrg, type OrgMembership } from './auth-context'
 
 // UnauthorizedError — defined here to break circular dep with api-helpers.ts
@@ -66,6 +67,8 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        // Optional role-specific entry point (candidate|agency|freelancer|employer).
+        portal: { label: 'Portal', type: 'text' },
       },
       async authorize(credentials) {
         try {
@@ -145,6 +148,32 @@ export const authOptions: NextAuthOptions = {
             }
 
             return null
+          }
+
+          // Role portal enforcement: when the login came from a role-specific page,
+          // the account must actually hold that role. Evaluated only AFTER the password
+          // is proven correct and returns null (same generic error as a bad password),
+          // so it neither reveals that the account exists nor counts as a failed attempt.
+          const rawPortal = (credentials as Record<string, string | undefined>).portal
+          if (rawPortal) {
+            if (!isPortal(rawPortal)) return null
+            const [roles, candidate, freelancer] = await Promise.all([
+              prisma.userOrgRole.findMany({
+                where: { userId: user.id, deletedAt: null },
+                select: { role: true },
+              }),
+              prisma.candidate.findFirst({ where: { userId: user.id }, select: { id: true } }),
+              prisma.freelancerProfile.findUnique({
+                where: { userId: user.id },
+                select: { id: true },
+              }),
+            ])
+            const matches = userMatchesPortal(rawPortal, {
+              orgRoles: roles.map((r) => r.role),
+              hasCandidate: !!candidate,
+              hasFreelancer: !!freelancer,
+            })
+            if (!matches) return null
           }
 
           // SECURITY: Email must be verified before login (production only).

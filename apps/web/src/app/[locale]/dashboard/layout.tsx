@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { CandidateShell } from './candidate-shell'
 
 /**
  * Server-side auth guard (defense-in-depth) for the /dashboard segment.
@@ -20,8 +21,8 @@ export default async function DashboardLayout({
   const session = await auth()
 
   if (!session?.user?.id) {
-    redirect(`/${params.locale}/login`)
+    redirect(`/${params.locale}/login/candidate`)
   }
 
-  return <>{children}</>
+  return <CandidateShell locale={params.locale}>{children}</CandidateShell>
 }

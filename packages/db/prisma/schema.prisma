@@ -134,8 +134,27 @@ model FreelancerProfile {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   proposals    GigProposal[]
+  portfolioItems PortfolioItem[]
 
   @@index([visible])
+}
+
+// Freelancer showcase: portfolio item (image by URL only, no upload).
+model PortfolioItem {
+  id           String   @id @default(cuid())
+  freelancerId String
+  title        String
+  description  String?
+  url          String?
+  imageUrl     String?
+  tags         String[] @default([])
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+
+  @@index([freelancerId])
 }
 
 // Freelancer marketplace: a freelance gig/project posted by a company (organization).

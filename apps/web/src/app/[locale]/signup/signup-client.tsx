@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -20,6 +20,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Eye, EyeOff } from 'lucide-react'
+import { portalHome, type Portal } from '@/lib/portal'
+
+type SignupRole = Portal
 
 const signupSchema = z
   .object({
@@ -27,19 +30,32 @@ const signupSchema = z
     email: z.string().email(),
     password: z.string().min(12),
     confirmPassword: z.string(),
-    role: z.enum(['candidate', 'employer', 'freelancer']),
+    role: z.enum(['candidate', 'employer', 'agency', 'freelancer']),
     companyName: z.string().optional(),
     acceptTerms: z.literal(true),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
   })
-  .refine((data) => data.role !== 'employer' || (data.companyName && data.companyName.length > 0), {
-    path: ['companyName'],
-  })
+  .refine(
+    (data) =>
+      (data.role !== 'employer' && data.role !== 'agency') ||
+      (data.companyName && data.companyName.length > 0),
+    {
+      path: ['companyName'],
+    },
+  )
 
-export default function SignupClient({ params }: { params: { locale: string } }) {
+export default function SignupClient({
+  params,
+  initialRole = 'candidate',
+}: {
+  params: { locale: string }
+  /** Pre-selected from `?role=` (validated server-side in page.tsx). */
+  initialRole?: SignupRole
+}) {
   const t = useTranslations('auth.signup')
+  const tp = useTranslations('authPortals')
   const router = useRouter()
   const locale = params.locale
   const [name, setName] = useState('')
@@ -48,7 +64,8 @@ export default function SignupClient({ params }: { params: { locale: string } })
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [role, setRole] = useState<'candidate' | 'employer' | 'freelancer'>('candidate')
+  const [role, setRole] = useState<SignupRole>(initialRole)
+  const needsCompany = role === 'employer' || role === 'agency'
   const [companyName, setCompanyName] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [error, setError] = useState('')
@@ -64,7 +81,7 @@ export default function SignupClient({ params }: { params: { locale: string } })
       password,
       confirmPassword,
       role,
-      companyName: role === 'employer' ? companyName : undefined,
+      companyName: needsCompany ? companyName : undefined,
       acceptTerms,
     })
 
@@ -85,7 +102,9 @@ export default function SignupClient({ params }: { params: { locale: string } })
         return
       }
       if (fieldErrors.companyName) {
-        setError(t('errors.companyRequired'))
+        setError(
+          role === 'agency' ? tp('signup.companyRequiredAgency') : t('errors.companyRequired'),
+        )
         return
       }
       setError(t('errors.generic'))
@@ -104,7 +123,7 @@ export default function SignupClient({ params }: { params: { locale: string } })
           email,
           password,
           role,
-          companyName: role === 'employer' ? companyName : undefined,
+          companyName: needsCompany ? companyName : undefined,
         }),
       })
 
@@ -117,24 +136,18 @@ export default function SignupClient({ params }: { params: { locale: string } })
       const signInResult = await signIn('credentials', {
         email,
         password,
+        portal: role,
         redirect: false,
       })
 
-      if (signInResult?.error) {
+      if (signInResult?.error === 'EMAIL_NOT_VERIFIED') {
+        setError(tp('signup.verifyEmail'))
+      } else if (signInResult?.error) {
         setError(t('errors.signInFailed'))
       } else {
-        // Get session to determine redirect based on role
-        const session = await getSession()
-
-        // Redirect by role: employer → employer dashboard, freelancer → freelancer
-        // profile, candidate → regular dashboard.
-        if (session?.user?.orgId || role === 'employer') {
-          router.push(`/${locale}/employer`)
-        } else if (role === 'freelancer') {
-          router.push(`/${locale}/freelancer`)
-        } else {
-          router.push(`/${locale}/dashboard`)
-        }
+        // Redirect by role: candidate -> /dashboard, agency -> /agency/dashboard,
+        // freelancer -> /freelancer/dashboard, employer -> /employer.
+        router.push(portalHome(role, locale))
         router.refresh()
       }
     } catch (error: unknown) {
@@ -150,12 +163,12 @@ export default function SignupClient({ params }: { params: { locale: string } })
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    await signIn('google', { callbackUrl: `/${locale}/dashboard` })
+    await signIn('google', { callbackUrl: portalHome('candidate', locale) })
   }
 
   const handleAppleSignIn = async () => {
     setLoading(true)
-    await signIn('apple', { callbackUrl: `/${locale}/dashboard` })
+    await signIn('apple', { callbackUrl: portalHome('candidate', locale) })
   }
 
   return (
@@ -224,9 +237,7 @@ export default function SignupClient({ params }: { params: { locale: string } })
               <Label>{t('registerAs')}</Label>
               <RadioGroup
                 value={role}
-                onValueChange={(value: string) =>
-                  setRole(value as 'candidate' | 'employer' | 'freelancer')
-                }
+                onValueChange={(value: string) => setRole(value as SignupRole)}
                 disabled={loading}
               >
                 <div className="flex items-center space-x-2 rounded-lg border p-3 hover:bg-muted/50">
@@ -244,11 +255,18 @@ export default function SignupClient({ params }: { params: { locale: string } })
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rounded-lg border p-3 hover:bg-muted/50">
+                  <RadioGroupItem value="agency" id="agency" />
+                  <Label htmlFor="agency" className="flex-1 cursor-pointer font-normal">
+                    <div className="font-semibold">{tp('signup.roleAgency')}</div>
+                    <p className="text-xs text-muted-foreground">{tp('signup.roleAgencyDesc')}</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rounded-lg border p-3 hover:bg-muted/50">
                   <RadioGroupItem value="freelancer" id="freelancer" />
                   <Label htmlFor="freelancer" className="flex-1 cursor-pointer font-normal">
-                    <div className="font-semibold">Freelancer</div>
+                    <div className="font-semibold">{tp('signup.roleFreelancer')}</div>
                     <p className="text-xs text-muted-foreground">
-                      Ponúkam svoje služby (grafika, web, marketing…) firmám
+                      {tp('signup.roleFreelancerDesc')}
                     </p>
                   </Label>
                 </div>
@@ -270,9 +288,11 @@ export default function SignupClient({ params }: { params: { locale: string } })
               />
             </div>
 
-            {role === 'employer' && (
+            {needsCompany && (
               <div className="space-y-2">
-                <Label htmlFor="companyName">{t('companyName')}</Label>
+                <Label htmlFor="companyName">
+                  {role === 'agency' ? tp('signup.agencyName') : t('companyName')}
+                </Label>
                 <Input
                   id="companyName"
                   type="text"
@@ -319,7 +339,7 @@ export default function SignupClient({ params }: { params: { locale: string } })
                 />
                 <button
                   type="button"
-                  aria-label={t('password')}
+                  aria-label={showPassword ? tp('form.hidePassword') : tp('form.showPassword')}
                   aria-pressed={showPassword}
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
@@ -350,7 +370,9 @@ export default function SignupClient({ params }: { params: { locale: string } })
                 />
                 <button
                   type="button"
-                  aria-label={t('confirmPassword')}
+                  aria-label={
+                    showConfirmPassword ? tp('form.hidePassword') : tp('form.showPassword')
+                  }
                   aria-pressed={showConfirmPassword}
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -396,7 +418,7 @@ export default function SignupClient({ params }: { params: { locale: string } })
         <CardFooter className="flex flex-wrap items-center justify-center gap-2">
           <div className="text-sm text-muted-foreground">
             {t('hasAccount')}{' '}
-            <Link href={`/${locale}/login`} className="text-primary hover:underline">
+            <Link href={`/${locale}/login/${role}`} className="text-primary hover:underline">
               {t('loginLink')}
             </Link>
           </div>
