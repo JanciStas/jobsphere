@@ -33,3 +33,6 @@ export function deriveStatus(lockedUntil: Date | string | null, now = new Date()
   if (until <= now) return 'ACTIVE'
   return until >= new Date('2098-01-01T00:00:00.000Z') ? 'SUSPENDED' : 'LOCKED'
 }
+
+/** lockedUntil at/after this instant means "suspended" (kept here so client code can import it without Prisma). */
+export const SUSPENDED_THRESHOLD = new Date('2098-01-01T00:00:00.000Z')

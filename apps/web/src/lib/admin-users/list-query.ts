@@ -2,8 +2,7 @@
 
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
-import { ADMIN_ROLES, EMPLOYER_ORG_ROLES } from './roles'
-import { SUSPENDED_THRESHOLD } from './guard'
+import { ADMIN_ROLES, EMPLOYER_ORG_ROLES, SUSPENDED_THRESHOLD } from './roles'
 
 export const USER_STATUS_FILTERS = ['active', 'suspended', 'locked', 'unverified'] as const
 

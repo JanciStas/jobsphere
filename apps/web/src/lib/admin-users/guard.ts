@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma'
 /** Far-future sentinel that `PATCH /api/admin/users` uses for "suspended". */
 export const SUSPENDED_DATE = new Date('2099-01-01T00:00:00.000Z')
 /** Anything at or after this is a suspension, anything before it a temporary lockout. */
-export const SUSPENDED_THRESHOLD = new Date('2098-01-01T00:00:00.000Z')
+export { SUSPENDED_THRESHOLD } from './roles'
 
 /** 401 for anonymous, 403 for a signed-in non-admin, null when the caller is a global admin. */
 export function adminDenied(session: Session | null): NextResponse | null {
