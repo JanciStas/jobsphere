@@ -18,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -49,7 +48,6 @@ export default function LoginClient({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
   const [wrongPortals, setWrongPortals] = useState<PublicPortal[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -242,20 +240,6 @@ export default function LoginClient({
                   )}
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              />
-              <label
-                htmlFor="remember"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {t('form.rememberMe')}
-              </label>
             </div>
 
             {error && (

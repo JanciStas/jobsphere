@@ -69,9 +69,9 @@ export function DashboardShell({ locale, roleLabel, nav, children }: DashboardSh
           </ul>
         </nav>
       </aside>
-      <main className="min-w-0 flex-1 text-base [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-tight md:[&_h1]:text-4xl [&_input]:min-h-12 [&_input]:text-base [&_select]:min-h-12 [&_select]:text-base [&_textarea]:text-base">
+      <div className="min-w-0 flex-1 text-base [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-tight md:[&_h1]:text-4xl [&_input]:min-h-12 [&_input]:text-base [&_select]:min-h-12 [&_select]:text-base [&_textarea]:text-base">
         {children}
-      </main>
+      </div>
     </div>
   )
 }
