@@ -76,7 +76,7 @@ export default async function FreelancerDashboardPage({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         <StatCard value={total} label={t('overview.kpiProposals')} icon={Send} />
         <StatCard value={count('PENDING')} label={t('overview.kpiPending')} icon={Hourglass} />
         <StatCard value={count('ACCEPTED')} label={t('overview.kpiAccepted')} icon={CheckCircle2} />

@@ -87,7 +87,7 @@ export default async function AdminOverviewPage({ params }: { params: { locale: 
         <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {cards.map((c) => (
           <AdminKpiCard
             key={c.key}

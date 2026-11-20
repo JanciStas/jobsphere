@@ -138,7 +138,7 @@ export function Header() {
           </Link>
 
           <nav
-            className="hidden items-center gap-6 lg:flex"
+            className="hidden items-center gap-4 lg:flex xl:gap-6"
             role="navigation"
             aria-label={t('nav.mainNavigation')}
           >
@@ -146,7 +146,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
                 aria-current={pathname === item.href ? 'page' : undefined}
               >
                 {item.label}
@@ -170,7 +170,7 @@ export function Header() {
             </Button>
           ) : session?.user ? (
             <>
-              <Button size="sm" variant="outline" className="hidden md:inline-flex" asChild>
+              <Button size="sm" variant="outline" className="hidden xl:inline-flex" asChild>
                 <Link href={account.dashboardHref}>{t('nav.myDashboard')}</Link>
               </Button>
               <DropdownMenu>

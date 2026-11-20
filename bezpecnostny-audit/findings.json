@@ -569,5 +569,37 @@
     "file": "apps/web/src/lib/auth.ts:150-162 (Vercel env PREVIEW_SKIP_EMAIL_VERIFICATION)",
     "status": "open",
     "summary": "Produkcia (jobsphere.eu) nevynucuje overenie e-mailu: účet založený cez /api/auth/signup sa prihlásil bez potvrdenia e-mailu (overené 2026-11-17, session vznikla). Vo Vercel Production existuje PREVIEW_SKIP_EMAIL_VERIFICATION, ktorý kontrolu vypína. Dôsledok: registrácia cudzím e-mailom (pre-hijack účtu), falošné employer organizácie, spam prihlášky. Riešenie (vlastník): nastaviť funkčný e-mailový provider (RESEND_API_KEY, EMAIL_SERVICE) a potom premennú z Production odstrániť + redeploy; bez providera by odstránenie zablokovalo registráciu."
+  },
+  {
+    "id": "2026-11-S1",
+    "severity": "Medium",
+    "category": "A - Authentication",
+    "file": "apps/web/src/app/api/admin/users/route.ts, users/[id]/*, lib/admin-users/guard.ts",
+    "status": "open",
+    "summary": "Super admin môže iného super admina degradovať, upraviť mu e-mail/heslo (reset link v odpovedi) a znova povýšiť, čím obíde ochranu help akcií na adminov a skreslí audit. Riešenie: evidovať demote a blokovať help akcie na bývalých adminoch, reset link neodovzdávať. Zatiaľ akceptované (2 dôveryhodní zakladatelia)."
+  },
+  {
+    "id": "2026-11-S2",
+    "severity": "Low",
+    "category": "A - Authentication",
+    "file": "apps/web/src/lib/auth.ts (parameter portal), lib/portal.ts",
+    "status": "open",
+    "summary": "Admin portál nie je bezpečnostná hranica: super admin sa prihlásením cez /login alebo iný portál dostane rovnaké práva. Relevantné až pri zavedení MFA len pre /login/admin."
+  },
+  {
+    "id": "2026-11-S3",
+    "severity": "Low",
+    "category": "D - Data integrity",
+    "file": "apps/web/src/app/api/admin/users/route.ts, team/[id]/route.ts",
+    "status": "open",
+    "summary": "Kontrola posledného super admina je count+update bez transakcie (race pri súčasnej degradácii dvoch adminov)."
+  },
+  {
+    "id": "2026-11-S4",
+    "severity": "Low",
+    "category": "L - Logging",
+    "file": "apps/web/src/lib/audit-log.ts, lib/admin-billing.ts",
+    "status": "open",
+    "summary": "Audit privilegovaných akcií je best-effort mimo transakcie; pri zlyhaní zápisu akcia prejde bez stopy. Duplicitné manuálne granty plánu pri súbehu (findLiveSubscription mimo tx)."
   }
 ]

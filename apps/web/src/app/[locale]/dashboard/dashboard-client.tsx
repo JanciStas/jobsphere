@@ -88,7 +88,7 @@ export default function DashboardClient({ locale, initialData, notice }: Dashboa
         <p className="text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         <StatCard value={stats.total} label={t('kpi.sent')} icon={FileText} />
         <StatCard value={stats.inProcess} label={t('kpi.inProcess')} icon={Hourglass} />
         <StatCard value={stats.saved} label={t('kpi.saved')} icon={Heart} />
