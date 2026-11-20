@@ -48,7 +48,7 @@ test.describe('Authentication', () => {
   })
 
   test('should show login form', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     await expect(page.locator('input#email')).toBeVisible()
     await expect(page.locator('input#password')).toBeVisible()

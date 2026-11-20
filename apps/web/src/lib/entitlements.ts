@@ -125,6 +125,8 @@ export async function canAddTeamMember(orgId: string): Promise<boolean> {
   return currentCount < limit
 }
 
+const PLAN_EXPIRY_GRACE_MS = 3 * 24 * 60 * 60 * 1000
+
 /**
  * Get current plan for organization
  */
@@ -136,6 +138,9 @@ export async function getCurrentPlan(
       orgId,
       // Subscription.status stores Stripe's lowercase vocabulary (see webhook).
       status: { in: ['active', 'trialing'] },
+      // Manually granted plans (admin) have no Stripe renewal, so they must lapse on their own.
+      // The grace window absorbs Stripe webhook lag for paying customers.
+      currentPeriodEnd: { gt: new Date(Date.now() - PLAN_EXPIRY_GRACE_MS) },
     },
     include: {
       product: {

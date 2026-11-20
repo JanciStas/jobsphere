@@ -43,7 +43,8 @@ const authState = (role: 'candidate' | 'recruiter' | 'orgAdmin' | 'hiringManager
 
 /** Sign in through the real form. Inputs are addressed by id — see file header. */
 async function loginViaForm(page: Page, email: string, password: string) {
-  await page.goto('/en/login')
+  // Each account signs in only through its own portal (employer accounts are rejected on /login/candidate).
+  await page.goto('/en/login/employer')
   await page.locator('input#email').fill(email)
   await page.locator('input#password').fill(password)
   await page
@@ -168,7 +169,7 @@ test.describe('Authentication Security', () => {
   })
 
   test('should prevent SQL injection in email field', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     // The payload has to survive `type="email"` to reach the server at all, so
     // the quote/comment sequence is carried in the local part of a valid address.
@@ -187,7 +188,7 @@ test.describe('Authentication Security', () => {
 
     // 1. Reflected payload in the query string. The login page reads `?error=`
     //    but only renders a notice for the literal value `forbidden`.
-    await page.goto('/en/login?error=%3Cscript%3Ealert(%22XSS%22)%3C%2Fscript%3E')
+    await page.goto('/en/login/candidate?error=%3Cscript%3Ealert(%22XSS%22)%3C%2Fscript%3E')
     await expect(page.locator('input#email')).toBeVisible()
 
     // 2. Payload typed into the form.
@@ -222,7 +223,7 @@ test.describe('Authentication Security', () => {
   })
 
   test('should not expose sensitive info in error messages', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     await page.locator('input#email').fill('nonexistent@example.com')
     await page.locator('input#password').fill('WrongPassword123!')
@@ -273,7 +274,7 @@ test.describe('Rate Limiting', () => {
 
 test.describe('CSRF Protection', () => {
   test('should include CSRF token in forms', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
     // NextAuth mints the token lazily; the client fetches it before signIn().
     await page.request.get('/api/auth/csrf')
 
@@ -462,7 +463,7 @@ test.describe('OAuth Security', () => {
     // tests below), so lib/auth.ts never registers GoogleProvider. The login
     // page mirrors that server-side and must not render a button that would
     // just throw a NextAuth error on click.
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     const googleButton = page.getByRole('button', { name: /google/i })
     await expect(googleButton).not.toBeVisible()
@@ -546,7 +547,7 @@ test.describe('Input Validation Security', () => {
 
 test.describe('Security Headers', () => {
   test('should include security headers in responses', async ({ page }) => {
-    const response = await page.goto('/en/login')
+    const response = await page.goto('/en/login/candidate')
     expect(response).not.toBeNull()
 
     const headers = response!.headers()
@@ -558,7 +559,7 @@ test.describe('Security Headers', () => {
   })
 
   test('should prevent clickjacking with X-Frame-Options', async ({ page }) => {
-    const response = await page.goto('/en/login')
+    const response = await page.goto('/en/login/candidate')
     expect(response).not.toBeNull()
 
     expect(['DENY', 'SAMEORIGIN']).toContain(response!.headers()['x-frame-options'])
@@ -567,13 +568,13 @@ test.describe('Security Headers', () => {
 
 test.describe('Password Security', () => {
   test('should not display password in plain text', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     await expect(page.locator('input#password')).toHaveAttribute('type', 'password')
   })
 
   test('should have password visibility toggle', async ({ page }) => {
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     // The toggle's accessible name is the localized field label ("Password"),
     // NOT "show"/"hide" — the old /show|hide/ locator matched nothing, so the

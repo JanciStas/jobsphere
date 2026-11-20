@@ -167,7 +167,7 @@ test.describe('Navigation Consistency', () => {
 test.describe('Form Inputs on Mobile', () => {
   test('Form inputs should be usable on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/en/login')
+    await page.goto('/en/login/candidate')
 
     // Check email input
     const emailInput = page.getByLabel(/email/i)

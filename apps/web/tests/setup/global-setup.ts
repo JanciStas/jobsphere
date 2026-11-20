@@ -59,6 +59,15 @@ function assertLocalTestDatabase() {
 
 const AUTH_DIR = path.join(__dirname, '..', '..', 'playwright', '.auth')
 
+const PORTAL_BY_USER: Record<string, string> = {
+  candidate: 'candidate',
+  recruiter: 'employer',
+  orgAdmin: 'employer',
+  hiringManager: 'employer',
+  agency: 'agency',
+  globalAdmin: 'admin',
+}
+
 /**
  * Login via UI and save authentication state
  */
@@ -74,8 +83,8 @@ async function loginAndSaveAuth(
   try {
     const credentials = getUserCredentials(userKey)
 
-    // Navigate to login page
-    await page.goto(`${baseURL}/en/login`)
+    // Every account signs in only through its own portal (/login is just a chooser).
+    await page.goto(`${baseURL}/en/login/${PORTAL_BY_USER[userKey] ?? 'candidate'}`)
 
     // Fill in login form
     await page.fill('input[type="email"]', credentials.email)
@@ -85,7 +94,7 @@ async function loginAndSaveAuth(
     await page.click('button[type="submit"]')
 
     // Wait for redirect after successful login
-    await page.waitForURL(/\/(en|de|cs|sk|pl)\/(dashboard|employer)/, {
+    await page.waitForURL(/\/(en|de|cs|sk|pl)\/(dashboard|employer|agency|admin|freelancer)/, {
       timeout: 10000,
     })
 

@@ -214,6 +214,19 @@ describe('Entitlements', () => {
       expect(result).toBe('PROFESSIONAL')
     })
 
+    it('ignores subscriptions whose period ended (manual plans must expire)', async () => {
+      vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null)
+
+      await getCurrentPlan('org-123')
+
+      const where = vi.mocked(prisma.subscription.findFirst).mock.calls.at(-1)?.[0]?.where as any
+      const cutoff: Date = where.currentPeriodEnd.gt
+      expect(cutoff).toBeInstanceOf(Date)
+      // Grace window is a few days at most, never in the future.
+      expect(cutoff.getTime()).toBeLessThanOrEqual(Date.now())
+      expect(cutoff.getTime()).toBeGreaterThan(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    })
+
     it('should return STARTER when no subscription', async () => {
       vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null)
 
