@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { portalHome, type Portal } from '@/lib/portal'
+import { isPortal, portalHome, type Portal } from '@/lib/portal'
 import Link from 'next/link'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -50,6 +50,7 @@ export default function LoginClient({
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [wrongPortals, setWrongPortals] = useState<Portal[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -62,6 +63,7 @@ export default function LoginClient({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setWrongPortals([])
 
     const result = loginSchema.safeParse({ email, password })
     if (!result.success) {
@@ -81,6 +83,12 @@ export default function LoginClient({
 
       if (result?.error === 'EMAIL_NOT_VERIFIED') {
         setError(t('form.emailNotVerified'))
+      } else if (result?.error?.includes('WRONG_PORTAL:')) {
+        const suggested = (result.error.split('WRONG_PORTAL:')[1] ?? '')
+          .split(',')
+          .filter((p): p is Portal => isPortal(p))
+        setWrongPortals(suggested)
+        setError(t('form.wrongPortal'))
       } else if (result?.error) {
         setError(t('form.invalidCredentials'))
       } else {
@@ -257,6 +265,17 @@ export default function LoginClient({
                 className="rounded-md bg-destructive/10 p-3 text-sm text-destructive"
               >
                 {error}
+                {wrongPortals.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {wrongPortals.map((p) => (
+                      <li key={p}>
+                        <Link href={`/${locale}/login/${p}`} className="font-semibold underline">
+                          {t(`roles.${p}.name`)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

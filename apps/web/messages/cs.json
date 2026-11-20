@@ -2604,7 +2604,8 @@
       "orContinueWith": "Pokračovat přes",
       "divider": "Nebo pokračujte e-mailem",
       "google": "Google",
-      "apple": "Apple"
+      "apple": "Apple",
+      "wrongPortal": "Údaje jsou správné, ale účet patří do jiného portálu. Přihlaste se zde:"
     },
     "signup": {
       "roleAgency": "Personální agentura",

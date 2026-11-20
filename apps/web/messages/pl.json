@@ -2604,7 +2604,8 @@
       "orContinueWith": "Kontynuuj przez",
       "divider": "Lub kontynuuj przez e-mail",
       "google": "Google",
-      "apple": "Apple"
+      "apple": "Apple",
+      "wrongPortal": "Dane są poprawne, ale konto należy do innego portalu. Zaloguj się tutaj:"
     },
     "signup": {
       "roleAgency": "Agencja rekrutacyjna",

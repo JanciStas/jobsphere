@@ -8,7 +8,7 @@ import * as bcryptjs from 'bcryptjs'
 import { getServerSession } from 'next-auth/next'
 import { logger } from './logger'
 import { maskEmail } from './mask-email'
-import { isPortal, userMatchesPortal } from './portal'
+import { isPortal, matchingPortals, userMatchesPortal } from './portal'
 import { deriveActiveContext, isMemberOfOrg, type OrgMembership } from './auth-context'
 
 // UnauthorizedError — defined here to break circular dep with api-helpers.ts
@@ -152,8 +152,8 @@ export const authOptions: NextAuthOptions = {
 
           // Role portal enforcement: when the login came from a role-specific page,
           // the account must actually hold that role. Evaluated only AFTER the password
-          // is proven correct and returns null (same generic error as a bad password),
-          // so it neither reveals that the account exists nor counts as a failed attempt.
+          // is proven correct, so it neither reveals that the account exists nor counts
+          // as a failed attempt.
           const rawPortal = (credentials as Record<string, string | undefined>).portal
           if (rawPortal) {
             if (!isPortal(rawPortal)) return null
@@ -168,12 +168,17 @@ export const authOptions: NextAuthOptions = {
                 select: { id: true },
               }),
             ])
-            const matches = userMatchesPortal(rawPortal, {
+            const identity = {
               orgRoles: roles.map((r) => r.role),
               hasCandidate: !!candidate,
               hasFreelancer: !!freelancer,
-            })
-            if (!matches) return null
+            }
+            if (!userMatchesPortal(rawPortal, identity)) {
+              // The password is already proven correct here, so telling the user which
+              // portal(s) their account belongs to reveals nothing to an attacker.
+              const others = matchingPortals(identity)
+              throw new Error(`WRONG_PORTAL:${others.join(',')}`)
+            }
           }
 
           // SECURITY: Email must be verified before login (production only).

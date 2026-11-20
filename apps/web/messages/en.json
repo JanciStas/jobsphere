@@ -2604,7 +2604,8 @@
       "orContinueWith": "Continue with",
       "divider": "Or continue with email",
       "google": "Google",
-      "apple": "Apple"
+      "apple": "Apple",
+      "wrongPortal": "Your credentials are correct, but this account belongs to a different portal. Sign in here:"
     },
     "signup": {
       "roleAgency": "Recruitment agency",

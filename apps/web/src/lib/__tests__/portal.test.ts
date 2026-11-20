@@ -61,3 +61,19 @@ describe('portal helpers', () => {
     expect(portalForPath('/settings')).toBeNull()
   })
 })
+
+describe('matchingPortals', () => {
+  it('returns the portals an employer account may use', async () => {
+    const { matchingPortals } = await import('../portal')
+    expect(
+      matchingPortals({ orgRoles: ['ORG_ADMIN'], hasCandidate: false, hasFreelancer: false }),
+    ).toEqual(['employer'])
+  })
+
+  it('returns every portal of a dual-role account', async () => {
+    const { matchingPortals } = await import('../portal')
+    expect(
+      matchingPortals({ orgRoles: ['AGENCY'], hasCandidate: true, hasFreelancer: true }),
+    ).toEqual(['candidate', 'agency', 'freelancer'])
+  })
+})

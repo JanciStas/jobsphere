@@ -44,6 +44,11 @@ export function userMatchesPortal(portal: Portal, identity: PortalIdentity): boo
   }
 }
 
+/** All portals this account may sign in through (used to guide a user who picked the wrong one). */
+export function matchingPortals(identity: PortalIdentity): Portal[] {
+  return PORTALS.filter((p) => userMatchesPortal(p, identity))
+}
+
 /** Where to land after sign-in / sign-up for a given portal (locale-prefixed). */
 export function portalHome(portal: Portal, locale: string): string {
   switch (portal) {

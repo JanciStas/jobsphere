@@ -2604,7 +2604,8 @@
       "orContinueWith": "Weiter mit",
       "divider": "Oder weiter mit E-Mail",
       "google": "Google",
-      "apple": "Apple"
+      "apple": "Apple",
+      "wrongPortal": "Die Zugangsdaten sind korrekt, aber dieses Konto gehört zu einem anderen Portal. Hier anmelden:"
     },
     "signup": {
       "roleAgency": "Personalagentur",
