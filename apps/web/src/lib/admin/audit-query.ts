@@ -54,9 +54,60 @@ export function parseAuditFilters(
   return second.success ? second.data : { page: 1 }
 }
 
-function validDate(day: string, endOfDay: boolean): Date | undefined {
-  const d = new Date(`${day}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`)
-  return Number.isNaN(d.getTime()) ? undefined : d
+/** Admins work in Slovak time; audit day filters and timestamps follow it (DST aware). */
+export const AUDIT_TIME_ZONE = 'Europe/Bratislava'
+
+const zoneParts = new Intl.DateTimeFormat('en-GB', {
+  timeZone: AUDIT_TIME_ZONE,
+  hourCycle: 'h23',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+})
+
+function wallClock(d: Date): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const p of zoneParts.formatToParts(d))
+    if (p.type !== 'literal') out[p.type] = Number(p.value)
+  return out
+}
+
+/** Offset of the audit zone from UTC at instant `t`, in ms (e.g. +1h in winter). */
+function zoneOffsetMs(t: number): number {
+  const w = wallClock(new Date(t))
+  return Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second) - (t - (t % 1000))
+}
+
+/** The UTC instant of 00:00 Slovak time on `day` (YYYY-MM-DD); undefined for impossible dates. */
+function zonedDayStart(day: string): Date | undefined {
+  const [y, m, d] = day.split('-').map(Number)
+  const naive = Date.UTC(y, m - 1, d)
+  const check = new Date(naive)
+  if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) {
+    return undefined
+  }
+  // Two passes: the offset at the guessed instant may differ from the one at local midnight.
+  let t = naive - zoneOffsetMs(naive)
+  t = naive - zoneOffsetMs(t)
+  return new Date(t)
+}
+
+/** Start of the Slovak day after `day` (exclusive upper bound). */
+function zonedNextDayStart(day: string): Date | undefined {
+  if (!zonedDayStart(day)) return undefined
+  const next = new Date(`${day}T00:00:00.000Z`)
+  next.setUTCDate(next.getUTCDate() + 1)
+  return zonedDayStart(next.toISOString().slice(0, 10))
+}
+
+/** "YYYY-MM-DD HH:mm" in Slovak time, for the audit table. */
+export function formatAuditTime(d: Date): string {
+  const w = wallClock(d)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${w.year}-${p(w.month)}-${p(w.day)} ${p(w.hour)}:${p(w.minute)}`
 }
 
 /** Resolve the "user" filter into a list of user ids (empty array = nobody matches). */
@@ -75,9 +126,9 @@ export async function buildAuditWhere(f: AuditFilters): Promise<Prisma.AuditLogW
   if (f.action) where.action = f.action
   if (f.entityType) where.entityType = f.entityType
   if (f.user) where.userId = { in: await resolveActorIds(f.user) }
-  const gte = f.from ? validDate(f.from, false) : undefined
-  const lte = f.to ? validDate(f.to, true) : undefined
-  if (gte || lte) where.createdAt = { ...(gte && { gte }), ...(lte && { lte }) }
+  const gte = f.from ? zonedDayStart(f.from) : undefined
+  const lt = f.to ? zonedNextDayStart(f.to) : undefined
+  if (gte || lt) where.createdAt = { ...(gte && { gte }), ...(lt && { lt }) }
   return where
 }
 

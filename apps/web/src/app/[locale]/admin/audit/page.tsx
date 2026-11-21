@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import {
   AUDIT_EXPORT_LIMIT,
   diffJson,
+  formatAuditTime,
   parseAuditFilters,
   queryAuditPage,
   type AuditFilters,
@@ -219,7 +220,7 @@ export default async function AdminAuditPage({
                   return (
                     <tr key={log.id} className="border-b align-top last:border-0">
                       <td className="whitespace-nowrap py-2 pr-4 text-muted-foreground">
-                        {log.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
+                        {formatAuditTime(log.createdAt)}
                       </td>
                       <td className="py-2 pr-4">
                         {actor ? (

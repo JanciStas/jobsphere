@@ -5,6 +5,8 @@ vi.mock('@/lib/logger', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: 
 
 import {
   parseAuditFilters,
+  buildAuditWhere,
+  formatAuditTime,
   diffJson,
   csvCell,
   auditRowsToCsv,
@@ -26,6 +28,35 @@ describe('parseAuditFilters', () => {
   })
   it('treats empty strings as unset', () => {
     expect(parseAuditFilters({ action: '', to: '' })).toEqual({ page: 1 })
+  })
+})
+
+describe('audit date filters use Slovak time (Europe/Bratislava)', () => {
+  it('winter day = 23:00 UTC previous day .. 23:00 UTC (CET, +01:00)', async () => {
+    const w = await buildAuditWhere({ from: '2026-11-21', to: '2026-11-21', page: 1 })
+    expect(w.createdAt).toEqual({
+      gte: new Date('2026-11-20T23:00:00.000Z'),
+      lt: new Date('2026-11-21T23:00:00.000Z'),
+    })
+  })
+  it('summer day = 22:00 UTC previous day (CEST, +02:00)', async () => {
+    const w = await buildAuditWhere({ from: '2026-07-15', page: 1 })
+    expect(w.createdAt).toEqual({ gte: new Date('2026-07-14T22:00:00.000Z') })
+  })
+  it('DST switch day (2026-03-29) is 23 hours long', async () => {
+    const w = await buildAuditWhere({ from: '2026-03-29', to: '2026-03-29', page: 1 })
+    expect(w.createdAt).toEqual({
+      gte: new Date('2026-03-28T23:00:00.000Z'),
+      lt: new Date('2026-03-29T22:00:00.000Z'),
+    })
+  })
+  it('an entry at 00:30 Slovak time belongs to that Slovak day', () => {
+    expect(formatAuditTime(new Date('2026-11-20T23:30:00.000Z'))).toBe('2026-11-21 00:30')
+    expect(formatAuditTime(new Date('2026-07-14T22:05:00.000Z'))).toBe('2026-07-15 00:05')
+  })
+  it('impossible calendar dates are ignored', async () => {
+    const w = await buildAuditWhere({ from: '2026-02-31', page: 1 })
+    expect(w.createdAt).toBeUndefined()
   })
 })
 
