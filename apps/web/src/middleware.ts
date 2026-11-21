@@ -14,21 +14,14 @@ export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Protected routes that require authentication
-  // NOTE: '/freelancer/dashboard' (not '/freelancer'): the public /freelancers directory and
-  // /freelancer-profile pages must stay public.
-  const protectedRoutes = [
-    '/dashboard',
-    '/employer',
-    '/agency',
-    '/freelancer/dashboard',
-    '/profile',
-    '/admin',
-    '/settings',
-  ]
-  const isProtectedRoute = protectedRoutes.some((route) => {
-    const pathWithoutLocale = pathname.replace(/^\/(en|de|cs|sk|pl)/, '')
-    return pathWithoutLocale.startsWith(route)
-  })
+  // NOTE: the whole '/freelancer' area is matched exactly or with a trailing slash, so the public
+  // /freelancers directory and /freelancer-profile pages stay public.
+  const protectedRoutes = ['/dashboard', '/employer', '/agency', '/profile', '/admin', '/settings']
+  const isProtectedRoute =
+    protectedRoutes.some((route) => {
+      const pathWithoutLocale = pathname.replace(/^\/(en|de|cs|sk|pl)/, '')
+      return pathWithoutLocale.startsWith(route)
+    }) || isFreelancerArea(pathname.replace(/^\/(en|de|cs|sk|pl)/, ''))
 
   if (isProtectedRoute) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
@@ -92,7 +85,7 @@ export default async function middleware(request: NextRequest) {
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.stripe.com",
+    "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://api.stripe.com https://api.anthropic.com https://api.openai.com https://api.voyageai.com https://*.sentry.io https://*.ingest.sentry.io https://vitals.vercel-insights.com https://graph.microsoft.com https://login.microsoftonline.com",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://vercel.live",
@@ -111,4 +104,8 @@ export default async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+}
+
+function isFreelancerArea(pathWithoutLocale: string): boolean {
+  return pathWithoutLocale === '/freelancer' || pathWithoutLocale.startsWith('/freelancer/')
 }

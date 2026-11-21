@@ -28,13 +28,20 @@ const fmt = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v))
 
 async function distinctValues(field: 'action' | 'entityType'): Promise<string[]> {
   try {
-    const rows = await prisma.auditLog.findMany({
-      distinct: [field],
-      select: { action: true, entityType: true },
-      orderBy: { [field]: 'asc' },
-      take: 200,
-    })
-    return rows.map((r) => r[field]).filter((v): v is string => !!v)
+    // groupBy runs as SQL GROUP BY with LIMIT. `findMany({ distinct })` is de-duplicated in
+    // memory on this Prisma version (no nativeDistinct), i.e. it read the whole AuditLog
+    // table on every page view before applying `take`.
+    const rows =
+      field === 'action'
+        ? await prisma.auditLog.groupBy({ by: ['action'], orderBy: { action: 'asc' }, take: 200 })
+        : await prisma.auditLog.groupBy({
+            by: ['entityType'],
+            orderBy: { entityType: 'asc' },
+            take: 200,
+          })
+    return rows
+      .map((r) => ('action' in r ? r.action : r.entityType) as string | null)
+      .filter((v): v is string => !!v)
   } catch (error) {
     logger.error('Admin audit: distinct filter values failed', error)
     return []

@@ -4,7 +4,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { SHORT_DATE } from '@/lib/formats'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getCurrentPlan, STARTER_LIMITS } from '@/lib/entitlements'
+import { getCurrentPlan, liveSubscriptionWhere, STARTER_LIMITS } from '@/lib/entitlements'
 import { FEATURES, isManualSubscription, stripeDashboardUrl } from '@/lib/admin-billing'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -40,7 +40,7 @@ export default async function AdminBillingDetailPage({
   })
   if (!org) notFound()
 
-  const [plan, entitlements, jobs, members, candidates, history] = await Promise.all([
+  const [plan, entitlements, jobs, members, candidates, history, live] = await Promise.all([
     getCurrentPlan(org.id),
     prisma.entitlement.findMany({
       where: { orgId: org.id },
@@ -55,6 +55,13 @@ export default async function AdminBillingDetailPage({
       orderBy: { createdAt: 'desc' },
       take: 20,
     }),
+    // Same rule and order as getCurrentPlan() and the billing actions, so the page never
+    // shows "managed by Stripe" for a lapsed row the actions would ignore (or vice versa).
+    prisma.subscription.findFirst({
+      where: { orgId: org.id, ...liveSubscriptionWhere() },
+      select: { providerSubId: true },
+      orderBy: { currentPeriodEnd: 'desc' },
+    }),
   ])
 
   const overrides = new Map(entitlements.map((e) => [e.featureKey, e.limitInt]))
@@ -67,7 +74,6 @@ export default async function AdminBillingDetailPage({
   }
   const fmtLimit = (l: number | null) => (l === null ? t('unlimited') : String(l))
 
-  const live = history.find((s) => s.status === 'active' || s.status === 'trialing')
   const stripeManaged = Boolean(live && !isManualSubscription(live.providerSubId))
   const stripeUrl = live ? stripeDashboardUrl(live.providerSubId) : null
 

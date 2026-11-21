@@ -14,6 +14,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { liveSubscriptionWhere } from '@/lib/entitlements'
 
 export const EMPLOYER_ROLES = ['ORG_ADMIN', 'RECRUITER', 'HIRING_MANAGER']
 const DAY = 86_400_000
@@ -82,9 +83,9 @@ export async function getAdminKpis(now = new Date()): Promise<AdminKpis> {
     safe('activeJobs', () => prisma.job.count({ where: { ...live, status: 'PUBLISHED' } })),
     safe('openGigs', () => prisma.gig.count({ where: { status: 'OPEN' } })),
     safe('activeSubscriptions', () =>
-      prisma.subscription.count({
-        where: { status: { in: ['active', 'trialing', 'ACTIVE', 'TRIALING'] } },
-      }),
+      // Same "live" rule as getCurrentPlan(): expired manual grants and Stripe rows whose
+      // period lapsed (webhook never arrived) are not counted as active.
+      prisma.subscription.count({ where: liveSubscriptionWhere() }),
     ),
   ])
   return {

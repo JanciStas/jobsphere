@@ -21,7 +21,8 @@ export async function requireAgency(locale: string): Promise<AgencyContext> {
   const userId = session.user.id
 
   const memberships = await prisma.userOrgRole.findMany({
-    where: { userId, deletedAt: null },
+    // A suspended organization (admin) loses access to its dashboard.
+    where: { userId, deletedAt: null, organization: { deletedAt: null } },
     select: { orgId: true, role: true },
   })
   const agencyOrgs = memberships.filter((m) => m.role === 'AGENCY')

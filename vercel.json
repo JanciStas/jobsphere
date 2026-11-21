@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/embeddings",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/manual-plan-expiry",
+      "schedule": "30 3 * * *"
     }
   ]
 }

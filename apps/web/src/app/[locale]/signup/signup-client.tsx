@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { z } from 'zod'
@@ -56,7 +55,6 @@ export default function SignupClient({
 }) {
   const t = useTranslations('auth.signup')
   const tp = useTranslations('authPortals')
-  const router = useRouter()
   const locale = params.locale
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -70,6 +68,7 @@ export default function SignupClient({
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,24 +131,11 @@ export default function SignupClient({
         throw new Error(data.error || t('errors.createFailed'))
       }
 
-      // Auto sign in after successful registration
-      const signInResult = await signIn('credentials', {
-        email,
-        password,
-        portal: role,
-        redirect: false,
-      })
-
-      if (signInResult?.error === 'EMAIL_NOT_VERIFIED') {
-        setError(tp('signup.verifyEmail'))
-      } else if (signInResult?.error) {
-        setError(t('errors.signInFailed'))
-      } else {
-        // Redirect by role: candidate -> /dashboard, agency -> /agency/dashboard,
-        // freelancer -> /freelancer/dashboard, employer -> /employer.
-        router.push(portalHome(role, locale))
-        router.refresh()
-      }
+      // No automatic sign-in: the signup API answers identically for new and existing
+      // emails, and an auto sign-in with the just-typed password would reveal which one it
+      // was (and count as a failed attempt against an existing account). Always show the
+      // same "check your email, then sign in" state.
+      setSubmitted(true)
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message || t('errors.generic'))
@@ -169,6 +155,26 @@ export default function SignupClient({
   const handleAppleSignIn = async () => {
     setLoading(true)
     await signIn('apple', { callbackUrl: portalHome('candidate', locale) })
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl font-bold">{tp('signup.successTitle')}</CardTitle>
+            <CardDescription role="status" aria-live="polite">
+              {tp('signup.successBody')}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link href={`/${locale}/login/${role}`}>{tp('signup.successCta')}</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
   }
 
   return (

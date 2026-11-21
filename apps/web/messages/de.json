@@ -2623,7 +2623,10 @@
       "roleFreelancerDesc": "Ich biete Unternehmen meine Dienstleistungen an (Grafik, Web, Marketing …)",
       "agencyName": "Name der Agentur",
       "companyRequiredAgency": "Der Name der Agentur ist erforderlich",
-      "verifyEmail": "Ihr Konto wurde erstellt. Bitte bestätigen Sie vor der Anmeldung Ihre E-Mail-Adresse über den Link in Ihrem Posteingang."
+      "verifyEmail": "Ihr Konto wurde erstellt. Bitte bestätigen Sie vor der Anmeldung Ihre E-Mail-Adresse über den Link in Ihrem Posteingang.",
+      "successTitle": "Prüfen Sie Ihre E-Mails",
+      "successBody": "Wenn diese E-Mail-Adresse neu ist, ist Ihr Konto bereit und wir haben Ihnen einen Bestätigungslink gesendet. Melden Sie sich danach über Ihr Portal an. Wenn Sie bereits ein Konto mit dieser Adresse haben, melden Sie sich einfach an.",
+      "successCta": "Zur Anmeldung"
     }
   },
   "freelancerDashboard": {

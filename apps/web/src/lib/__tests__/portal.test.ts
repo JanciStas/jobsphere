@@ -84,6 +84,9 @@ describe('portal helpers', () => {
   it('portalForPath', () => {
     expect(portalForPath('/agency/dashboard')).toBe('agency')
     expect(portalForPath('/freelancer/dashboard')).toBe('freelancer')
+    expect(portalForPath('/freelancer/proposals')).toBe('freelancer')
+    expect(portalForPath('/freelancer/portfolio')).toBe('freelancer')
+    expect(portalForPath('/freelancer')).toBe('freelancer')
     expect(portalForPath('/freelancers')).toBeNull()
     expect(portalForPath('/freelancer-profile/x')).toBeNull()
     expect(portalForPath('/employer/jobs')).toBe('employer')

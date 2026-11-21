@@ -28,6 +28,7 @@ const { requireGlobalAdmin } = vi.hoisted(() => ({ requireGlobalAdmin: vi.fn() }
 vi.mock('@/lib/auth', async (importOriginal) => ({
   ...((await importOriginal()) as object),
   requireGlobalAdmin,
+  auth: requireGlobalAdmin,
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -60,7 +61,7 @@ const patch = (body: unknown) =>
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireGlobalAdmin.mockResolvedValue({ user: { id: 'admin-1' } })
+  requireGlobalAdmin.mockResolvedValue({ user: { id: 'admin-1', isGlobalAdmin: true } })
   ;(prisma.organization.findUnique as any).mockResolvedValue(ORG)
   ;(prisma.organization.update as any).mockResolvedValue(ORG)
   ;(prisma.user.updateMany as any).mockResolvedValue({ count: 3 })
@@ -68,7 +69,7 @@ beforeEach(() => {
 
 describe('access', () => {
   it('refuses a non-admin and writes nothing', async () => {
-    requireGlobalAdmin.mockResolvedValue(null)
+    requireGlobalAdmin.mockResolvedValue({ user: { id: 'u-1', isGlobalAdmin: false } })
     const res = await PATCH(patch({ action: 'suspend', orgId: 'org-1' }))
 
     expect(res.status).toBe(403)

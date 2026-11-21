@@ -90,10 +90,7 @@ export function portalHome(portal: Portal, locale: string): string {
 export function portalForPath(pathWithoutLocale: string): Portal | null {
   if (pathWithoutLocale === '/admin' || pathWithoutLocale.startsWith('/admin/')) return 'admin'
   if (pathWithoutLocale === '/agency' || pathWithoutLocale.startsWith('/agency/')) return 'agency'
-  if (
-    pathWithoutLocale === '/freelancer/dashboard' ||
-    pathWithoutLocale.startsWith('/freelancer/dashboard/')
-  )
+  if (pathWithoutLocale === '/freelancer' || pathWithoutLocale.startsWith('/freelancer/'))
     return 'freelancer'
   if (pathWithoutLocale === '/employer' || pathWithoutLocale.startsWith('/employer/'))
     return 'employer'

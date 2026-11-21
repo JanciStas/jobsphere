@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { Eye, Hourglass, CheckCircle2, GalleryHorizontal, Send } from 'lucide-react'
-import { auth } from '@/lib/auth'
+import { requireFreelancerUserId } from '../_lib/require-freelancer-user'
 import { prisma } from '@/lib/prisma'
 import { countPortfolioItems } from '@/lib/portfolio-safe'
 import { StatCard } from '@/components/dashboard/stat-card'
@@ -17,8 +17,7 @@ export default async function FreelancerDashboardPage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'freelancerDashboard' })
-  const session = await auth()
-  const userId = session?.user?.id as string
+  const userId = await requireFreelancerUserId(locale)
 
   const profile = await prisma.freelancerProfile.findUnique({
     where: { userId },
@@ -48,7 +47,7 @@ export default async function FreelancerDashboardPage({
       : Promise.resolve([]),
     profile ? countPortfolioItems(profile.id) : Promise.resolve(0),
     prisma.gig.findMany({
-      where: { status: 'OPEN' },
+      where: { status: 'OPEN', organization: { deletedAt: null } },
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: { id: true, title: true, budget: true, currency: true },

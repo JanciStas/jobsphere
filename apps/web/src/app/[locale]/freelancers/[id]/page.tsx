@@ -15,7 +15,7 @@ const AVAILABILITY_KEYS = ['AVAILABLE', 'LIMITED', 'UNAVAILABLE'] as const
 /** Public-safe projection only: never select the user's e-mail or other PII. */
 async function loadProfile(id: string) {
   return prisma.freelancerProfile.findFirst({
-    where: { id, visible: true },
+    where: { id, visible: true, user: { deletedAt: null } },
     select: {
       id: true,
       title: true,

@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server'
-import { auth } from '@/lib/auth'
+import { requireFreelancerUserId } from '../_lib/require-freelancer-user'
 import { prisma } from '@/lib/prisma'
 import { VisibilityForm } from './visibility-form'
 
@@ -12,9 +12,9 @@ export default async function FreelancerSettingsPage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'freelancerDashboard.settings' })
-  const session = await auth()
+  const userId = await requireFreelancerUserId(locale)
   const profile = await prisma.freelancerProfile.findUnique({
-    where: { userId: session?.user?.id as string },
+    where: { userId: userId },
     select: { id: true, visible: true },
   })
 

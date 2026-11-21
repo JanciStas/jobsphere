@@ -26,6 +26,7 @@ const { requireGlobalAdmin } = vi.hoisted(() => ({ requireGlobalAdmin: vi.fn() }
 vi.mock('@/lib/auth', async (importOriginal) => ({
   ...((await importOriginal()) as object),
   requireGlobalAdmin,
+  auth: requireGlobalAdmin,
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -69,7 +70,7 @@ const del = () =>
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireGlobalAdmin.mockResolvedValue({ user: { id: 'admin-1' } })
+  requireGlobalAdmin.mockResolvedValue({ user: { id: 'admin-1', isGlobalAdmin: true } })
   ;(prisma.organization.findUnique as any).mockResolvedValue({ id: 'org-1', name: 'Acme' })
   ;(prisma.user.findUnique as any).mockResolvedValue({
     id: 'user-2',
@@ -90,13 +91,31 @@ describe('access', () => {
     ['PATCH', () => PATCH(patch({ role: 'RECRUITER' }), ctx)],
     ['DELETE', () => DELETE(del(), ctx)],
   ] as const)('%s refuses a non-admin and writes nothing', async (_m, invoke) => {
-    requireGlobalAdmin.mockResolvedValue(null)
+    requireGlobalAdmin.mockResolvedValue({ user: { id: 'u-1', isGlobalAdmin: false } })
     const res = await invoke()
 
     expect(res.status).toBe(403)
     expect(prisma.userOrgRole.create).not.toHaveBeenCalled()
     expect(prisma.userOrgRole.update).not.toHaveBeenCalled()
     expect(prisma.userOrgRole.delete).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['POST', () => POST(post({ email: 'member@acme.io' }), ctx)],
+    ['PATCH', () => PATCH(patch({ role: 'RECRUITER' }), ctx)],
+    ['DELETE', () => DELETE(del(), ctx)],
+  ] as const)('%s answers 401 (not 403) when signed out', async (_m, invoke) => {
+    requireGlobalAdmin.mockResolvedValue(null)
+    expect((await invoke()).status).toBe(401)
+  })
+
+  it('PATCH with a malformed JSON body is a 400, not a 500', async () => {
+    const bad = new Request('http://localhost:3000/api/admin/organizations/org-1/members/user-2', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{not json',
+    })
+    expect((await PATCH(bad, ctx)).status).toBe(400)
   })
 })
 
@@ -194,6 +213,31 @@ describe('changing a role', () => {
       where: { id: 'user-2' },
       data: { sessionEpoch: { increment: 1 } },
     })
+  })
+
+  it('refuses to demote the last ORG_ADMIN (same guard as DELETE)', async () => {
+    ;(prisma.userOrgRole.findUnique as any).mockResolvedValue({
+      userId: 'user-2',
+      orgId: 'org-1',
+      role: 'ORG_ADMIN',
+    })
+    ;(prisma.userOrgRole.count as any).mockResolvedValue(1)
+
+    const res = await PATCH(patch({ role: 'RECRUITER' }), ctx)
+
+    expect(res.status).toBe(400)
+    expect(prisma.userOrgRole.update).not.toHaveBeenCalled()
+  })
+
+  it('allows demoting an ORG_ADMIN when another remains', async () => {
+    ;(prisma.userOrgRole.findUnique as any).mockResolvedValue({
+      userId: 'user-2',
+      orgId: 'org-1',
+      role: 'ORG_ADMIN',
+    })
+    ;(prisma.userOrgRole.count as any).mockResolvedValue(2)
+
+    expect((await PATCH(patch({ role: 'RECRUITER' }), ctx)).status).toBe(200)
   })
 
   it('404s when there is no such membership', async () => {

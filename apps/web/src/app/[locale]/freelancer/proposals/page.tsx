@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { auth } from '@/lib/auth'
+import { requireFreelancerUserId } from '../_lib/require-freelancer-user'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,10 +18,10 @@ export default async function FreelancerProposalsPage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'freelancerDashboard.proposals' })
-  const session = await auth()
+  const userId = await requireFreelancerUserId(locale)
 
   const proposals = await prisma.gigProposal.findMany({
-    where: { freelancer: { userId: session?.user?.id as string } },
+    where: { freelancer: { userId: userId } },
     orderBy: { createdAt: 'desc' },
     take: 100,
     select: {

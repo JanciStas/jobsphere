@@ -18,7 +18,7 @@ vi.mock('@/lib/logger', () => ({
 }))
 
 const { requireGlobalAdmin } = vi.hoisted(() => ({ requireGlobalAdmin: vi.fn() }))
-vi.mock('@/lib/auth', () => ({ requireGlobalAdmin }))
+vi.mock('@/lib/auth', () => ({ requireGlobalAdmin, auth: requireGlobalAdmin }))
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -55,9 +55,21 @@ describe('POST /api/admin/jobs', () => {
   })
 
   it('returns 403 when caller is not a global admin', async () => {
-    requireGlobalAdmin.mockResolvedValue(null)
+    requireGlobalAdmin.mockResolvedValue({ user: { id: 'u-1', isGlobalAdmin: false } })
     const res = await POST(req(VALID_BODY))
     expect(res.status).toBe(403)
+    expect(prisma.job.create).not.toHaveBeenCalled()
+  })
+
+  it('returns 401 when signed out', async () => {
+    requireGlobalAdmin.mockResolvedValue(null)
+    expect((await POST(req(VALID_BODY))).status).toBe(401)
+  })
+
+  it('rejects salaryMin above salaryMax with 400', async () => {
+    requireGlobalAdmin.mockResolvedValue({ user: { id: 'admin-1', isGlobalAdmin: true } })
+    const res = await POST(req({ ...VALID_BODY, salaryMin: 5000, salaryMax: 3000 }))
+    expect(res.status).toBe(400)
     expect(prisma.job.create).not.toHaveBeenCalled()
   })
 

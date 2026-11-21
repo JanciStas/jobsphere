@@ -32,7 +32,12 @@ export function isMissingTableError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
   const e = error as { code?: unknown; message?: unknown }
   if (e.code === 'P2021' || e.code === 'P2022') return true
-  return typeof e.message === 'string' && /does not exist/i.test(e.message)
+  // Raw driver errors carry no Prisma code. Match only the Postgres "missing relation/column"
+  // text for this table: a bare /does not exist/ also matched P2025 "Record ... does not exist".
+  return (
+    typeof e.message === 'string' &&
+    /(relation|table)\s+"?(public\.)?"?PortfolioItem"?\s+does not exist/i.test(e.message)
+  )
 }
 
 /** Public/owner read: never throws because of a missing table. */

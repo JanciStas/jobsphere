@@ -84,7 +84,7 @@ export const PATCH = withCsrfProtection(
       if (authResult instanceof NextResponse) return authResult
 
       try {
-        const body: unknown = await req.json()
+        const body: unknown = await req.json().catch(() => null)
         const { userId, action } = patchBodySchema.parse(body)
 
         // Prevent admins from acting on themselves for sensitive operations

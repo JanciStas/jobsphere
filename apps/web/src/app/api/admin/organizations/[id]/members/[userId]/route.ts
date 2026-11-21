@@ -3,14 +3,14 @@
  * the person from the organisation.
  *
  * Mirrors api/organizations/current/members/[userId] but authorises on
- * requireGlobalAdmin and takes the organisation from the URL. The employer-side
+ * requireAdminApi and takes the organisation from the URL. The employer-side
  * route can only ever act on the caller's own organisation, which is why an
  * admin had no way to fix a membership in a company they do not belong to.
  */
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGlobalAdmin } from '@/lib/auth'
+import { requireAdminApi } from '@/lib/admin-guard'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/errors'
@@ -39,16 +39,31 @@ export const PATCH = withCsrfProtection(
         }
         const { orgId, userId } = parsedIds
 
-        const admin = await requireGlobalAdmin()
-        if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const admin = guard.session
 
-        const { role } = updateRoleSchema.parse(await req.json())
+        const { role } = updateRoleSchema.parse(await req.json().catch(() => null))
 
         const membership = await prisma.userOrgRole.findUnique({
           where: { userId_orgId: { userId, orgId } },
         })
         if (!membership || membership.deletedAt) {
           return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
+        }
+
+        // Demoting the last ORG_ADMIN strands the company exactly like removing them
+        // (DELETE below refuses that), so the same guard applies here.
+        if (membership.role === 'ORG_ADMIN' && role !== 'ORG_ADMIN') {
+          const admins = await prisma.userOrgRole.count({
+            where: { orgId, role: 'ORG_ADMIN', deletedAt: null },
+          })
+          if (admins <= 1) {
+            return NextResponse.json(
+              { error: 'Cannot demote the last ORG_ADMIN. Promote someone else first.' },
+              { status: 400 },
+            )
+          }
         }
 
         // Role and session revocation together: the new role has to take effect
@@ -98,8 +113,9 @@ export const DELETE = withCsrfProtection(
         }
         const { orgId, userId } = parsedIds
 
-        const admin = await requireGlobalAdmin()
-        if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const admin = guard.session
 
         const membership = await prisma.userOrgRole.findUnique({
           where: { userId_orgId: { userId, orgId } },

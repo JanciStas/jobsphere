@@ -125,7 +125,21 @@ export async function canAddTeamMember(orgId: string): Promise<boolean> {
   return currentCount < limit
 }
 
-const PLAN_EXPIRY_GRACE_MS = 3 * 24 * 60 * 60 * 1000
+/** How long a subscription stays "live" after its period end (absorbs Stripe webhook lag). */
+export const PLAN_EXPIRY_GRACE_MS = 3 * 24 * 60 * 60 * 1000
+
+/**
+ * The one rule for "this subscription is live": active/trialing (Stripe's lowercase
+ * vocabulary, see webhook) and its period has not ended more than the grace window ago.
+ * Manually granted plans (admin) have no Stripe renewal, so they must lapse on their own.
+ * Used by getCurrentPlan(), the admin billing actions/pages and the admin KPIs.
+ */
+export function liveSubscriptionWhere(now: Date = new Date()) {
+  return {
+    status: { in: ['active', 'trialing'] },
+    currentPeriodEnd: { gt: new Date(now.getTime() - PLAN_EXPIRY_GRACE_MS) },
+  }
+}
 
 /**
  * Get current plan for organization
@@ -136,11 +150,7 @@ export async function getCurrentPlan(
   const subscription = await prisma.subscription.findFirst({
     where: {
       orgId,
-      // Subscription.status stores Stripe's lowercase vocabulary (see webhook).
-      status: { in: ['active', 'trialing'] },
-      // Manually granted plans (admin) have no Stripe renewal, so they must lapse on their own.
-      // The grace window absorbs Stripe webhook lag for paying customers.
-      currentPeriodEnd: { gt: new Date(Date.now() - PLAN_EXPIRY_GRACE_MS) },
+      ...liveSubscriptionWhere(),
     },
     include: {
       product: {

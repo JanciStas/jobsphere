@@ -53,7 +53,7 @@ export const POST = withCsrfProtection(
         // 500 branch and a wrong-typed `rejectionReason` went straight to the
         // database. This route can hard-erase a person's data — it should be the
         // strictest input on the admin surface, not the loosest.
-        const { action, rejectionReason } = processSchema.parse(await req.json())
+        const { action, rejectionReason } = processSchema.parse(await req.json().catch(() => null))
 
         const dsar = await prisma.dSARRequest.findUnique({ where: { id: params.id } })
         if (!dsar) {

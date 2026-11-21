@@ -45,7 +45,7 @@ export const PATCH = withCsrfProtection(
         const p = ids(context)
         if (!p) return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
 
-        const data = patchSchema.parse(await req.json())
+        const data = patchSchema.parse(await req.json().catch(() => null))
         if (Object.keys(data).length === 0) {
           return NextResponse.json({ error: 'Nothing to change' }, { status: 400 })
         }

@@ -52,9 +52,10 @@ export default function LoginClient({
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // OAuth accounts carry no agency/freelancer identity, so social login is offered only on
-  // the candidate and employer portals (and only for providers lib/auth.ts registered).
-  const oauthAllowed = portal === 'candidate' || portal === 'employer'
+  // OAuth accounts carry no agency/freelancer/employer identity, so social login is offered
+  // only on the candidate portal (and only for providers lib/auth.ts registered). A new
+  // Google/Apple account on the employer portal would have no organization — a dead end.
+  const oauthAllowed = portal === 'candidate'
   const showGoogle = oauthAllowed && providersAvailable.google
   const showApple = oauthAllowed && providersAvailable.apple
 
@@ -253,7 +254,10 @@ export default function LoginClient({
                   <ul className="mt-2 space-y-1">
                     {wrongPortals.map((p) => (
                       <li key={p}>
-                        <Link href={`/${locale}/login/${p}`} className="font-semibold underline">
+                        <Link
+                          href={`/${locale}/login/${p}${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+                          className="font-semibold underline"
+                        >
                           {t(`roles.${p}.name`)}
                         </Link>
                       </li>

@@ -87,7 +87,7 @@ export const PATCH = withCsrfProtection(
       if (authResult instanceof NextResponse) return authResult
 
       try {
-        const parsed = updateUserSchema.safeParse(await req.json())
+        const parsed = updateUserSchema.safeParse(await req.json().catch(() => null))
         if (!parsed.success) {
           return NextResponse.json(
             { error: 'Invalid request', issues: parsed.error.issues },

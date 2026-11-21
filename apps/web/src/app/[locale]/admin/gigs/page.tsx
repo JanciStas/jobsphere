@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { SHORT_DATE } from '@/lib/formats'
 import { auth } from '@/lib/auth'
+import { parsePageNumber } from '@/lib/admin/paging'
 import { listGigs, GIG_STATUSES } from '@/lib/admin-marketplace'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,7 +51,7 @@ export default async function AdminGigsPage({
     redirect(`/${params.locale}/login?error=forbidden`)
   }
 
-  const page = Math.max(1, Math.floor(Number(searchParams.page ?? '1')) || 1)
+  const page = parsePageNumber(searchParams.page)
   const { items, total } = await listGigs({
     search: searchParams.search,
     status: searchParams.status,

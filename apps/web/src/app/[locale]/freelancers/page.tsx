@@ -30,7 +30,7 @@ export default async function FreelancersPage({ params }: { params: Promise<{ lo
   const ta = await getTranslations({ locale, namespace: 'freelancerDashboard.availability' })
 
   const freelancers = await prisma.freelancerProfile.findMany({
-    where: { visible: true },
+    where: { visible: true, user: { deletedAt: null } },
     select: {
       id: true,
       title: true,

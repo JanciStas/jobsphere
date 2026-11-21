@@ -57,7 +57,7 @@ export const POST = withCsrfProtection(
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body = await req.json()
+        const body = await req.json().catch(() => null)
         const { orgId, orgName, adminEmail, industry, role } = inviteOrgSchema.parse(body)
         const memberRole = role ?? 'ORG_ADMIN'
         const email = adminEmail.toLowerCase()

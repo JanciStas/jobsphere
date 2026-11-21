@@ -30,7 +30,7 @@ export const PATCH = withCsrfProtection(
           return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
         }
 
-        const { status } = patchSchema.parse(await req.json())
+        const { status } = patchSchema.parse(await req.json().catch(() => null))
 
         // Scoped by gigId: a proposal id belonging to another gig is a 404.
         const proposal = await prisma.gigProposal.findFirst({

@@ -2623,7 +2623,10 @@
       "roleFreelancerDesc": "Oferuję firmom swoje usługi (grafika, www, marketing…)",
       "agencyName": "Nazwa agencji",
       "companyRequiredAgency": "Nazwa agencji jest wymagana",
-      "verifyEmail": "Konto zostało utworzone. Przed zalogowaniem potwierdź adres e-mail za pomocą linku w skrzynce odbiorczej."
+      "verifyEmail": "Konto zostało utworzone. Przed zalogowaniem potwierdź adres e-mail za pomocą linku w skrzynce odbiorczej.",
+      "successTitle": "Sprawdź swoją skrzynkę e-mail",
+      "successBody": "Jeśli ten adres e-mail jest nowy, konto jest gotowe i wysłaliśmy na niego link potwierdzający. Następnie zaloguj się przez swój portal. Jeśli masz już konto z tym adresem, po prostu się zaloguj.",
+      "successCta": "Przejdź do logowania"
     }
   },
   "freelancerDashboard": {

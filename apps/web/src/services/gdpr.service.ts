@@ -167,8 +167,10 @@ export class GdprService {
       // hard-delete the row without orphaning them. Anonymize instead — all PII is erased
       // and the row is kept as an empty tombstone so the FK stays valid (GDPR Art.17 still
       // satisfied: no personal data remains). Pure job-seekers (no authored jobs) are hard-deleted.
+      // Gig.createdBy is the same kind of required FK, so a gig author is tombstoned too.
       const authoredJobs = await tx.job.count({ where: { createdBy: userId } })
-      if (authoredJobs > 0) {
+      const authoredGigs = await tx.gig.count({ where: { createdBy: userId } })
+      if (authoredJobs + authoredGigs > 0) {
         await tx.user.update({
           where: { id: userId },
           data: {

@@ -18,6 +18,7 @@ describe('isMissingTableError', () => {
     expect(isMissingTableError({ code: 'P2021' })).toBe(true)
     expect(isMissingTableError({ code: 'P2022' })).toBe(true)
     expect(isMissingTableError(new Error('relation "PortfolioItem" does not exist'))).toBe(true)
+    expect(isMissingTableError(new Error('Record to delete does not exist.'))).toBe(false)
     expect(isMissingTableError(new Error('boom'))).toBe(false)
     expect(isMissingTableError(null)).toBe(false)
   })

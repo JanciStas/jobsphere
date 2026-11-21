@@ -9,8 +9,9 @@ export default async function AgencyLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { locale: string }
+  params: Promise<{ locale: string }>
 }) {
-  await requireAgency(params.locale)
-  return <AgencyShell locale={params.locale}>{children}</AgencyShell>
+  const { locale } = await params
+  await requireAgency(locale)
+  return <AgencyShell locale={locale}>{children}</AgencyShell>
 }

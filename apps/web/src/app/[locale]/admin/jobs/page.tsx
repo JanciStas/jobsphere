@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { SHORT_DATE } from '@/lib/formats'
 import { auth } from '@/lib/auth'
+import { parsePageNumber } from '@/lib/admin/paging'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,7 +54,7 @@ export default async function AdminJobsPage({
 
   const status = searchParams.status ?? undefined
   const search = searchParams.search ?? undefined
-  const page = Math.max(1, Number(searchParams.page ?? '1'))
+  const page = parsePageNumber(searchParams.page)
   const limit = 50
   const skip = (page - 1) * limit
 

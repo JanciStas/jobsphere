@@ -2623,7 +2623,10 @@
       "roleFreelancerDesc": "I offer my services (design, web, marketing…) to companies",
       "agencyName": "Agency name",
       "companyRequiredAgency": "Agency name is required",
-      "verifyEmail": "Your account has been created. Please verify your email address using the link in your inbox before signing in."
+      "verifyEmail": "Your account has been created. Please verify your email address using the link in your inbox before signing in.",
+      "successTitle": "Check your email",
+      "successBody": "If this email address is new, your account is ready and we have sent a confirmation link to it. Then sign in through your portal. If you already have an account with this address, just sign in.",
+      "successCta": "Go to sign in"
     }
   },
   "freelancerDashboard": {

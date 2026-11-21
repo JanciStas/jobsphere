@@ -82,7 +82,10 @@ export const POST = withCsrfProtection(
           )
         }
 
-        const gig = await prisma.gig.findUnique({ where: { id: gigId }, select: { status: true } })
+        const gig = await prisma.gig.findFirst({
+          where: { id: gigId, organization: { deletedAt: null } },
+          select: { status: true },
+        })
         if (!gig) return NextResponse.json({ error: 'Gig not found' }, { status: 404 })
         if (gig.status !== 'OPEN') {
           return NextResponse.json({ error: 'Táto zákazka už neprijíma ponuky' }, { status: 400 })
@@ -96,23 +99,35 @@ export const POST = withCsrfProtection(
           )
         }
 
-        // One proposal per (gig, freelancer): upsert so re-submitting updates it.
-        const proposal = await prisma.gigProposal.upsert({
+        // One proposal per (gig, freelancer). Re-submitting edits a PENDING or WITHDRAWN one;
+        // an ACCEPTED or REJECTED proposal is final and must not jump back into the queue.
+        const fields = {
+          proposedRate: parsed.data.proposedRate ?? null,
+          proposedDurationDays: parsed.data.proposedDurationDays ?? null,
+          message: parsed.data.message,
+        }
+        const existing = await prisma.gigProposal.findUnique({
           where: { gigId_freelancerId: { gigId, freelancerId: freelancer.id } },
-          create: {
-            gigId,
-            freelancerId: freelancer.id,
-            proposedRate: parsed.data.proposedRate ?? null,
-            proposedDurationDays: parsed.data.proposedDurationDays ?? null,
-            message: parsed.data.message,
-          },
-          update: {
-            proposedRate: parsed.data.proposedRate ?? null,
-            proposedDurationDays: parsed.data.proposedDurationDays ?? null,
-            message: parsed.data.message,
-            status: 'PENDING',
-          },
+          select: { id: true },
         })
+        let proposal
+        if (existing) {
+          const updated = await prisma.gigProposal.updateMany({
+            where: { id: existing.id, status: { in: ['PENDING', 'WITHDRAWN'] } },
+            data: { ...fields, status: 'PENDING' },
+          })
+          if (updated.count === 0) {
+            return NextResponse.json(
+              { error: 'This proposal has already been decided' },
+              { status: 409 },
+            )
+          }
+          proposal = await prisma.gigProposal.findUnique({ where: { id: existing.id } })
+        } else {
+          proposal = await prisma.gigProposal.create({
+            data: { gigId, freelancerId: freelancer.id, ...fields },
+          })
+        }
         return NextResponse.json({ proposal }, { status: 201 })
       } catch (error) {
         logger.error('Create proposal error', { error })

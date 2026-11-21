@@ -18,7 +18,7 @@ vi.mock('@/lib/logger', () => ({
 }))
 
 const { requireGlobalAdmin } = vi.hoisted(() => ({ requireGlobalAdmin: vi.fn() }))
-vi.mock('@/lib/auth', () => ({ requireGlobalAdmin }))
+vi.mock('@/lib/auth', () => ({ requireGlobalAdmin, auth: requireGlobalAdmin }))
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -47,7 +47,7 @@ describe('POST /api/admin/organizations', () => {
   })
 
   it('returns 403 when caller is not a global admin', async () => {
-    requireGlobalAdmin.mockResolvedValue(null)
+    requireGlobalAdmin.mockResolvedValue({ user: { id: 'u-1', isGlobalAdmin: false } })
     const res = await POST(req({ name: 'Acme' }))
     expect(res.status).toBe(403)
     expect(prisma.organization.create).not.toHaveBeenCalled()

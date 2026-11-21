@@ -7,6 +7,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolveGigOrgId } from './_lib/org-scope'
 import { withRateLimit } from '@/lib/rate-limit'
 import { withCsrfProtection } from '@/lib/csrf'
 import { z } from 'zod'
@@ -19,15 +20,12 @@ export const GET = withRateLimit(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const member = await prisma.userOrgRole.findFirst({
-      where: { userId: session.user.id, deletedAt: null },
-      select: { orgId: true },
-    })
-    if (!member) {
+    const orgId = await resolveGigOrgId(session.user.id, session.user.orgId)
+    if (!orgId) {
       return NextResponse.json({ gigs: [] })
     }
     const gigs = await prisma.gig.findMany({
-      where: { orgId: member.orgId },
+      where: { orgId },
       include: { _count: { select: { proposals: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -53,11 +51,8 @@ export const POST = withCsrfProtection(
         if (!session?.user?.id) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
-        const member = await prisma.userOrgRole.findFirst({
-          where: { userId: session.user.id, deletedAt: null },
-          select: { orgId: true },
-        })
-        if (!member) {
+        const orgId = await resolveGigOrgId(session.user.id, session.user.orgId)
+        if (!orgId) {
           return NextResponse.json({ error: 'Only company members can post gigs' }, { status: 403 })
         }
 
@@ -71,7 +66,7 @@ export const POST = withCsrfProtection(
 
         const gig = await prisma.gig.create({
           data: {
-            orgId: member.orgId,
+            orgId,
             createdBy: session.user.id,
             title: parsed.data.title,
             description: parsed.data.description,

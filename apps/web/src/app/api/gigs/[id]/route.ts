@@ -71,8 +71,16 @@ export const PATCH = withCsrfProtection(
         const orgIds = await getMemberOrgIds(session.user.id)
         if (orgIds.length === 0) return notFound()
 
+        // Re-opening a gig that already has an accepted freelancer would let a second
+        // proposal be accepted on top of it.
         const result = await prisma.gig.updateMany({
-          where: { id: gigId, orgId: { in: orgIds } },
+          where: {
+            id: gigId,
+            orgId: { in: orgIds },
+            ...(parsed.data.status === 'OPEN'
+              ? { proposals: { none: { status: 'ACCEPTED' } } }
+              : {}),
+          },
           data: parsed.data,
         })
         if (result.count === 0) return notFound()

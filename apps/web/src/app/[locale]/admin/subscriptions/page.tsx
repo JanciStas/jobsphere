@@ -4,6 +4,8 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { CheckCircle2, Clock, AlertTriangle, XCircle, Euro } from 'lucide-react'
 import { SHORT_DATE } from '@/lib/formats'
 import { auth } from '@/lib/auth'
+import { parsePageNumber } from '@/lib/admin/paging'
+import { liveSubscriptionWhere } from '@/lib/entitlements'
 import { prisma } from '@/lib/prisma'
 import { estimateMrrCents, isManualSubscription } from '@/lib/admin-billing'
 import { StatCard } from '@/components/dashboard/stat-card'
@@ -57,7 +59,7 @@ export default async function AdminSubscriptionsPage({ params, searchParams }: P
   const orgId = /^[A-Za-z0-9_-]{1,64}$/.test(searchParams.orgId ?? '')
     ? searchParams.orgId
     : undefined
-  const page = Math.max(1, Math.floor(Number(searchParams.page ?? 1)) || 1)
+  const page = parsePageNumber(searchParams.page)
 
   const where = {
     ...(status ? { status } : {}),
@@ -78,8 +80,10 @@ export default async function AdminSubscriptionsPage({ params, searchParams }: P
       take: PAGE_SIZE,
     }),
     prisma.subscription.count({ where }),
-    prisma.subscription.count({ where: { status: 'active' } }),
-    prisma.subscription.count({ where: { status: 'trialing' } }),
+    // KPI tiles count only live subscriptions (same rule as getCurrentPlan), so an expired
+    // manual grant or a Stripe row whose webhook never arrived is not reported as active.
+    prisma.subscription.count({ where: { ...liveSubscriptionWhere(), status: 'active' } }),
+    prisma.subscription.count({ where: { ...liveSubscriptionWhere(), status: 'trialing' } }),
     prisma.subscription.count({ where: { status: 'past_due' } }),
     prisma.subscription.count({
       where: {
@@ -88,7 +92,7 @@ export default async function AdminSubscriptionsPage({ params, searchParams }: P
       },
     }),
     prisma.subscription.findMany({
-      where: { status: 'active' },
+      where: { ...liveSubscriptionWhere(), status: 'active' },
       select: {
         providerSubId: true,
         product: {

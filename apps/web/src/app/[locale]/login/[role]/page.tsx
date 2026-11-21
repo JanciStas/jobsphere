@@ -8,8 +8,8 @@ import LoginClient from '../login-client'
 import AdminLoginClient from '../admin-login-client'
 
 type Props = {
-  params: { locale: string; role: string }
-  searchParams?: Record<string, string | string[] | undefined>
+  params: Promise<{ locale: string; role: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,9 +28,10 @@ export default async function LoginRolePage({ params, searchParams }: Props) {
   const { locale, role } = await params
   if (!isPortal(role)) notFound()
 
-  const rawError = searchParams?.error
+  const sp = (await searchParams) ?? {}
+  const rawError = sp.error
   const error = Array.isArray(rawError) ? rawError[0] : rawError
-  const rawCallback = searchParams?.callbackUrl
+  const rawCallback = sp.callbackUrl
   const callbackUrl = safeCallbackPath(
     Array.isArray(rawCallback) ? rawCallback[0] : rawCallback,
     locale,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGlobalAdmin } from '@/lib/auth'
+import { requireAdminApi } from '@/lib/admin-guard'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { createAuditLog, getRequestMetadata } from '@/lib/audit-log'
@@ -13,10 +13,8 @@ export const runtime = 'nodejs'
 
 async function listOrganizations() {
   try {
-    const session = await requireGlobalAdmin()
-    if (!session) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const guard = await requireAdminApi()
+    if (!guard.ok) return guard.response
 
     const orgs = await prisma.organization.findMany({
       select: {
@@ -84,12 +82,11 @@ export const PATCH = withCsrfProtection(
   withRateLimit(
     async (req: Request) => {
       try {
-        const session = await requireGlobalAdmin()
-        if (!session) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const session = guard.session
 
-        const body = await req.json()
+        const body = await req.json().catch(() => null)
         const parsed = patchSchema.parse(body)
         const { orgId, action } = parsed
 
@@ -187,12 +184,11 @@ export const POST = withCsrfProtection(
   withRateLimit(
     async (req: Request) => {
       try {
-        const session = await requireGlobalAdmin()
-        if (!session) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const session = guard.session
 
-        const body = await req.json()
+        const body = await req.json().catch(() => null)
         const data = createOrgSchema.parse(body)
 
         // Prefer an explicit slug when supplied, otherwise derive one from name.

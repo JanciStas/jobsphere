@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { parseLimit, parsePageNumber } from '@/lib/admin/paging'
 
 export async function requireAdminApi() {
   const session = await auth()
@@ -26,10 +27,7 @@ export async function requireAdminApi() {
 }
 
 export function parsePaging(searchParams: URLSearchParams, defaultLimit = 25) {
-  const page = Math.max(1, Math.floor(Number(searchParams.get('page') ?? '1')) || 1)
-  const limit = Math.min(
-    100,
-    Math.max(1, Math.floor(Number(searchParams.get('limit') ?? String(defaultLimit))) || 1),
-  )
+  const page = parsePageNumber(searchParams.get('page'))
+  const limit = parseLimit(searchParams.get('limit'), defaultLimit)
   return { page, limit, skip: (page - 1) * limit }
 }

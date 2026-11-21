@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 async function getOpenGig(id: string) {
   return prisma.gig.findFirst({
-    where: { id, status: 'OPEN' },
+    where: { id, status: 'OPEN', organization: { deletedAt: null } },
     select: {
       id: true,
       title: true,

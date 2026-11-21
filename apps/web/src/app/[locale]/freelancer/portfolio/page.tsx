@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server'
-import { auth } from '@/lib/auth'
+import { requireFreelancerUserId } from '../_lib/require-freelancer-user'
 import { prisma } from '@/lib/prisma'
 import { listPortfolioItems } from '@/lib/portfolio-safe'
 import { PortfolioManager } from './portfolio-manager'
@@ -13,9 +13,9 @@ export default async function FreelancerPortfolioPage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'freelancerDashboard.portfolio' })
-  const session = await auth()
+  const userId = await requireFreelancerUserId(locale)
   const profile = await prisma.freelancerProfile.findUnique({
-    where: { userId: session?.user?.id as string },
+    where: { userId: userId },
     select: { id: true },
   })
   const items = profile ? await listPortfolioItems(profile.id) : []

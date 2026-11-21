@@ -62,7 +62,7 @@ export const PATCH = withCsrfProtection(
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body = await req.json()
+        const body = await req.json().catch(() => null)
         const parsed = patchSchema.parse(body)
 
         if (parsed.type === 'setting') {

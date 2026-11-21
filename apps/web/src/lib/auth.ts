@@ -9,6 +9,7 @@ import { getServerSession } from 'next-auth/next'
 import { logger } from './logger'
 import { maskEmail } from './mask-email'
 import { isPortal, matchingPortals, userMatchesPortal } from './portal'
+import { SUSPENDED_THRESHOLD } from './admin-users/roles'
 import { deriveActiveContext, isMemberOfOrg, type OrgMembership } from './auth-context'
 
 // UnauthorizedError — defined here to break circular dep with api-helpers.ts
@@ -98,6 +99,9 @@ export const authOptions: NextAuthOptions = {
 
           // SECURITY: Check if account is locked
           if (user.lockedUntil && user.lockedUntil > new Date()) {
+            // Same bcrypt cost as the missing-account branch, so a locked/suspended account
+            // cannot be told apart from a missing one by response time.
+            await bcryptjs.compare(credentials.password, user.password)
             const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000)
             logger.warn(`Account locked. Unlocks in ${minutesLeft} minutes`)
             return null
@@ -179,6 +183,14 @@ export const authOptions: NextAuthOptions = {
               // The password is already proven correct here, so telling the user which
               // portal(s) their account belongs to reveals nothing to an attacker.
               const others = matchingPortals(identity)
+              // The password was correct, so earlier typos must not keep counting toward a
+              // lockout once the user switches to the right portal.
+              if (user.failedAttempts > 0 || user.lockedUntil) {
+                await prisma.user.update({
+                  where: { id: user.id },
+                  data: { failedAttempts: 0, lockedUntil: null },
+                })
+              }
               throw new Error(`WRONG_PORTAL:${others.join(',')}`)
             }
           }
@@ -251,7 +263,10 @@ export const authOptions: NextAuthOptions = {
         })
         if (!dbUser) return true
         if (dbUser.deletedAt) return false
-        if (dbUser.lockedUntil && dbUser.lockedUntil > new Date()) return false
+        // Only an admin suspension blocks OAuth. The 15-minute brute-force lock guards the
+        // password, which Google/Apple sign-in does not use; blocking it here would let anyone
+        // lock a user out of OAuth by typing wrong passwords.
+        if (dbUser.lockedUntil && dbUser.lockedUntil >= SUSPENDED_THRESHOLD) return false
       } catch (error) {
         logger.error('❌ signIn callback error:', error)
         return false

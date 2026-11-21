@@ -45,6 +45,8 @@ export default async function GigsPage({
   const gigs = await prisma.gig.findMany({
     where: {
       status: 'OPEN',
+      // Suspended organizations (admin) disappear from the public marketplace.
+      organization: { deletedAt: null },
       ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
       ...(minBudget !== undefined || maxBudget !== undefined
         ? { budget: { gte: minBudget, lte: maxBudget } }

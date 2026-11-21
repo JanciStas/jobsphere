@@ -7,11 +7,12 @@ import { safeCallbackPath } from '@/lib/safe-callback'
 import { ForbiddenNotice } from './forbidden-notice'
 
 type Props = {
-  params: { locale: string }
-  searchParams?: Record<string, string | string[] | undefined>
+  params: Promise<{ locale: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
-export async function generateMetadata({ params: { locale } }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return { title: t('login.title'), description: t('login.description') }
 }
@@ -26,10 +27,11 @@ export default async function LoginChooserPage({ params, searchParams }: Props) 
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'authPortals' })
 
-  const rawError = searchParams?.error
+  const sp = (await searchParams) ?? {}
+  const rawError = sp.error
   const error = Array.isArray(rawError) ? rawError[0] : rawError
 
-  const rawCallback = searchParams?.callbackUrl
+  const rawCallback = sp.callbackUrl
   const callbackUrl = safeCallbackPath(
     Array.isArray(rawCallback) ? rawCallback[0] : rawCallback,
     locale,

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { SHORT_DATE } from '@/lib/formats'
 import { auth } from '@/lib/auth'
+import { parsePageNumber } from '@/lib/admin/paging'
 import { listFreelancers, AVAILABILITIES } from '@/lib/admin-marketplace'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,7 +45,7 @@ export default async function AdminFreelancersPage({
     redirect(`/${params.locale}/login?error=forbidden`)
   }
 
-  const page = Math.max(1, Math.floor(Number(searchParams.page ?? '1')) || 1)
+  const page = parsePageNumber(searchParams.page)
   const { items, total } = await listFreelancers({
     search: searchParams.search,
     visible: searchParams.visible,

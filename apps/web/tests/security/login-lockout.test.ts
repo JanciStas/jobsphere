@@ -23,6 +23,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    userOrgRole: { findMany: vi.fn() },
+    candidate: { findFirst: vi.fn() },
+    freelancerProfile: { findUnique: vi.fn() },
   },
 }))
 
@@ -116,14 +119,14 @@ describe('QA-005 — login account lockout', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(
       makeUser({ failedAttempts: 5, lockedUntil: future }) as any,
     )
-    // Even if the password WOULD match, the lock short-circuits before bcrypt.
+    // Even if the password WOULD match, the lock rejects the login.
     vi.mocked(bcryptjs.compare).mockResolvedValue(true as any)
 
     const result = await authorize({ email: EMAIL, password: 'correct-password' })
 
     expect(result).toBeNull()
-    // Locked path returns before any password verification or DB mutation.
-    expect(bcryptjs.compare).not.toHaveBeenCalled()
+    // bcrypt still runs (constant timing vs. a missing account), but nothing is mutated.
+    expect(bcryptjs.compare).toHaveBeenCalledTimes(1)
     expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
@@ -164,5 +167,56 @@ describe('QA-005 — login account lockout', () => {
       .mock.calls.find((c: any) => c[0].data.failedAttempts === 0 && c[0].data.lockedUntil === null)
     expect(resetCall).toBeDefined()
     expect(bcryptjs.compare).toHaveBeenCalled()
+  })
+
+  it('(f) a correct password on the wrong portal clears earlier failed attempts', async () => {
+    const authorize = getAuthorize()
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(makeUser({ failedAttempts: 4 }) as any)
+    vi.mocked(bcryptjs.compare).mockResolvedValue(true as any)
+    // An employer account (ORG_ADMIN) signing in through the candidate portal.
+    vi.mocked(prisma.userOrgRole.findMany).mockResolvedValue([{ role: 'ORG_ADMIN' }] as any)
+    vi.mocked(prisma.candidate.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.freelancerProfile.findUnique).mockResolvedValue(null)
+
+    await expect(
+      authorize({ email: EMAIL, password: 'correct-password', portal: 'candidate' } as any),
+    ).rejects.toThrow(/WRONG_PORTAL:employer/)
+
+    const resetCall = vi
+      .mocked(prisma.user.update)
+      .mock.calls.find((c: any) => c[0].data.failedAttempts === 0 && c[0].data.lockedUntil === null)
+    expect(resetCall).toBeDefined()
+  })
+})
+
+describe('OAuth signIn callback — lockout vs. suspension', () => {
+  const signIn = (authOptions.callbacks as any).signIn as (args: any) => Promise<boolean>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('allows OAuth during a temporary brute-force lock', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      deletedAt: null,
+      lockedUntil: new Date(Date.now() + 10 * 60_000),
+    } as any)
+    await expect(signIn({ user: { id: 'user-1' } })).resolves.toBe(true)
+  })
+
+  it('refuses OAuth for an admin-suspended account', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      deletedAt: null,
+      lockedUntil: new Date('2099-01-01T00:00:00.000Z'),
+    } as any)
+    await expect(signIn({ user: { id: 'user-1' } })).resolves.toBe(false)
+  })
+
+  it('refuses OAuth for a soft-deleted account', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      deletedAt: new Date(),
+      lockedUntil: null,
+    } as any)
+    await expect(signIn({ user: { id: 'user-1' } })).resolves.toBe(false)
   })
 })

@@ -19,7 +19,13 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog, getRequestMetadata } from '@/lib/audit-log'
 import { handleApiError } from '@/lib/errors'
-import { STARTER_LIMITS, type Feature } from '@/lib/entitlements'
+import { logger } from '@/lib/logger'
+import {
+  STARTER_LIMITS,
+  liveSubscriptionWhere,
+  PLAN_EXPIRY_GRACE_MS,
+  type Feature,
+} from '@/lib/entitlements'
 
 export const MANUAL_PREFIX = 'manual_'
 export const MAX_MANUAL_YEARS = 5
@@ -233,10 +239,18 @@ async function requireLiveOrg(orgId: string) {
   return org
 }
 
-/** Same selection rule as getCurrentPlan(): newest active/trialing period. */
-async function findLiveSubscription(orgId: string) {
-  return prisma.subscription.findFirst({
-    where: { orgId, status: { in: ['active', 'trialing'] } },
+/**
+ * Same selection rule as getCurrentPlan() (shared `liveSubscriptionWhere`): the newest
+ * active/trialing subscription whose period has not lapsed past the grace window. A stale
+ * Stripe row whose webhook never arrived (no Stripe keys in production, H4) therefore no
+ * longer blocks a manual grant, and an expired manual grant can no longer be extended.
+ */
+async function findLiveSubscription(
+  orgId: string,
+  db: Pick<typeof prisma, 'subscription'> = prisma,
+) {
+  return db.subscription.findFirst({
+    where: { orgId, ...liveSubscriptionWhere() },
     orderBy: { currentPeriodEnd: 'desc' },
   })
 }
@@ -258,6 +272,23 @@ async function applyPlanLimits(tx: typeof prisma, orgId: string, plan: 'STARTER'
       where: { orgId_featureKey: { orgId, featureKey } },
       create: { orgId, featureKey, limitInt, remainingInt: limitInt },
       update: { limitInt, remainingInt: limitInt, deletedAt: null },
+    })
+  }
+}
+
+/**
+ * Back to STARTER when a plan ends: the plan table AND every per-feature override an admin
+ * set (CUSTOM_BRANDING / API_ACCESS are not in any plan table, so applyPlanLimits alone left
+ * them unlocked forever). Only features that already have a row are touched.
+ */
+async function resetToStarter(tx: typeof prisma, orgId: string) {
+  await applyPlanLimits(tx, orgId, 'STARTER')
+  const planKeys = new Set(Object.keys(PLAN_LIMITS.STARTER))
+  for (const featureKey of FEATURES.filter((f) => !planKeys.has(f))) {
+    const limitInt = STARTER_LIMITS[featureKey] ?? 0
+    await tx.entitlement.updateMany({
+      where: { orgId, featureKey },
+      data: { limitInt, remainingInt: limitInt },
     })
   }
 }
@@ -292,7 +323,7 @@ export async function grantPlan(a: {
   const { plan, until, reason } = a.body
 
   const out = await prisma.$transaction(async (tx) => {
-    const current = await findLiveSubscription(a.orgId)
+    const current = await findLiveSubscription(a.orgId, tx)
     if (current) assertManual(current)
 
     const productId = await resolvePlanProduct(tx as typeof prisma, plan)
@@ -417,7 +448,7 @@ export async function cancelSubscription(a: {
         where: { id: current.id },
         data: { status: 'canceled', canceledAt: now, endedAt: now, cancelAt: null },
       })
-      await applyPlanLimits(tx as typeof prisma, a.orgId, 'STARTER')
+      await resetToStarter(tx as typeof prisma, a.orgId)
       return updated
     }
     return tx.subscription.update({
@@ -476,4 +507,81 @@ export async function setLimitOverride(a: {
     ...a.meta,
   })
   return { featureKey, limit }
+}
+
+// ------------------------------------------------------------ expiry job ---
+
+export interface ExpiryResult {
+  expired: number
+  failed: number
+}
+
+/**
+ * Daily job (Vercel Cron, /api/cron/manual-plan-expiry). Manual subscriptions get no Stripe
+ * `subscription.deleted` webhook, so without this they never end: the plan *name* lapses via
+ * the grace window in getCurrentPlan(), but every feature check reads the Entitlement rows,
+ * which stayed on the granted limits forever.
+ *
+ * Ends manual subscriptions whose period ended more than the grace window ago, or whose
+ * scheduled cancellation (`cancelAt`, set by "cancel at period end") has passed, then puts
+ * the org back on STARTER — unless another live subscription (e.g. a real Stripe one) still
+ * covers it. Each org is handled in its own transaction so one failure does not block the rest.
+ */
+export async function expireManualSubscriptions(now: Date = new Date()): Promise<ExpiryResult> {
+  const cutoff = new Date(now.getTime() - PLAN_EXPIRY_GRACE_MS)
+  const due = await prisma.subscription.findMany({
+    where: {
+      providerSubId: { startsWith: MANUAL_PREFIX },
+      status: { in: ['active', 'trialing'] },
+      OR: [{ currentPeriodEnd: { lte: cutoff } }, { cancelAt: { lte: now } }],
+    },
+    select: { id: true, orgId: true, status: true, currentPeriodEnd: true, cancelAt: true },
+    take: 500,
+  })
+
+  let expired = 0
+  let failed = 0
+  for (const sub of due) {
+    try {
+      const reset = await prisma.$transaction(async (tx) => {
+        await tx.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: 'canceled',
+            endedAt: now,
+            ...(sub.cancelAt ? { canceledAt: sub.cancelAt } : {}),
+          },
+        })
+        const stillLive = await tx.subscription.findFirst({
+          where: { orgId: sub.orgId, id: { not: sub.id }, ...liveSubscriptionWhere(now) },
+          select: { id: true },
+        })
+        if (stillLive) return false
+        await resetToStarter(tx as typeof prisma, sub.orgId)
+        return true
+      })
+      expired++
+      await createAuditLog({
+        // System actor: no userId — the entry is attributable to the cron job via `op`.
+        orgId: sub.orgId,
+        action: 'SUBSCRIPTION_CANCELED',
+        resource: 'SUBSCRIPTION',
+        resourceId: sub.id,
+        previous: {
+          status: sub.status,
+          currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+          cancelAt: sub.cancelAt ? sub.cancelAt.toISOString() : null,
+        },
+        metadata: {
+          op: 'admin_billing.manual_expiry',
+          reason: sub.cancelAt && sub.cancelAt <= now ? 'cancel_at_reached' : 'period_ended',
+          limitsResetToStarter: reset,
+        },
+      })
+    } catch (error) {
+      failed++
+      logger.error('Manual plan expiry failed', { subscriptionId: sub.id, error })
+    }
+  }
+  return { expired, failed }
 }

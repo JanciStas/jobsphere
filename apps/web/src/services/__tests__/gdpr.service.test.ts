@@ -45,6 +45,7 @@ function makeTxStub(order: string[]) {
       updateMany: vi.fn(),
     },
     job: { count: vi.fn().mockResolvedValue(0) },
+    gig: { count: vi.fn().mockResolvedValue(0) },
     resume: {
       findMany: vi.fn().mockResolvedValue([{ id: 'res1' }]),
       deleteMany: vi.fn(rec('resume')),
@@ -179,5 +180,19 @@ describe('GdprService.eraseUserData', () => {
     expect(anonData.lastLoginIp).toBeNull()
     expect(anonData.lastLoginAt).toBeNull()
     expect(anonData.emailVerified).toBeNull()
+  })
+
+  it('anonymizes a gig author with no jobs instead of hitting the Gig.createdBy FK', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'u4', email: 'agency@org.z' } as any)
+    vi.mocked(getCandidateIdsForUser).mockResolvedValue([])
+
+    const tx = makeTxStub([])
+    tx.gig.count.mockResolvedValue(1)
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => cb(tx))
+
+    await GdprService.eraseUserData('u4')
+
+    expect(tx.user.update).toHaveBeenCalledTimes(1)
+    expect(tx.user.delete).not.toHaveBeenCalled()
   })
 })

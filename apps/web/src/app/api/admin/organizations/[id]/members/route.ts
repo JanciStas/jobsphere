@@ -9,13 +9,13 @@
  *
  * The employer-side equivalent lives in api/organizations/current/members and is
  * scoped to the caller's own organisation. Same shape, different authority:
- * requireGlobalAdmin instead of an ORG_ADMIN membership, and the organisation
+ * requireAdminApi instead of an ORG_ADMIN membership, and the organisation
  * comes from the URL rather than from the session.
  */
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGlobalAdmin } from '@/lib/auth'
+import { requireAdminApi } from '@/lib/admin-guard'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { handleApiError } from '@/lib/errors'
@@ -43,8 +43,8 @@ export const GET = withRateLimit(
       const id = orgId(context)
       if (!id) return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
 
-      const admin = await requireGlobalAdmin()
-      if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const guard = await requireAdminApi()
+      if (!guard.ok) return guard.response
 
       const members = await prisma.userOrgRole.findMany({
         where: { orgId: id },
@@ -69,10 +69,11 @@ export const POST = withCsrfProtection(
         const id = orgId(context)
         if (!id) return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
 
-        const admin = await requireGlobalAdmin()
-        if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const admin = guard.session
 
-        const { email, role } = addMemberSchema.parse(await req.json())
+        const { email, role } = addMemberSchema.parse(await req.json().catch(() => null))
 
         const org = await prisma.organization.findUnique({ where: { id } })
         if (!org) {

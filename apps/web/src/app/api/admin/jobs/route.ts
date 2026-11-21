@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireGlobalAdmin } from '@/lib/auth'
+import { requireAdminApi } from '@/lib/admin-guard'
+import { parseLimit, parsePageNumber } from '@/lib/admin/paging'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { canTransition } from '@/lib/job-status'
@@ -13,16 +14,14 @@ export const runtime = 'nodejs'
 
 async function listJobs(req: Request) {
   try {
-    const session = await requireGlobalAdmin()
-    if (!session) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const guard = await requireAdminApi()
+    if (!guard.ok) return guard.response
 
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search') ?? undefined
     const status = searchParams.get('status') ?? undefined
-    const page = Math.max(1, Number(searchParams.get('page') ?? '1'))
-    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? '50')))
+    const page = parsePageNumber(searchParams.get('page'))
+    const limit = parseLimit(searchParams.get('limit'), 50)
     const skip = (page - 1) * limit
 
     const where = {
@@ -65,6 +64,29 @@ async function listJobs(req: Request) {
   }
 }
 
+// Same vocabularies as createJobSchema below, so an edit cannot store a value the public
+// filters do not know (which would silently hide the job from every filtered listing).
+const EMPLOYMENT_TYPES = ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE', 'INTERNSHIP'] as const
+const SENIORITIES = ['JUNIOR', 'MID', 'SENIOR', 'LEAD', 'EXECUTIVE'] as const
+
+/** Content keys whose before/after values go into the audit entry. */
+const CONTENT_KEYS = [
+  'title',
+  'description',
+  'requirements',
+  'benefits',
+  'city',
+  'region',
+  'salaryMin',
+  'salaryMax',
+  'salaryCurrency',
+  'employmentType',
+  'seniority',
+] as const
+
+const salaryOrdered = (d: { salaryMin?: number | null; salaryMax?: number | null }) =>
+  d.salaryMin == null || d.salaryMax == null || d.salaryMin <= d.salaryMax
+
 const patchSchema = z.object({
   jobId: z.string().min(1),
   // PAUSED was missing here while job-status-filter.tsx offered it as a filter,
@@ -84,21 +106,26 @@ const patchSchema = z.object({
   salaryMin: z.number().int().min(0).optional().nullable(),
   salaryMax: z.number().int().min(0).optional().nullable(),
   salaryCurrency: z.string().max(10).optional(),
-  employmentType: z.string().optional(),
-  seniority: z.string().optional(),
+  employmentType: z.enum(EMPLOYMENT_TYPES).optional(),
+  seniority: z.enum(SENIORITIES).optional(),
 })
 
 export const PATCH = withCsrfProtection(
   withRateLimit(
     async (req: Request) => {
       try {
-        const session = await requireGlobalAdmin()
-        if (!session) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const session = guard.session
 
-        const body = await req.json()
-        const { jobId, status, deleted, ...content } = patchSchema.parse(body)
+        const parsed = patchSchema.safeParse(await req.json().catch(() => null))
+        if (!parsed.success) {
+          return NextResponse.json(
+            { error: 'Validation failed', issues: parsed.error.issues },
+            { status: 400 },
+          )
+        }
+        const { jobId, status, deleted, ...content } = parsed.data
 
         if (status === undefined && deleted === undefined && Object.keys(content).length === 0) {
           return NextResponse.json({ error: 'Nothing to change' }, { status: 400 })
@@ -107,6 +134,19 @@ export const PATCH = withCsrfProtection(
         const job = await prisma.job.findUnique({ where: { id: jobId } })
         if (!job) {
           return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+        }
+
+        // Checked against the merged result, so lowering only one bound is validated too.
+        if (
+          !salaryOrdered({
+            salaryMin: content.salaryMin !== undefined ? content.salaryMin : job.salaryMin,
+            salaryMax: content.salaryMax !== undefined ? content.salaryMax : job.salaryMax,
+          })
+        ) {
+          return NextResponse.json(
+            { error: 'salaryMin must not exceed salaryMax' },
+            { status: 400 },
+          )
         }
 
         // Same transition table the employer-side route validates against, rather
@@ -136,16 +176,29 @@ export const PATCH = withCsrfProtection(
 
         logger.info(`Admin updated job ${jobId} by ${session.user.id}`, { status, deleted })
 
+        // Content edits are recorded with before/after values; otherwise a content-only edit
+        // would leave an audit entry that shows no change at all.
+        const changedKeys = CONTENT_KEYS.filter((k) => content[k] !== undefined)
+        const jobRow = job as unknown as Record<string, unknown>
+        const contentBefore = Object.fromEntries(changedKeys.map((k) => [k, jobRow[k] ?? null]))
+        const contentAfter = Object.fromEntries(changedKeys.map((k) => [k, content[k] ?? null]))
+
         await createAuditLog({
           userId: session.user.id,
           orgId: job.orgId,
           action: 'JOB_UPDATED',
           resource: 'JOB',
           resourceId: jobId,
-          previous: { status: job.status, deletedAt: job.deletedAt?.toISOString() ?? null },
+          previous: {
+            status: job.status,
+            deletedAt: job.deletedAt?.toISOString() ?? null,
+            ...contentBefore,
+          },
           metadata: {
             status: updated.status,
             deletedAt: updated.deletedAt?.toISOString() ?? null,
+            ...contentAfter,
+            ...(changedKeys.length ? { changedFields: changedKeys } : {}),
           },
           ...getRequestMetadata(req),
         })
@@ -163,35 +216,34 @@ export const PATCH = withCsrfProtection(
 // Admin job creation. Unlike POST /api/jobs (which resolves the org from the
 // caller's membership), a global admin is not bound to any org — so `orgId` is
 // REQUIRED in the body and validated to exist before the job is created.
-const createJobSchema = z.object({
-  orgId: z.string().min(1, 'orgId is required'),
-  title: z.string().min(3, 'Title must be at least 3 characters').max(200),
-  description: z.string().min(50, 'Description must be at least 50 characters').max(10000),
-  requirements: z.string().max(10000).optional(),
-  benefits: z.string().max(10000).optional(),
-  location: z.string().min(2).max(100).optional(),
-  region: z.string().max(100).optional(),
-  workMode: z.enum(['REMOTE', 'HYBRID', 'ONSITE']).default('ONSITE'),
-  type: z
-    .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE', 'INTERNSHIP'])
-    .default('FULL_TIME'),
-  seniority: z.enum(['JUNIOR', 'MID', 'SENIOR', 'LEAD', 'EXECUTIVE']).default('MID'),
-  salaryMin: z.number().int().min(0).optional(),
-  salaryMax: z.number().int().min(0).optional(),
-  salaryCurrency: z.string().max(10).optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED']).default('PUBLISHED'),
-})
+const createJobSchema = z
+  .object({
+    orgId: z.string().min(1, 'orgId is required'),
+    title: z.string().min(3, 'Title must be at least 3 characters').max(200),
+    description: z.string().min(50, 'Description must be at least 50 characters').max(10000),
+    requirements: z.string().max(10000).optional(),
+    benefits: z.string().max(10000).optional(),
+    location: z.string().min(2).max(100).optional(),
+    region: z.string().max(100).optional(),
+    workMode: z.enum(['REMOTE', 'HYBRID', 'ONSITE']).default('ONSITE'),
+    type: z.enum(EMPLOYMENT_TYPES).default('FULL_TIME'),
+    seniority: z.enum(SENIORITIES).default('MID'),
+    salaryMin: z.number().int().min(0).optional(),
+    salaryMax: z.number().int().min(0).optional(),
+    salaryCurrency: z.string().max(10).optional(),
+    status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED']).default('PUBLISHED'),
+  })
+  .refine(salaryOrdered, { message: 'salaryMin must not exceed salaryMax', path: ['salaryMin'] })
 
 export const POST = withCsrfProtection(
   withRateLimit(
     async (req: Request) => {
       try {
-        const session = await requireGlobalAdmin()
-        if (!session) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
+        const guard = await requireAdminApi()
+        if (!guard.ok) return guard.response
+        const session = guard.session
 
-        const body = await req.json()
+        const body = await req.json().catch(() => null)
         const data = createJobSchema.parse(body)
 
         // The chosen org must exist (and not be soft-deleted) — otherwise the
@@ -226,7 +278,7 @@ export const POST = withCsrfProtection(
             publishedAt: data.status === 'PUBLISHED' ? new Date() : null,
             orgId: org.id,
             // Provenance: the admin who created it (session.user.id is guaranteed
-            // present because requireGlobalAdmin resolved a global-admin session).
+            // present because requireAdminApi resolved a global-admin session).
             createdBy: session.user.id,
           },
           select: { id: true, title: true, status: true, orgId: true, createdAt: true },

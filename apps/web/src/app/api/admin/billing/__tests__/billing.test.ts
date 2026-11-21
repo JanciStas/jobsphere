@@ -23,8 +23,8 @@ vi.mock('@/lib/auth', async (importOriginal) => ({
 const { db } = vi.hoisted(() => {
   const db: any = {
     organization: { findUnique: vi.fn() },
-    subscription: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
-    entitlement: { findUnique: vi.fn(), upsert: vi.fn() },
+    subscription: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), create: vi.fn() },
+    entitlement: { findUnique: vi.fn(), upsert: vi.fn(), updateMany: vi.fn() },
     plan: { findFirst: vi.fn() },
     product: { create: vi.fn() },
   }
@@ -38,7 +38,11 @@ import { POST as extend } from '../[orgId]/extend/route'
 import { POST as cancel } from '../[orgId]/cancel/route'
 import { POST as limits } from '../[orgId]/limits/route'
 import { createAuditLog } from '@/lib/audit-log'
-import { stripeDashboardUrl, estimateMrrCents } from '@/lib/admin-billing'
+import {
+  stripeDashboardUrl,
+  estimateMrrCents,
+  expireManualSubscriptions,
+} from '@/lib/admin-billing'
 
 const ctx = { params: { orgId: 'org-1' } }
 const req = (body: unknown) =>
@@ -174,6 +178,85 @@ describe('extend / cancel', () => {
       .map((c: any) => c[0])
       .find((u: any) => u.create.featureKey === 'MAX_JOBS')
     expect(jobs.update.limitInt).toBe(5)
+    // Overrides outside the plan table are reset too (they used to survive a cancel).
+    const resetKeys = db.entitlement.updateMany.mock.calls.map((c: any) => c[0].where.featureKey)
+    expect(resetKeys).toEqual(expect.arrayContaining(['CUSTOM_BRANDING', 'API_ACCESS']))
+    for (const c of db.entitlement.updateMany.mock.calls) expect(c[0].data.limitInt).toBe(0)
+  })
+  it('only treats subscriptions within the grace window as live (same rule as getCurrentPlan)', async () => {
+    await extend(req({ until: future(60), reason: REASON }), ctx)
+    const where = db.subscription.findFirst.mock.calls[0][0].where
+    expect(where.status).toEqual({ in: ['active', 'trialing'] })
+    expect(where.currentPeriodEnd.gt).toBeInstanceOf(Date)
+    expect(where.currentPeriodEnd.gt.getTime()).toBeLessThan(Date.now())
+  })
+})
+
+describe('expireManualSubscriptions (daily cron)', () => {
+  const now = new Date('2027-01-10T03:30:00Z')
+  const expiredSub = {
+    id: 'sub-old',
+    orgId: 'org-1',
+    status: 'active',
+    currentPeriodEnd: new Date('2027-01-01T00:00:00Z'),
+    cancelAt: null,
+  }
+
+  it('selects only manual, still-active rows past the grace window or past cancelAt', async () => {
+    db.subscription.findMany.mockResolvedValue([])
+    await expireManualSubscriptions(now)
+    const where = db.subscription.findMany.mock.calls[0][0].where
+    expect(where.providerSubId).toEqual({ startsWith: 'manual_' })
+    expect(where.status).toEqual({ in: ['active', 'trialing'] })
+    const [periodCond, cancelCond] = where.OR
+    expect(periodCond.currentPeriodEnd.lte.getTime()).toBe(now.getTime() - 3 * 864e5)
+    expect(cancelCond.cancelAt.lte).toEqual(now)
+  })
+
+  it('cancels the row, resets the org to STARTER and audits as the system', async () => {
+    db.subscription.findMany.mockResolvedValue([expiredSub])
+    db.subscription.findFirst.mockResolvedValue(null) // no other live subscription
+    const result = await expireManualSubscriptions(now)
+
+    expect(result).toEqual({ expired: 1, failed: 0 })
+    const upd = db.subscription.update.mock.calls[0][0]
+    expect(upd.where).toEqual({ id: 'sub-old' })
+    expect(upd.data).toMatchObject({ status: 'canceled', endedAt: now })
+    const jobs = db.entitlement.upsert.mock.calls
+      .map((c: any) => c[0])
+      .find((u: any) => u.create.featureKey === 'MAX_JOBS')
+    expect(jobs.update.limitInt).toBe(5)
+    const audit = (createAuditLog as any).mock.calls[0][0]
+    expect(audit.userId).toBeUndefined()
+    expect(audit.metadata).toMatchObject({
+      op: 'admin_billing.manual_expiry',
+      reason: 'period_ended',
+      limitsResetToStarter: true,
+    })
+  })
+
+  it('keeps the limits when another live subscription (e.g. Stripe) still covers the org', async () => {
+    db.subscription.findMany.mockResolvedValue([
+      { ...expiredSub, cancelAt: new Date('2027-01-05T00:00:00Z') },
+    ])
+    db.subscription.findFirst.mockResolvedValue({ id: 'sub-stripe' })
+    await expireManualSubscriptions(now)
+    expect(db.subscription.update.mock.calls[0][0].data.canceledAt).toEqual(
+      new Date('2027-01-05T00:00:00Z'),
+    )
+    expect(db.entitlement.upsert).not.toHaveBeenCalled()
+    expect((createAuditLog as any).mock.calls[0][0].metadata).toMatchObject({
+      reason: 'cancel_at_reached',
+      limitsResetToStarter: false,
+    })
+  })
+
+  it('counts a failing org and continues with the next one', async () => {
+    db.subscription.findMany.mockResolvedValue([expiredSub, { ...expiredSub, id: 'sub-2' }])
+    db.subscription.findFirst.mockResolvedValue(null)
+    db.subscription.update.mockRejectedValueOnce(new Error('db down'))
+    const result = await expireManualSubscriptions(now)
+    expect(result).toEqual({ expired: 1, failed: 1 })
   })
 })
 

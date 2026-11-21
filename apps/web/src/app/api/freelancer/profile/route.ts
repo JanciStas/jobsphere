@@ -11,6 +11,7 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { withCsrfProtection } from '@/lib/csrf'
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
+import { httpUrl } from '../portfolio/schema'
 
 export const GET = withRateLimit(
   async () => {
@@ -35,7 +36,7 @@ const updateSchema = z.object({
   currency: z.string().max(8).optional(),
   availability: z.enum(['AVAILABLE', 'LIMITED', 'UNAVAILABLE']).optional(),
   location: z.string().max(120).optional(),
-  portfolioUrl: z.string().url().max(300).optional().or(z.literal('')),
+  portfolioUrl: httpUrl.optional().or(z.literal('')),
   visible: z.boolean().optional(),
 })
 

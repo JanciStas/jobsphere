@@ -2623,7 +2623,10 @@
       "roleFreelancerDesc": "Ponúkam svoje služby (grafika, web, marketing…) firmám",
       "agencyName": "Názov agentúry",
       "companyRequiredAgency": "Názov agentúry je povinný",
-      "verifyEmail": "Účet bol vytvorený. Pred prihlásením overte svoju e-mailovú adresu cez odkaz v doručenej pošte."
+      "verifyEmail": "Účet bol vytvorený. Pred prihlásením overte svoju e-mailovú adresu cez odkaz v doručenej pošte.",
+      "successTitle": "Skontrolujte si e-mail",
+      "successBody": "Ak je táto e-mailová adresa nová, účet je pripravený a poslali sme na ňu potvrdzovací odkaz. Potom sa prihláste cez svoj portál. Ak už účet s touto adresou máte, jednoducho sa prihláste.",
+      "successCta": "Prejsť na prihlásenie"
     }
   },
   "freelancerDashboard": {
