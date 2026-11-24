@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 
 export function Footer() {
   const t = useTranslations('footer')
+  const tFaq = useTranslations('faqPage')
   const locale = useLocale()
 
   const footerSections = [
@@ -28,6 +29,7 @@ export function Footer() {
       links: [
         { label: t('about'), href: `/${locale}/about` },
         { label: t('contact'), href: `/${locale}/contact` },
+        { label: tFaq('footerLink'), href: `/${locale}/faq` },
         { label: t('blog'), href: `/${locale}/blog` },
       ],
     },

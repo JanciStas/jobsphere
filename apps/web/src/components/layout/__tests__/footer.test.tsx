@@ -19,6 +19,7 @@ vi.mock('next-intl', () => ({
       about: 'About Us',
       contact: 'Contact',
       blog: 'Blog',
+      footerLink: 'FAQ',
       legal: 'Legal',
       privacy: 'Privacy Policy',
       terms: 'Terms of Service',
@@ -178,10 +179,11 @@ describe('Footer', () => {
     expect(sections).toHaveLength(4)
   })
 
-  it('should render all 12 links (3 per section x 4 sections)', () => {
+  it('should render all 13 links (3 per section, plus FAQ under Company)', () => {
     const { container } = render(<Footer />)
 
     const links = container.querySelectorAll('a')
-    expect(links).toHaveLength(12)
+    expect(links).toHaveLength(13)
+    expect(container.querySelector('a[href="/en/faq"]')).toHaveTextContent('FAQ')
   })
 })

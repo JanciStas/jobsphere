@@ -1,22 +1,24 @@
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { cmsTexts } from '@/lib/cms/texts'
 import { Users, Target, Zap, BarChart3, Clock, Shield, CheckCircle, ArrowRight } from 'lucide-react'
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string }
-}): Promise<Metadata> {
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return { title: t('forEmployers.title'), description: t('forEmployers.description') }
 }
 
-export default function ForEmployersPage({ params }: { params: { locale: string } }) {
-  const t = useTranslations('forEmployers')
+export default async function ForEmployersPage({ params }: Props) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'forEmployers' })
+  // Admin overrides (CMS "Texty webu") for the whitelisted keys, else the built-in text.
+  const tx = await cmsTexts(locale, t, 'forEmployers')
   const features = [
     {
       icon: Users,
@@ -69,20 +71,20 @@ export default function ForEmployersPage({ params }: { params: { locale: string 
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h1 className="mb-6 text-5xl font-bold leading-tight text-foreground">
-                {t('hero.title')}
+                {tx('hero.title')}
               </h1>
               <p className="mb-8 text-xl leading-relaxed text-muted-foreground">
-                {t('hero.subtitle')}
+                {tx('hero.subtitle')}
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Button size="lg" className="px-8 text-lg" asChild>
-                  <Link href={`/${params.locale}/signup`}>
-                    {t('hero.cta.start')}
+                  <Link href={`/${locale}/signup`}>
+                    {tx('hero.cta.start')}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="px-8 text-lg" asChild>
-                  <Link href={`/${params.locale}/pricing`}>{t('hero.cta.pricing')}</Link>
+                  <Link href={`/${locale}/pricing`}>{t('hero.cta.pricing')}</Link>
                 </Button>
               </div>
             </div>
@@ -175,7 +177,7 @@ export default function ForEmployersPage({ params }: { params: { locale: string 
                   <p className="mb-4 text-muted-foreground">{t('plans.starter.description')}</p>
                   <p className="mb-4 text-4xl font-bold">{t('plans.starter.price')}</p>
                   <Button className="w-full" variant="outline" asChild>
-                    <Link href={`/${params.locale}/signup`}>{t('plans.starter.cta')}</Link>
+                    <Link href={`/${locale}/signup`}>{t('plans.starter.cta')}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -191,7 +193,7 @@ export default function ForEmployersPage({ params }: { params: { locale: string 
                     <span className="text-lg text-muted-foreground">{t('plans.pro.period')}</span>
                   </p>
                   <Button className="w-full" asChild>
-                    <Link href={`/${params.locale}/signup`}>{t('plans.pro.cta')}</Link>
+                    <Link href={`/${locale}/signup`}>{t('plans.pro.cta')}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -203,19 +205,19 @@ export default function ForEmployersPage({ params }: { params: { locale: string 
       {/* CTA Section */}
       <section className="px-4 py-20">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="mb-6 text-4xl font-bold">{t('cta.title')}</h2>
+          <h2 className="mb-6 text-4xl font-bold">{tx('cta.title')}</h2>
           <p className="mx-auto mb-8 max-w-2xl text-xl text-muted-foreground">
-            {t('cta.subtitle')}
+            {tx('cta.subtitle')}
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Button size="lg" className="px-8 text-lg" asChild>
-              <Link href={`/${params.locale}/signup`}>
+              <Link href={`/${locale}/signup`}>
                 {t('cta.create')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="px-8 text-lg" asChild>
-              <Link href={`/${params.locale}/login`}>{t('cta.login')}</Link>
+              <Link href={`/${locale}/login`}>{t('cta.login')}</Link>
             </Button>
           </div>
         </div>

@@ -17,21 +17,23 @@ import {
   Euro,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { cmsTexts } from '@/lib/cms/texts'
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string }
-}): Promise<Metadata> {
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'pageMetadata' })
   return { title: t('home.title'), description: t('home.description') }
 }
 
-export default async function HomePage({ params }: { params: { locale: string } }) {
+export default async function HomePage({ params }: Props) {
+  const { locale } = await params
   // This is an async Server Component — must use the async getTranslations(),
   // NOT the useTranslations() hook (calling a hook here crashes the render).
-  const t = await getTranslations()
-  const locale = params.locale
+  const t = await getTranslations({ locale })
+  // Admin overrides (CMS "Texty webu") for the whitelisted keys, else the built-in text.
+  const tx = await cmsTexts(locale, t)
 
   const latestJobs = await prisma.job.findMany({
     where: { status: 'PUBLISHED', deletedAt: null },
@@ -99,14 +101,14 @@ export default async function HomePage({ params }: { params: { locale: string } 
         <div className="container relative z-10">
           <div className="mx-auto max-w-5xl text-center">
             <h1 className="text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-              {t('hero.title')}
+              {tx('hero.title')}
             </h1>
             <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-white/90 sm:text-2xl">
-              {t('hero.subtitle')}
+              {tx('hero.subtitle')}
             </p>
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="px-8 py-6 text-lg font-medium" asChild>
-                <Link href={`/${locale}/jobs`}>{t('hero.ctaPrimary')}</Link>
+                <Link href={`/${locale}/jobs`}>{tx('hero.ctaPrimary')}</Link>
               </Button>
               <Button
                 size="lg"
@@ -114,7 +116,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
                 className="border-2 border-white bg-white/10 px-8 py-6 text-lg font-medium text-white transition-all hover:bg-white hover:text-primary"
                 asChild
               >
-                <Link href={`/${locale}/for-employers`}>{t('hero.ctaSecondary')}</Link>
+                <Link href={`/${locale}/for-employers`}>{tx('hero.ctaSecondary')}</Link>
               </Button>
             </div>
           </div>
@@ -260,10 +262,10 @@ export default async function HomePage({ params }: { params: { locale: string } 
         <div className="container">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              {t('page.cta.title')}
+              {tx('page.cta.title')}
             </h2>
             <p className="mt-6 text-xl leading-relaxed text-muted-foreground">
-              {t('page.cta.subtitle')}
+              {tx('page.cta.subtitle')}
             </p>
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="px-8 py-6 text-lg font-medium" asChild>

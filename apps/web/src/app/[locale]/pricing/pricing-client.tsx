@@ -10,8 +10,16 @@ import { Badge } from '@/components/ui/badge'
 import { Check, Loader2 } from 'lucide-react'
 import { logger } from '@/lib/logger'
 
-export default function PricingClient({ params }: { params: { locale: string } }) {
+export default function PricingClient({
+  params,
+  textOverrides = {},
+}: {
+  params: { locale: string }
+  /** CMS overrides keyed by full message path ('pricing.title'), resolved on the server. */
+  textOverrides?: Record<string, string>
+}) {
   const t = useTranslations('pricing')
+  const tx = (key: string) => textOverrides[`pricing.${key}`] ?? t(key)
   const locale = params.locale
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
@@ -115,8 +123,8 @@ export default function PricingClient({ params }: { params: { locale: string } }
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold">{t('title')}</h1>
-          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">{t('subtitle')}</p>
+          <h1 className="mb-4 text-4xl font-bold">{tx('title')}</h1>
+          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">{tx('subtitle')}</p>
         </div>
 
         {/* Pricing Cards */}
@@ -252,8 +260,8 @@ export default function PricingClient({ params }: { params: { locale: string } }
 
         {/* CTA */}
         <div className="mt-16 text-center">
-          <h2 className="mb-4 text-3xl font-bold">{t('cta.title')}</h2>
-          <p className="mb-8 text-muted-foreground">{t('cta.subtitle')}</p>
+          <h2 className="mb-4 text-3xl font-bold">{tx('cta.title')}</h2>
+          <p className="mb-8 text-muted-foreground">{tx('cta.subtitle')}</p>
           <div className="flex justify-center gap-4">
             <Button size="lg" asChild>
               <Link href={`/${locale}/signup`}>{t('cta.startFree')}</Link>
