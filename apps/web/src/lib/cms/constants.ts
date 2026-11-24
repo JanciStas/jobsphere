@@ -27,7 +27,8 @@ export function slugify(input: string): string {
 
 /** Only absolute http(s) URLs or site-relative paths are accepted as CMS links. */
 export function isSafeCmsLink(value: string): boolean {
-  if (value.startsWith('/') && !value.startsWith('//')) return true
+  // Browsers read `/\evil.com` as `//evil.com`: a site path is `/` + non-slash, no backslash.
+  if (/^\/(?![/\\])/.test(value)) return !value.includes('\\')
   try {
     const u = new URL(value)
     return u.protocol === 'https:' || u.protocol === 'http:'

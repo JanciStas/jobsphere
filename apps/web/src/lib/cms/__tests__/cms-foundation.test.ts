@@ -43,7 +43,13 @@ describe('renderMarkdown (XSS)', () => {
   it('demotes h1 to h2 and allows https images', () => {
     const html = renderMarkdown('# Big\n\n![alt](https://cdn.example.com/a.png)')
     expect(html).toContain('<h2>Big</h2>')
-    expect(html).toContain('<img src="https://cdn.example.com/a.png" alt="alt" loading="lazy" />')
+    expect(html).toMatch(/<img [^>]*src="https:\/\/cdn\.example\.com\/a\.png"[^>]*>/)
+    expect(html).toContain('alt="alt"')
+    expect(html).toContain('loading="lazy"')
+  })
+  it('drops relative and protocol-relative image sources (no cookie-bearing GETs to our origin)', () => {
+    const html = renderMarkdown('![a](/api/admin/x) <img src="x"> ![b](//evil.com/p.png)')
+    expect(html).not.toMatch(/src="(\/|x"|\/\/)/)
   })
   it('returns empty string for empty input', () => {
     expect(renderMarkdown('')).toBe('')
@@ -73,7 +79,7 @@ describe('sniffImageType / storeCmsImage', () => {
   })
   it('rejects missing and oversized files', async () => {
     expect(await storeCmsImage(null, 'cms')).toMatchObject({ ok: false, code: 'no_file' })
-    const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'b.jpg', { type: 'image/jpeg' })
+    const big = new File([new Uint8Array(4 * 1024 * 1024 + 1)], 'b.jpg', { type: 'image/jpeg' })
     expect(await storeCmsImage(big, 'cms')).toMatchObject({ ok: false, code: 'too_large' })
   })
   it('stores a valid image under the folder with the sniffed extension', async () => {
@@ -94,6 +100,8 @@ describe('constants', () => {
     expect(isSafeCmsLink('https://jobsphere.eu')).toBe(true)
     expect(isSafeCmsLink('/sk/pricing')).toBe(true)
     expect(isSafeCmsLink('//evil.com')).toBe(false)
+    expect(isSafeCmsLink('/' + String.fromCharCode(92) + 'evil.com')).toBe(false)
+    expect(isSafeCmsLink('/sk/a' + String.fromCharCode(92) + 'b')).toBe(false)
     expect(isSafeCmsLink('javascript:alert(1)')).toBe(false)
   })
   it('isCmsLocale', () => {

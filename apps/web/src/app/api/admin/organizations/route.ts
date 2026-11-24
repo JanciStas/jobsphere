@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requireAdminApi } from '@/lib/admin-guard'
 import { prisma } from '@/lib/prisma'
@@ -8,6 +9,8 @@ import { handleApiError } from '@/lib/errors'
 import { withCsrfProtection } from '@/lib/csrf'
 import { withRateLimit } from '@/lib/rate-limit'
 import { generateUniqueOrgSlug } from '@/lib/org-slug'
+import { CMS_LOCALES } from '@/lib/cms/constants'
+import { careerPagePath } from '@/lib/career/media'
 
 export const runtime = 'nodejs'
 
@@ -133,8 +136,19 @@ export const PATCH = withCsrfProtection(
         const updated = await prisma.organization.update({
           where: { id: orgId },
           data: { deletedAt: suspending ? new Date() : null },
-          select: { id: true, name: true, deletedAt: true },
+          select: { id: true, name: true, slug: true, deletedAt: true },
         })
+
+        // The public career/company pages are cached (ISR); without this a suspended org
+        // stays visible there until the cache expires.
+        try {
+          for (const l of CMS_LOCALES) {
+            revalidatePath(careerPagePath(l, updated.slug))
+            revalidatePath(`/${l}/company/${updated.id}`)
+          }
+        } catch (error) {
+          logger.warn('Career page revalidation after suspend/activate failed', { error })
+        }
 
         // Suspending the organisation without this leaves every member holding a
         // working session: they keep browsing an organisation the platform

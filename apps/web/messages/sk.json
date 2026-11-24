@@ -1492,7 +1492,25 @@
   "blog": {
     "title": "Blog",
     "comingSoon": "Blog pripravujeme. Medzitým si pozrite aktuálne pracovné ponuky.",
-    "browseJobs": "Prejsť na ponuky"
+    "browseJobs": "Prejsť na ponuky",
+    "subtitle": "Novinky, tipy a články zo sveta náboru a kariéry.",
+    "categoriesLabel": "Kategórie blogu",
+    "allCategories": "Všetko",
+    "noPostsInCategory": "V tejto kategórii zatiaľ nie sú žiadne články.",
+    "noPostsOnPage": "Na tejto stránke nie sú žiadne články.",
+    "backToBlog": "Späť na blog",
+    "readingTime": "{minutes} min čítania",
+    "readMore": "Čítať ďalej",
+    "tags": "Štítky",
+    "relatedPosts": "Súvisiace články",
+    "notFoundTitle": "Článok sa nenašiel",
+    "pageTitleWithPage": "Blog – strana {page}",
+    "pagination": {
+      "label": "Stránkovanie článkov",
+      "previous": "Novšie články",
+      "next": "Staršie články",
+      "pageOf": "Strana {page} z {total}"
+    }
   },
   "admin": {
     "nav": {
@@ -2215,7 +2233,7 @@
     "cvTitle": "CV / Životopis",
     "cvDesc": "Nahratie vášho životopisu pre uchádzanie sa o prácu",
     "dropPrompt": "Pretiahnite sem váš CV alebo kliknite pre výber",
-    "fileHint": "PDF, DOC, DOCX (max. 5 MB)",
+    "fileHint": "PDF, DOC, DOCX (max. 4 MB)",
     "chooseFile": "Vybrať súbor",
     "uploadedMeta": "Nahrané 1.10.2024 • 245 KB",
     "view": "Zobraziť",
@@ -3362,8 +3380,459 @@
       "insertImage": "Vložiť obrázok",
       "loading": "Načítava sa",
       "previewFailed": "Náhľad sa nepodarilo načítať.",
-      "uploadFailed": "Obrázok sa nepodarilo nahrať (JPG, PNG alebo WEBP, max. 5 MB).",
+      "uploadFailed": "Obrázok sa nepodarilo nahrať (JPG, PNG alebo WEBP, max. 4 MB).",
       "help": "Formát Markdown: ## nadpis, **tučné**, *kurzíva*, - zoznam, [odkaz](https://…). HTML sa nepoužije."
     }
+  },
+  "adminAnnouncements": {
+    "title": "Oznamy",
+    "description": "Krátke správy v páse nad hlavičkou webu – napríklad plánovaná odstávka alebo akcia.",
+    "newButton": "Nový oznam",
+    "empty": "Zatiaľ tu nie sú žiadne oznamy.",
+    "dismissibleShort": "dá sa zavrieť",
+    "columns": {
+      "message": "Text",
+      "audience": "Pre koho",
+      "schedule": "Zobrazenie",
+      "status": "Stav",
+      "active": "Zapnutý",
+      "actions": "Akcie"
+    },
+    "status": {
+      "active": "Aktívny",
+      "scheduled": "Naplánovaný",
+      "expired": "Skončený",
+      "inactive": "Vypnutý"
+    },
+    "variants": {
+      "info": "Informácia",
+      "warning": "Upozornenie",
+      "promo": "Propagácia"
+    },
+    "audiences": {
+      "all": "Všetci",
+      "candidates": "Uchádzači",
+      "employers": "Zamestnávatelia",
+      "guests": "Neprihlásení návštevníci"
+    },
+    "schedule": {
+      "always": "Bez časového obmedzenia",
+      "from": "Od {date}",
+      "until": "Do {date}",
+      "range": "{from} – {to}"
+    },
+    "actions": {
+      "edit": "Upraviť",
+      "delete": "Zmazať",
+      "toggleActive": "Zapnúť alebo vypnúť oznam „{message}“"
+    },
+    "deleteDialog": {
+      "title": "Zmazať oznam?",
+      "description": "Oznam „{message}“ sa natrvalo odstráni. Táto akcia sa nedá vrátiť.",
+      "confirm": "Zmazať",
+      "cancel": "Zrušiť"
+    },
+    "toasts": {
+      "created": "Oznam bol vytvorený.",
+      "updated": "Zmeny boli uložené.",
+      "deleted": "Oznam bol zmazaný.",
+      "activated": "Oznam je zapnutý.",
+      "deactivated": "Oznam je vypnutý."
+    },
+    "errors": {
+      "generic": "Niečo sa pokazilo. Skúste to znova.",
+      "notMigrated": "Tabuľky CMS v databáze ešte neexistujú. Najprv je potrebné aplikovať migráciu CMS.",
+      "loadFailed": "Oznamy sa nepodarilo načítať.",
+      "notFound": "Oznam sa nenašiel. Možno ho medzitým niekto zmazal.",
+      "validation": "Skontrolujte vyznačené polia."
+    },
+    "locales": {
+      "sk": "slovenčina",
+      "en": "angličtina",
+      "de": "nemčina",
+      "cs": "čeština",
+      "pl": "poľština"
+    },
+    "form": {
+      "createTitle": "Nový oznam",
+      "editTitle": "Upraviť oznam",
+      "back": "Späť na oznamy",
+      "messageSection": "Text oznamu",
+      "messageHint": "Slovenský text je povinný. Ak preklad chýba, zobrazí sa slovenská verzia (prípadne anglická).",
+      "messageLabel": "Text – {language}",
+      "required": "(povinné)",
+      "optional": "(nepovinné)",
+      "linkSection": "Odkaz",
+      "linkUrlLabel": "Adresa odkazu",
+      "linkUrlHint": "Nepovinné. Cesta na webe (napr. /sk/jobs) alebo úplná adresa začínajúca na https://. Externé odkazy sa otvoria v novom okne.",
+      "linkLabelLabel": "Text odkazu – {language}",
+      "linkLabelPlaceholder": "Viac informácií",
+      "settingsSection": "Zobrazenie",
+      "variantLabel": "Typ",
+      "audienceLabel": "Komu sa zobrazí",
+      "startsAtLabel": "Zobraziť od",
+      "endsAtLabel": "Zobraziť do",
+      "timeZoneHint": "Časy sú v slovenskom čase. Ak pole necháte prázdne, oznam nemá začiatok ani koniec.",
+      "activeLabel": "Zapnutý",
+      "activeHint": "Vypnutý oznam sa nezobrazí nikomu, ani v naplánovanom čase.",
+      "dismissibleLabel": "Návštevník ho môže zavrieť",
+      "dismissibleHint": "Zavretý oznam sa návštevníkovi znova ukáže, až keď ho upravíte.",
+      "preview": "Náhľad",
+      "previewPlaceholder": "Sem príde text oznamu.",
+      "previewLinkLabel": "Viac informácií",
+      "save": "Uložiť",
+      "saving": "Ukladám…",
+      "cancel": "Zrušiť",
+      "errors": {
+        "messageRequired": "Vyplňte slovenský text oznamu (najviac 300 znakov).",
+        "linkInvalid": "Zadajte cestu začínajúcu lomkou (napr. /sk/jobs) alebo adresu začínajúcu na https://.",
+        "windowInvalid": "Koniec zobrazenia musí byť neskôr ako jeho začiatok."
+      }
+    }
+  },
+  "announcementBar": {
+    "label": "Oznámenia",
+    "dismiss": "Zavrieť oznam",
+    "learnMore": "Viac informácií",
+    "opensInNewTab": "otvorí sa v novom okne"
+  },
+  "adminBlog": {
+    "metaTitle": "Blog – správa obsahu",
+    "notMigrated": "Tabuľky CMS v databáze zatiaľ neexistujú. Najprv treba aplikovať migráciu 20261124_cms.",
+    "newPost": "Nový článok",
+    "categoriesLink": "Kategórie",
+    "empty": "Žiadne články nezodpovedajú filtru.",
+    "filters": {
+      "locale": "Jazyk",
+      "allLocales": "Všetky jazyky",
+      "status": "Stav",
+      "allStatuses": "Všetky stavy",
+      "apply": "Filtrovať"
+    },
+    "status": {
+      "DRAFT": "Koncept",
+      "PUBLISHED": "Publikovaný",
+      "SCHEDULED": "Naplánovaný"
+    },
+    "columns": {
+      "title": "Názov",
+      "locale": "Jazyk",
+      "status": "Stav",
+      "category": "Kategória",
+      "publishedAt": "Publikované",
+      "updatedAt": "Upravené",
+      "actions": "Akcie"
+    },
+    "actions": {
+      "edit": "Upraviť",
+      "view": "Zobraziť na webe",
+      "delete": "Zmazať"
+    },
+    "pagination": "Stránkovanie",
+    "previous": "Predchádzajúca",
+    "next": "Ďalšia",
+    "pageOf": "Strana {page} z {total}",
+    "toast": {
+      "deleted": "Článok bol zmazaný.",
+      "deleteFailed": "Článok sa nepodarilo zmazať."
+    },
+    "deleteDialog": {
+      "title": "Zmazať článok?",
+      "description": "Článok „{title}“ bude natrvalo odstránený. Túto akciu nie je možné vrátiť.",
+      "cancel": "Zrušiť",
+      "confirm": "Zmazať"
+    },
+    "form": {
+      "newTitle": "Nový článok",
+      "editTitle": "Upraviť článok",
+      "title": "Názov",
+      "slug": "Adresa (slug)",
+      "slugHelp": "Článok bude na adrese {path}",
+      "slugInvalid": "Slug môže obsahovať len malé písmená bez diakritiky, číslice a pomlčky.",
+      "slugTaken": "Článok s touto adresou v tomto jazyku už existuje.",
+      "excerpt": "Perex",
+      "excerptHelp": "Krátke zhrnutie do zoznamu článkov ({count}/{max} znakov).",
+      "body": "Text článku",
+      "locale": "Jazyk",
+      "status": "Stav",
+      "publishedAt": "Dátum publikovania (čas Bratislava)",
+      "publishedAtHelp": "Nechajte prázdne a článok sa publikuje hneď po uložení.",
+      "publishedAtScheduled": "Dátum je v budúcnosti – článok sa na webe zobrazí až vtedy.",
+      "scheduledFor": "Naplánované na {date}",
+      "category": "Kategória",
+      "noCategory": "Bez kategórie",
+      "tags": "Štítky",
+      "tagsHelp": "Oddeľte čiarkou, najviac {max} ({count} zadaných).",
+      "tagsInvalid": "Najviac {max} štítkov, každý najviac {length} znakov.",
+      "coverImage": "Titulný obrázok",
+      "coverUpload": "Nahrať obrázok",
+      "coverUploadFailed": "Obrázok sa nepodarilo nahrať (JPG, PNG alebo WEBP, max. 4 MB).",
+      "coverRemove": "Odstrániť titulný obrázok",
+      "coverPreviewAlt": "Náhľad titulného obrázka",
+      "seo": "SEO",
+      "seoTitle": "SEO titulok",
+      "seoDescription": "SEO popis",
+      "submitDraft": "Uložiť koncept",
+      "submitPublish": "Publikovať",
+      "submitSchedule": "Naplánovať",
+      "cancel": "Späť na zoznam",
+      "saved": "Článok bol uložený.",
+      "saveFailed": "Článok sa nepodarilo uložiť."
+    },
+    "categories": {
+      "title": "Kategórie blogu",
+      "backToPosts": "Späť na články",
+      "newTitle": "Nová kategória",
+      "nameIn": "Názov ({locale})",
+      "slug": "Adresa (slug)",
+      "create": "Vytvoriť kategóriu",
+      "save": "Uložiť",
+      "created": "Kategória bola vytvorená.",
+      "saved": "Kategória bola uložená.",
+      "deleted": "Kategória bola zmazaná.",
+      "saveFailed": "Kategóriu sa nepodarilo uložiť.",
+      "slugTaken": "Kategória s touto adresou už existuje.",
+      "slugInvalid": "Slug môže obsahovať len malé písmená bez diakritiky, číslice a pomlčky.",
+      "nameRequired": "Vyplňte názov aspoň v jednom jazyku.",
+      "empty": "Zatiaľ nemáte žiadne kategórie.",
+      "postCount": "{count, plural, one {# článok} few {# články} other {# článkov}}",
+      "moveUp": "Posunúť vyššie",
+      "moveDown": "Posunúť nižšie",
+      "deleteTitle": "Zmazať kategóriu?",
+      "deleteDescription": "Kategória „{name}“ bude odstránená. Jej články ({count}) zostanú zachované, len bez kategórie."
+    }
+  },
+  "careerPage": {
+    "notFoundTitle": "Kariérna stránka sa nenašla",
+    "metaTitle": "Kariéra v {company}",
+    "metaDescription": "Pracovné príležitosti, benefity a život vo firme {company}.",
+    "logoAlt": "Logo {company}",
+    "eyebrow": "Kariéra v {company}",
+    "viewPositions": "Voľné pozície ({count})",
+    "companyProfile": "Profil firmy",
+    "aboutHeading": "O firme {company}",
+    "videoHeading": "Pozrite sa k nám",
+    "videoTitle": "Video firmy {company}",
+    "openPositions": "Voľné pozície",
+    "noPositions": "Momentálne tu nie sú žiadne voľné pozície. Skúste to neskôr.",
+    "remote": "Na diaľku",
+    "benefitsHeading": "Čo u nás získate",
+    "employees": "{size} zamestnancov",
+    "website": "Webová stránka",
+    "companyLink": "Kariérna stránka"
+  },
+  "employerCareerPage": {
+    "title": "Kariérna stránka",
+    "description": "Verejná stránka vašej firmy pre uchádzačov – príbeh, benefity, video a všetky voľné pozície na jednom mieste.",
+    "loading": "Načítava sa…",
+    "unavailableTitle": "Zatiaľ nedostupné",
+    "unavailable": "Kariérne stránky ešte nie sú v tomto prostredí aktivované. Skúste to prosím neskôr.",
+    "loadFailedTitle": "Nepodarilo sa načítať",
+    "loadFailed": "Kariérnu stránku sa nepodarilo načítať. Obnovte stránku a skúste to znova.",
+    "readOnlyTitle": "Len na čítanie",
+    "readOnly": "Kariérnu stránku môže upravovať iba administrátor organizácie.",
+    "saved": "Kariérna stránka bola uložená.",
+    "saveFailed": "Uloženie zlyhalo. Skúste to znova.",
+    "save": "Uložiť",
+    "saving": "Ukladá sa…",
+    "publicUrl": {
+      "label": "Verejná adresa",
+      "copy": "Kopírovať",
+      "copied": "Odkaz bol skopírovaný.",
+      "copyFailed": "Odkaz sa nepodarilo skopírovať.",
+      "open": "Otvoriť",
+      "live": "Stránka je zverejnená a uchádzači ju vidia.",
+      "notLive": "Stránka zatiaľ nie je zverejnená. Zapnite „Zverejniť“ a uložte."
+    },
+    "sections": {
+      "content": "Obsah",
+      "branding": "Vzhľad"
+    },
+    "published": {
+      "label": "Zverejniť",
+      "hint": "Keď je vypnuté, stránka nie je verejne dostupná ani v sitemape."
+    },
+    "headline": {
+      "label": "Hlavný nadpis",
+      "placeholder": "Napr. Tvoríme softvér, ktorý ľudí baví"
+    },
+    "subheadline": {
+      "label": "Podnadpis",
+      "placeholder": "Krátko, prečo sa oplatí pracovať práve u vás"
+    },
+    "about": {
+      "label": "O firme"
+    },
+    "benefits": {
+      "label": "Benefity",
+      "hint": "Najviac {max} krátkych bodov.",
+      "empty": "Zatiaľ ste nepridali žiadne benefity.",
+      "itemLabel": "Benefit {number}",
+      "placeholder": "Napr. 5 týždňov dovolenky",
+      "remove": "Odstrániť benefit {number}",
+      "add": "Pridať benefit",
+      "limitReached": "Dosiahli ste maximum"
+    },
+    "cover": {
+      "label": "Titulný obrázok",
+      "hint": "JPG, PNG alebo WEBP do 5 MB. Ideálne na šírku, napr. 1800 × 600 px.",
+      "previewAlt": "Náhľad titulného obrázka",
+      "none": "Bez titulného obrázka",
+      "upload": "Nahrať obrázok",
+      "replace": "Vymeniť obrázok",
+      "uploading": "Nahráva sa…",
+      "remove": "Odstrániť",
+      "uploaded": "Obrázok bol nahraný. Nezabudnite uložiť.",
+      "uploadFailed": "Obrázok sa nepodarilo nahrať.",
+      "tooLarge": "Obrázok je príliš veľký (max. 4 MB).",
+      "invalidType": "Nepodporovaný formát. Použite JPG, PNG alebo WEBP."
+    },
+    "brandColor": {
+      "label": "Firemná farba",
+      "picker": "Vybrať firemnú farbu",
+      "reset": "Zrušiť",
+      "hint": "Použije sa v hlavičke stránky. Formát #RRGGBB."
+    },
+    "video": {
+      "label": "Video (YouTube alebo Vimeo)",
+      "hint": "Vložte odkaz v tvare youtube.com/watch?v=…, youtu.be/… alebo vimeo.com/…"
+    },
+    "errors": {
+      "brandColor": "Zadajte farbu v tvare #RRGGBB, napr. #2563eb.",
+      "videoUrl": "Podporované sú iba https odkazy na YouTube alebo Vimeo.",
+      "invalid": "Niektoré údaje nie sú platné. Skontrolujte formulár."
+    }
+  },
+  "adminCmsPages": {
+    "metaTitle": "Stránky | Obsah webu",
+    "title": "Statické stránky",
+    "description": "Obchodné podmienky, ochrana súkromia, GDPR a O nás v každom jazyku. Kým verzia nie je publikovaná, web zobrazuje vstavaný text.",
+    "notMigrated": "Databázové tabuľky CMS ešte neexistujú. Web zobrazuje vstavané texty a zmeny sa zatiaľ nedajú uložiť.",
+    "columns": {
+      "page": "Stránka"
+    },
+    "slugs": {
+      "terms": "Obchodné podmienky",
+      "privacy": "Ochrana súkromia",
+      "gdpr": "GDPR",
+      "about": "O nás"
+    },
+    "editAria": "Upraviť stránku {page} ({lang})",
+    "status": {
+      "published": "Publikované",
+      "draft": "Koncept",
+      "builtIn": "Vstavaný text"
+    },
+    "create": "Vytvoriť",
+    "legend": "Vstavaný text = stránka zobrazuje pôvodný obsah z prekladov. Koncept sa verejne nezobrazuje.",
+    "back": "Späť na prehľad",
+    "editTitle": "{page} — {lang}",
+    "editExisting": "Upravujete uloženú verziu tejto stránky.",
+    "editNew": "Verzia ešte neexistuje. Formulár je predvyplnený aktuálnym vstavaným textom.",
+    "fields": {
+      "title": "Nadpis",
+      "body": "Obsah",
+      "seoTitle": "SEO titulok",
+      "seoTitleHint": "{count}/{max} znakov. Prázdne = použije sa nadpis.",
+      "seoDescription": "SEO popis",
+      "seoDescriptionHint": "{count}/{max} znakov. Prázdne = začiatok obsahu.",
+      "status": "Stav",
+      "statusHint": "Verejne sa zobrazí len publikovaná verzia."
+    },
+    "save": "Uložiť",
+    "viewPublic": "Zobraziť na webe",
+    "delete": "Zmazať verziu",
+    "deleteConfirm": "Naozaj zmazať túto verziu? Stránka sa vráti k vstavanému textu.",
+    "deleted": "Verzia bola zmazaná.",
+    "savedPublished": "Uložené a publikované.",
+    "savedDraft": "Uložené ako koncept.",
+    "saveFailed": "Uloženie zlyhalo. Skontrolujte polia a skúste to znova."
+  },
+  "adminCmsFaq": {
+    "metaTitle": "FAQ | Obsah webu",
+    "title": "Časté otázky (FAQ)",
+    "description": "Otázky a odpovede na stránke /faq. Každý jazyk má vlastný zoznam; poradie meníte šípkami.",
+    "languageLabel": "Jazyk",
+    "notMigrated": "Databázové tabuľky CMS ešte neexistujú. Zmeny sa zatiaľ nedajú uložiť.",
+    "add": "Pridať otázku",
+    "viewPublic": "Zobraziť na webe",
+    "empty": "V tomto jazyku zatiaľ nie sú žiadne otázky.",
+    "newTitle": "Nová otázka",
+    "editTitle": "Upraviť otázku",
+    "fields": {
+      "question": "Otázka",
+      "category": "Kategória",
+      "answer": "Odpoveď",
+      "published": "Publikovať na webe"
+    },
+    "categories": {
+      "general": "Všeobecné",
+      "candidates": "Pre kandidátov",
+      "employers": "Pre zamestnávateľov"
+    },
+    "published": "Publikované",
+    "draft": "Skryté",
+    "moveUp": "Posunúť vyššie",
+    "moveDown": "Posunúť nižšie",
+    "edit": "Upraviť",
+    "delete": "Zmazať",
+    "deleteConfirm": "Naozaj zmazať otázku „{question}“?",
+    "deleted": "Otázka bola zmazaná.",
+    "saved": "Uložené.",
+    "saveFailed": "Uloženie zlyhalo. Skontrolujte polia a skúste to znova.",
+    "save": "Uložiť",
+    "cancel": "Zrušiť"
+  },
+  "adminCmsTexts": {
+    "metaTitle": "Texty webu | Obsah webu",
+    "title": "Texty webu",
+    "description": "Prepíšte vybrané texty na úvodnej stránke, v cenníku a na stránke pre zamestnávateľov. Prázdne pole = vstavaný text. Len obyčajný text, bez HTML.",
+    "languageLabel": "Jazyk",
+    "notMigrated": "Databázové tabuľky CMS ešte neexistujú. Web zobrazuje vstavané texty a zmeny sa zatiaľ nedajú uložiť.",
+    "groups": {
+      "home": "Úvodná stránka",
+      "pricing": "Cenník",
+      "forEmployers": "Pre zamestnávateľov"
+    },
+    "labels": {
+      "hero_title": "Hlavný nadpis",
+      "hero_subtitle": "Podnadpis",
+      "hero_ctaPrimary": "Hlavné tlačidlo",
+      "hero_ctaSecondary": "Vedľajšie tlačidlo",
+      "page_cta_title": "Výzva na konci stránky — nadpis",
+      "page_cta_subtitle": "Výzva na konci stránky — text",
+      "pricing_title": "Nadpis cenníka",
+      "pricing_subtitle": "Podnadpis cenníka",
+      "pricing_cta_title": "Výzva pod cenníkom — nadpis",
+      "pricing_cta_subtitle": "Výzva pod cenníkom — text",
+      "forEmployers_hero_title": "Hlavný nadpis",
+      "forEmployers_hero_subtitle": "Podnadpis",
+      "forEmployers_hero_cta_start": "Hlavné tlačidlo",
+      "forEmployers_cta_title": "Výzva na konci stránky — nadpis",
+      "forEmployers_cta_subtitle": "Výzva na konci stránky — text"
+    },
+    "overridden": "Upravené",
+    "builtIn": "Vstavaný text",
+    "placeholder": "Prázdne = použije sa vstavaný text",
+    "save": "Uložiť",
+    "reset": "Obnoviť pôvodný",
+    "saved": "Text bol uložený.",
+    "resetDone": "Obnovený vstavaný text.",
+    "saveFailed": "Uloženie zlyhalo. Text môže mať najviac 500 znakov a nesmie obsahovať HTML."
+  },
+  "faqPage": {
+    "metaTitle": "Časté otázky | JobSphere",
+    "metaDescription": "Odpovede na najčastejšie otázky kandidátov a zamestnávateľov o JobSphere.",
+    "title": "Časté otázky",
+    "subtitle": "Rýchle odpovede na to, na čo sa nás kandidáti a zamestnávatelia pýtajú najčastejšie.",
+    "empty": "Odpovede na časté otázky práve pripravujeme. Medzitým nám napíšte — radi pomôžeme.",
+    "contactCta": "Kontaktujte nás",
+    "stillQuestions": "Nenašli ste odpoveď?",
+    "categories": {
+      "general": "Všeobecné",
+      "candidates": "Pre kandidátov",
+      "employers": "Pre zamestnávateľov"
+    },
+    "footerLink": "Časté otázky"
   }
 }

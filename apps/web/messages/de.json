@@ -1491,8 +1491,26 @@
   },
   "blog": {
     "title": "Blog",
-    "comingSoon": "Our blog is coming soon. In the meantime, check out current job openings.",
-    "browseJobs": "Browse jobs"
+    "comingSoon": "Unser Blog ist bald verfügbar. Sehen Sie sich in der Zwischenzeit die aktuellen Stellenangebote an.",
+    "browseJobs": "Zu den Stellenangeboten",
+    "subtitle": "Neuigkeiten, Tipps und Artikel rund um Recruiting und Karriere.",
+    "categoriesLabel": "Blog-Kategorien",
+    "allCategories": "Alle",
+    "noPostsInCategory": "In dieser Kategorie gibt es noch keine Artikel.",
+    "noPostsOnPage": "Auf dieser Seite gibt es keine Artikel.",
+    "backToBlog": "Zurück zum Blog",
+    "readingTime": "{minutes} Min. Lesezeit",
+    "readMore": "Weiterlesen",
+    "tags": "Schlagwörter",
+    "relatedPosts": "Ähnliche Artikel",
+    "notFoundTitle": "Artikel nicht gefunden",
+    "pageTitleWithPage": "Blog – Seite {page}",
+    "pagination": {
+      "label": "Seitennavigation der Artikel",
+      "previous": "Neuere Artikel",
+      "next": "Ältere Artikel",
+      "pageOf": "Seite {page} von {total}"
+    }
   },
   "admin": {
     "nav": {
@@ -2215,7 +2233,7 @@
     "cvTitle": "Lebenslauf",
     "cvDesc": "Laden Sie Ihren Lebenslauf für Bewerbungen hoch",
     "dropPrompt": "Ziehen Sie Ihren Lebenslauf hierher oder klicken Sie zur Auswahl",
-    "fileHint": "PDF, DOC, DOCX (max. 5 MB)",
+    "fileHint": "PDF, DOC, DOCX (max. 4 MB)",
     "chooseFile": "Datei auswählen",
     "uploadedMeta": "Hochgeladen am 1.10.2024 • 245 KB",
     "view": "Anzeigen",
@@ -3362,8 +3380,459 @@
       "insertImage": "Bild einfügen",
       "loading": "Wird geladen",
       "previewFailed": "Vorschau konnte nicht geladen werden.",
-      "uploadFailed": "Bild konnte nicht hochgeladen werden (JPG, PNG oder WEBP, max. 5 MB).",
+      "uploadFailed": "Bild konnte nicht hochgeladen werden (JPG, PNG oder WEBP, max. 4 MB).",
       "help": "Markdown: ## Überschrift, **fett**, *kursiv*, - Liste, [Link](https://…). HTML wird nicht verwendet."
     }
+  },
+  "adminAnnouncements": {
+    "title": "Hinweise",
+    "description": "Kurze Mitteilungen im Streifen über der Kopfzeile der Website – zum Beispiel eine geplante Wartung oder eine Aktion.",
+    "newButton": "Neuer Hinweis",
+    "empty": "Noch keine Hinweise vorhanden.",
+    "dismissibleShort": "schließbar",
+    "columns": {
+      "message": "Text",
+      "audience": "Zielgruppe",
+      "schedule": "Anzeige",
+      "status": "Status",
+      "active": "Ein",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "active": "Aktiv",
+      "scheduled": "Geplant",
+      "expired": "Beendet",
+      "inactive": "Aus"
+    },
+    "variants": {
+      "info": "Information",
+      "warning": "Warnung",
+      "promo": "Werbung"
+    },
+    "audiences": {
+      "all": "Alle",
+      "candidates": "Bewerber",
+      "employers": "Arbeitgeber",
+      "guests": "Nicht angemeldete Besucher"
+    },
+    "schedule": {
+      "always": "Ohne zeitliche Begrenzung",
+      "from": "Ab {date}",
+      "until": "Bis {date}",
+      "range": "{from} – {to}"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "toggleActive": "Hinweis „{message}“ ein- oder ausschalten"
+    },
+    "deleteDialog": {
+      "title": "Hinweis löschen?",
+      "description": "Der Hinweis „{message}“ wird endgültig entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "toasts": {
+      "created": "Hinweis wurde erstellt.",
+      "updated": "Änderungen wurden gespeichert.",
+      "deleted": "Hinweis wurde gelöscht.",
+      "activated": "Hinweis ist eingeschaltet.",
+      "deactivated": "Hinweis ist ausgeschaltet."
+    },
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "notMigrated": "Die CMS-Tabellen existieren in der Datenbank noch nicht. Bitte zuerst die CMS-Migration anwenden.",
+      "loadFailed": "Die Hinweise konnten nicht geladen werden.",
+      "notFound": "Hinweis nicht gefunden. Möglicherweise wurde er inzwischen gelöscht.",
+      "validation": "Bitte prüfen Sie die markierten Felder."
+    },
+    "locales": {
+      "sk": "Slowakisch",
+      "en": "Englisch",
+      "de": "Deutsch",
+      "cs": "Tschechisch",
+      "pl": "Polnisch"
+    },
+    "form": {
+      "createTitle": "Neuer Hinweis",
+      "editTitle": "Hinweis bearbeiten",
+      "back": "Zurück zu den Hinweisen",
+      "messageSection": "Text des Hinweises",
+      "messageHint": "Der slowakische Text ist Pflicht. Fehlt eine Übersetzung, wird die slowakische (oder englische) Fassung angezeigt.",
+      "messageLabel": "Text – {language}",
+      "required": "(Pflichtfeld)",
+      "optional": "(optional)",
+      "linkSection": "Link",
+      "linkUrlLabel": "Link-Adresse",
+      "linkUrlHint": "Optional. Ein Pfad auf dieser Website (z. B. /de/jobs) oder eine vollständige Adresse, die mit https:// beginnt. Externe Links öffnen sich in einem neuen Tab.",
+      "linkLabelLabel": "Link-Text – {language}",
+      "linkLabelPlaceholder": "Mehr erfahren",
+      "settingsSection": "Anzeige",
+      "variantLabel": "Typ",
+      "audienceLabel": "Angezeigt für",
+      "startsAtLabel": "Anzeigen ab",
+      "endsAtLabel": "Anzeigen bis",
+      "timeZoneHint": "Zeiten in slowakischer Zeit (Europe/Bratislava). Ein leeres Feld bedeutet keinen Beginn bzw. kein Ende.",
+      "activeLabel": "Eingeschaltet",
+      "activeHint": "Ein ausgeschalteter Hinweis wird niemandem angezeigt, auch nicht im geplanten Zeitraum.",
+      "dismissibleLabel": "Besucher können ihn schließen",
+      "dismissibleHint": "Ein geschlossener Hinweis erscheint für diesen Besucher erst wieder, wenn Sie ihn bearbeiten.",
+      "preview": "Vorschau",
+      "previewPlaceholder": "Hier steht der Text des Hinweises.",
+      "previewLinkLabel": "Mehr erfahren",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen",
+      "errors": {
+        "messageRequired": "Geben Sie den slowakischen Text ein (höchstens 300 Zeichen).",
+        "linkInvalid": "Geben Sie einen Pfad mit Schrägstrich am Anfang (z. B. /de/jobs) oder eine Adresse mit https:// ein.",
+        "windowInvalid": "Das Ende muss nach dem Beginn liegen."
+      }
+    }
+  },
+  "announcementBar": {
+    "label": "Hinweise",
+    "dismiss": "Hinweis schließen",
+    "learnMore": "Mehr erfahren",
+    "opensInNewTab": "öffnet sich in einem neuen Tab"
+  },
+  "adminBlog": {
+    "metaTitle": "Blog – Inhaltsverwaltung",
+    "notMigrated": "Die CMS-Tabellen existieren in der Datenbank noch nicht. Zuerst muss die Migration 20261124_cms angewendet werden.",
+    "newPost": "Neuer Artikel",
+    "categoriesLink": "Kategorien",
+    "empty": "Keine Artikel entsprechen dem Filter.",
+    "filters": {
+      "locale": "Sprache",
+      "allLocales": "Alle Sprachen",
+      "status": "Status",
+      "allStatuses": "Alle Status",
+      "apply": "Filtern"
+    },
+    "status": {
+      "DRAFT": "Entwurf",
+      "PUBLISHED": "Veröffentlicht",
+      "SCHEDULED": "Geplant"
+    },
+    "columns": {
+      "title": "Titel",
+      "locale": "Sprache",
+      "status": "Status",
+      "category": "Kategorie",
+      "publishedAt": "Veröffentlicht",
+      "updatedAt": "Bearbeitet",
+      "actions": "Aktionen"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "view": "Auf der Website ansehen",
+      "delete": "Löschen"
+    },
+    "pagination": "Seitennavigation",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pageOf": "Seite {page} von {total}",
+    "toast": {
+      "deleted": "Der Artikel wurde gelöscht.",
+      "deleteFailed": "Der Artikel konnte nicht gelöscht werden."
+    },
+    "deleteDialog": {
+      "title": "Artikel löschen?",
+      "description": "Der Artikel „{title}“ wird dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen"
+    },
+    "form": {
+      "newTitle": "Neuer Artikel",
+      "editTitle": "Artikel bearbeiten",
+      "title": "Titel",
+      "slug": "URL (Slug)",
+      "slugHelp": "Der Artikel ist unter {path} erreichbar",
+      "slugInvalid": "Der Slug darf nur Kleinbuchstaben ohne Umlaute, Ziffern und Bindestriche enthalten.",
+      "slugTaken": "In dieser Sprache gibt es bereits einen Artikel mit dieser URL.",
+      "excerpt": "Teaser",
+      "excerptHelp": "Kurze Zusammenfassung für die Artikelliste ({count}/{max} Zeichen).",
+      "body": "Artikeltext",
+      "locale": "Sprache",
+      "status": "Status",
+      "publishedAt": "Veröffentlichungsdatum (Zeitzone Bratislava)",
+      "publishedAtHelp": "Leer lassen, um den Artikel sofort beim Speichern zu veröffentlichen.",
+      "publishedAtScheduled": "Das Datum liegt in der Zukunft – der Artikel erscheint erst dann auf der Website.",
+      "scheduledFor": "Geplant für {date}",
+      "category": "Kategorie",
+      "noCategory": "Keine Kategorie",
+      "tags": "Schlagwörter",
+      "tagsHelp": "Durch Kommas trennen, höchstens {max} ({count} eingegeben).",
+      "tagsInvalid": "Höchstens {max} Schlagwörter mit je höchstens {length} Zeichen.",
+      "coverImage": "Titelbild",
+      "coverUpload": "Bild hochladen",
+      "coverUploadFailed": "Das Bild konnte nicht hochgeladen werden (JPG, PNG oder WEBP, max. 4 MB).",
+      "coverRemove": "Titelbild entfernen",
+      "coverPreviewAlt": "Vorschau des Titelbilds",
+      "seo": "SEO",
+      "seoTitle": "SEO-Titel",
+      "seoDescription": "SEO-Beschreibung",
+      "submitDraft": "Entwurf speichern",
+      "submitPublish": "Veröffentlichen",
+      "submitSchedule": "Planen",
+      "cancel": "Zurück zur Liste",
+      "saved": "Der Artikel wurde gespeichert.",
+      "saveFailed": "Der Artikel konnte nicht gespeichert werden."
+    },
+    "categories": {
+      "title": "Blog-Kategorien",
+      "backToPosts": "Zurück zu den Artikeln",
+      "newTitle": "Neue Kategorie",
+      "nameIn": "Name ({locale})",
+      "slug": "URL (Slug)",
+      "create": "Kategorie anlegen",
+      "save": "Speichern",
+      "created": "Die Kategorie wurde angelegt.",
+      "saved": "Die Kategorie wurde gespeichert.",
+      "deleted": "Die Kategorie wurde gelöscht.",
+      "saveFailed": "Die Kategorie konnte nicht gespeichert werden.",
+      "slugTaken": "Eine Kategorie mit dieser URL existiert bereits.",
+      "slugInvalid": "Der Slug darf nur Kleinbuchstaben ohne Umlaute, Ziffern und Bindestriche enthalten.",
+      "nameRequired": "Geben Sie einen Namen in mindestens einer Sprache ein.",
+      "empty": "Sie haben noch keine Kategorien.",
+      "postCount": "{count, plural, one {# Artikel} other {# Artikel}}",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "deleteTitle": "Kategorie löschen?",
+      "deleteDescription": "Die Kategorie „{name}“ wird entfernt. Ihre Artikel ({count}) bleiben erhalten, nur ohne Kategorie."
+    }
+  },
+  "careerPage": {
+    "notFoundTitle": "Karriereseite nicht gefunden",
+    "metaTitle": "Karriere bei {company}",
+    "metaDescription": "Offene Stellen, Benefits und Arbeiten bei {company}.",
+    "logoAlt": "Logo von {company}",
+    "eyebrow": "Karriere bei {company}",
+    "viewPositions": "Offene Stellen ({count})",
+    "companyProfile": "Unternehmensprofil",
+    "aboutHeading": "Über {company}",
+    "videoHeading": "Ein Blick hinter die Kulissen",
+    "videoTitle": "Video von {company}",
+    "openPositions": "Offene Stellen",
+    "noPositions": "Derzeit gibt es keine offenen Stellen. Schauen Sie bald wieder vorbei.",
+    "remote": "Remote",
+    "benefitsHeading": "Was wir bieten",
+    "employees": "{size} Mitarbeitende",
+    "website": "Website",
+    "companyLink": "Karriereseite"
+  },
+  "employerCareerPage": {
+    "title": "Karriereseite",
+    "description": "Die öffentliche Seite Ihres Unternehmens für Bewerbende – Ihre Geschichte, Benefits, ein Video und alle offenen Stellen an einem Ort.",
+    "loading": "Wird geladen…",
+    "unavailableTitle": "Noch nicht verfügbar",
+    "unavailable": "Karriereseiten sind in dieser Umgebung noch nicht aktiviert. Bitte versuchen Sie es später erneut.",
+    "loadFailedTitle": "Laden fehlgeschlagen",
+    "loadFailed": "Die Karriereseite konnte nicht geladen werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
+    "readOnlyTitle": "Nur Lesezugriff",
+    "readOnly": "Nur Administratoren der Organisation können die Karriereseite bearbeiten.",
+    "saved": "Karriereseite gespeichert.",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "publicUrl": {
+      "label": "Öffentliche Adresse",
+      "copy": "Kopieren",
+      "copied": "Link kopiert.",
+      "copyFailed": "Link konnte nicht kopiert werden.",
+      "open": "Öffnen",
+      "live": "Die Seite ist veröffentlicht und für Bewerbende sichtbar.",
+      "notLive": "Die Seite ist noch nicht veröffentlicht. Aktivieren Sie „Veröffentlichen“ und speichern Sie."
+    },
+    "sections": {
+      "content": "Inhalt",
+      "branding": "Erscheinungsbild"
+    },
+    "published": {
+      "label": "Veröffentlichen",
+      "hint": "Ist die Option aus, ist die Seite weder öffentlich erreichbar noch in der Sitemap."
+    },
+    "headline": {
+      "label": "Überschrift",
+      "placeholder": "z. B. Wir entwickeln Software, die begeistert"
+    },
+    "subheadline": {
+      "label": "Unterüberschrift",
+      "placeholder": "Kurz: Warum es sich lohnt, bei Ihnen zu arbeiten"
+    },
+    "about": {
+      "label": "Über das Unternehmen"
+    },
+    "benefits": {
+      "label": "Benefits",
+      "hint": "Höchstens {max} kurze Punkte.",
+      "empty": "Noch keine Benefits hinzugefügt.",
+      "itemLabel": "Benefit {number}",
+      "placeholder": "z. B. 30 Tage Urlaub",
+      "remove": "Benefit {number} entfernen",
+      "add": "Benefit hinzufügen",
+      "limitReached": "Maximum erreicht"
+    },
+    "cover": {
+      "label": "Titelbild",
+      "hint": "JPG, PNG oder WEBP bis 5 MB. Am besten im Querformat, z. B. 1800 × 600 px.",
+      "previewAlt": "Vorschau des Titelbilds",
+      "none": "Kein Titelbild",
+      "upload": "Bild hochladen",
+      "replace": "Bild ersetzen",
+      "uploading": "Wird hochgeladen…",
+      "remove": "Entfernen",
+      "uploaded": "Bild hochgeladen. Vergessen Sie nicht zu speichern.",
+      "uploadFailed": "Das Bild konnte nicht hochgeladen werden.",
+      "tooLarge": "Das Bild ist zu groß (max. 4 MB).",
+      "invalidType": "Nicht unterstütztes Format. Verwenden Sie JPG, PNG oder WEBP."
+    },
+    "brandColor": {
+      "label": "Markenfarbe",
+      "picker": "Markenfarbe wählen",
+      "reset": "Zurücksetzen",
+      "hint": "Wird im Kopfbereich der Seite verwendet. Format #RRGGBB."
+    },
+    "video": {
+      "label": "Video (YouTube oder Vimeo)",
+      "hint": "Fügen Sie einen Link wie youtube.com/watch?v=…, youtu.be/… oder vimeo.com/… ein."
+    },
+    "errors": {
+      "brandColor": "Geben Sie eine Farbe als #RRGGBB ein, z. B. #2563eb.",
+      "videoUrl": "Nur https-Links zu YouTube oder Vimeo werden unterstützt.",
+      "invalid": "Einige Angaben sind ungültig. Bitte prüfen Sie das Formular."
+    }
+  },
+  "adminCmsPages": {
+    "metaTitle": "Seiten | Website-Inhalte",
+    "title": "Statische Seiten",
+    "description": "Nutzungsbedingungen, Datenschutz, DSGVO und Über uns in jeder Sprache. Solange keine Version veröffentlicht ist, zeigt die Website den integrierten Text.",
+    "notMigrated": "Die CMS-Datenbanktabellen existieren noch nicht. Die Website zeigt die integrierten Texte, Änderungen können vorerst nicht gespeichert werden.",
+    "columns": {
+      "page": "Seite"
+    },
+    "slugs": {
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutzerklärung",
+      "gdpr": "DSGVO",
+      "about": "Über uns"
+    },
+    "editAria": "Seite {page} ({lang}) bearbeiten",
+    "status": {
+      "published": "Veröffentlicht",
+      "draft": "Entwurf",
+      "builtIn": "Integrierter Text"
+    },
+    "create": "Erstellen",
+    "legend": "Integrierter Text = die Seite zeigt den ursprünglichen Inhalt aus den Übersetzungen. Entwürfe sind nicht öffentlich sichtbar.",
+    "back": "Zurück zur Übersicht",
+    "editTitle": "{page} — {lang}",
+    "editExisting": "Sie bearbeiten die gespeicherte Version dieser Seite.",
+    "editNew": "Es gibt noch keine Version. Das Formular ist mit dem aktuellen integrierten Text vorausgefüllt.",
+    "fields": {
+      "title": "Überschrift",
+      "body": "Inhalt",
+      "seoTitle": "SEO-Titel",
+      "seoTitleHint": "{count}/{max} Zeichen. Leer = die Überschrift wird verwendet.",
+      "seoDescription": "SEO-Beschreibung",
+      "seoDescriptionHint": "{count}/{max} Zeichen. Leer = der Anfang des Inhalts.",
+      "status": "Status",
+      "statusHint": "Öffentlich wird nur die veröffentlichte Version angezeigt."
+    },
+    "save": "Speichern",
+    "viewPublic": "Auf der Website ansehen",
+    "delete": "Version löschen",
+    "deleteConfirm": "Diese Version wirklich löschen? Die Seite zeigt dann wieder den integrierten Text.",
+    "deleted": "Die Version wurde gelöscht.",
+    "savedPublished": "Gespeichert und veröffentlicht.",
+    "savedDraft": "Als Entwurf gespeichert.",
+    "saveFailed": "Speichern fehlgeschlagen. Prüfen Sie die Felder und versuchen Sie es erneut."
+  },
+  "adminCmsFaq": {
+    "metaTitle": "FAQ | Website-Inhalte",
+    "title": "Häufige Fragen (FAQ)",
+    "description": "Fragen und Antworten auf der Seite /faq. Jede Sprache hat eine eigene Liste; die Reihenfolge ändern Sie mit den Pfeilen.",
+    "languageLabel": "Sprache",
+    "notMigrated": "Die CMS-Datenbanktabellen existieren noch nicht. Änderungen können vorerst nicht gespeichert werden.",
+    "add": "Frage hinzufügen",
+    "viewPublic": "Auf der Website ansehen",
+    "empty": "In dieser Sprache gibt es noch keine Fragen.",
+    "newTitle": "Neue Frage",
+    "editTitle": "Frage bearbeiten",
+    "fields": {
+      "question": "Frage",
+      "category": "Kategorie",
+      "answer": "Antwort",
+      "published": "Auf der Website veröffentlichen"
+    },
+    "categories": {
+      "general": "Allgemein",
+      "candidates": "Für Bewerber",
+      "employers": "Für Arbeitgeber"
+    },
+    "published": "Veröffentlicht",
+    "draft": "Ausgeblendet",
+    "moveUp": "Nach oben verschieben",
+    "moveDown": "Nach unten verschieben",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "deleteConfirm": "Die Frage „{question}“ wirklich löschen?",
+    "deleted": "Die Frage wurde gelöscht.",
+    "saved": "Gespeichert.",
+    "saveFailed": "Speichern fehlgeschlagen. Prüfen Sie die Felder und versuchen Sie es erneut.",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "adminCmsTexts": {
+    "metaTitle": "Website-Texte | Website-Inhalte",
+    "title": "Website-Texte",
+    "description": "Überschreiben Sie ausgewählte Texte auf der Startseite, der Preisseite und der Seite für Arbeitgeber. Leeres Feld = integrierter Text. Nur reiner Text, kein HTML.",
+    "languageLabel": "Sprache",
+    "notMigrated": "Die CMS-Datenbanktabellen existieren noch nicht. Die Website zeigt die integrierten Texte, Änderungen können vorerst nicht gespeichert werden.",
+    "groups": {
+      "home": "Startseite",
+      "pricing": "Preise",
+      "forEmployers": "Für Arbeitgeber"
+    },
+    "labels": {
+      "hero_title": "Hauptüberschrift",
+      "hero_subtitle": "Unterüberschrift",
+      "hero_ctaPrimary": "Hauptschaltfläche",
+      "hero_ctaSecondary": "Zweite Schaltfläche",
+      "page_cta_title": "Handlungsaufruf am Seitenende — Überschrift",
+      "page_cta_subtitle": "Handlungsaufruf am Seitenende — Text",
+      "pricing_title": "Überschrift der Preisseite",
+      "pricing_subtitle": "Unterüberschrift der Preisseite",
+      "pricing_cta_title": "Handlungsaufruf unter den Preisen — Überschrift",
+      "pricing_cta_subtitle": "Handlungsaufruf unter den Preisen — Text",
+      "forEmployers_hero_title": "Hauptüberschrift",
+      "forEmployers_hero_subtitle": "Unterüberschrift",
+      "forEmployers_hero_cta_start": "Hauptschaltfläche",
+      "forEmployers_cta_title": "Handlungsaufruf am Seitenende — Überschrift",
+      "forEmployers_cta_subtitle": "Handlungsaufruf am Seitenende — Text"
+    },
+    "overridden": "Angepasst",
+    "builtIn": "Integrierter Text",
+    "placeholder": "Leer = der integrierte Text wird verwendet",
+    "save": "Speichern",
+    "reset": "Original wiederherstellen",
+    "saved": "Der Text wurde gespeichert.",
+    "resetDone": "Integrierter Text wiederhergestellt.",
+    "saveFailed": "Speichern fehlgeschlagen. Der Text darf höchstens 500 Zeichen lang sein und kein HTML enthalten."
+  },
+  "faqPage": {
+    "metaTitle": "Häufige Fragen | JobSphere",
+    "metaDescription": "Antworten auf die Fragen, die Bewerber und Arbeitgeber am häufigsten zu JobSphere stellen.",
+    "title": "Häufige Fragen",
+    "subtitle": "Schnelle Antworten auf das, was Bewerber und Arbeitgeber uns am häufigsten fragen.",
+    "empty": "Wir bereiten gerade Antworten auf häufige Fragen vor. Schreiben Sie uns in der Zwischenzeit — wir helfen gern.",
+    "contactCta": "Kontakt aufnehmen",
+    "stillQuestions": "Keine Antwort gefunden?",
+    "categories": {
+      "general": "Allgemein",
+      "candidates": "Für Bewerber",
+      "employers": "Für Arbeitgeber"
+    },
+    "footerLink": "FAQ"
   }
 }

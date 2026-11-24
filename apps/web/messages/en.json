@@ -1492,7 +1492,25 @@
   "blog": {
     "title": "Blog",
     "comingSoon": "Our blog is coming soon. In the meantime, check out current job openings.",
-    "browseJobs": "Browse jobs"
+    "browseJobs": "Browse jobs",
+    "subtitle": "News, tips and articles from the world of recruiting and careers.",
+    "categoriesLabel": "Blog categories",
+    "allCategories": "All",
+    "noPostsInCategory": "There are no articles in this category yet.",
+    "noPostsOnPage": "There are no articles on this page.",
+    "backToBlog": "Back to blog",
+    "readingTime": "{minutes} min read",
+    "readMore": "Read more",
+    "tags": "Tags",
+    "relatedPosts": "Related articles",
+    "notFoundTitle": "Article not found",
+    "pageTitleWithPage": "Blog – page {page}",
+    "pagination": {
+      "label": "Article pagination",
+      "previous": "Newer articles",
+      "next": "Older articles",
+      "pageOf": "Page {page} of {total}"
+    }
   },
   "admin": {
     "nav": {
@@ -3362,8 +3380,459 @@
       "insertImage": "Insert image",
       "loading": "Loading",
       "previewFailed": "Could not load the preview.",
-      "uploadFailed": "Could not upload the image (JPG, PNG or WEBP, max 5 MB).",
+      "uploadFailed": "Could not upload the image (JPG, PNG or WEBP, max 4 MB).",
       "help": "Markdown: ## heading, **bold**, *italic*, - list, [link](https://…). HTML is not used."
     }
+  },
+  "adminAnnouncements": {
+    "title": "Announcements",
+    "description": "Short messages in the strip above the site header – for example planned maintenance or a promotion.",
+    "newButton": "New announcement",
+    "empty": "There are no announcements yet.",
+    "dismissibleShort": "dismissible",
+    "columns": {
+      "message": "Message",
+      "audience": "Audience",
+      "schedule": "Shown",
+      "status": "Status",
+      "active": "On",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "scheduled": "Scheduled",
+      "expired": "Ended",
+      "inactive": "Off"
+    },
+    "variants": {
+      "info": "Information",
+      "warning": "Warning",
+      "promo": "Promotion"
+    },
+    "audiences": {
+      "all": "Everyone",
+      "candidates": "Candidates",
+      "employers": "Employers",
+      "guests": "Signed-out visitors"
+    },
+    "schedule": {
+      "always": "No time limit",
+      "from": "From {date}",
+      "until": "Until {date}",
+      "range": "{from} – {to}"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "toggleActive": "Turn announcement “{message}” on or off"
+    },
+    "deleteDialog": {
+      "title": "Delete announcement?",
+      "description": "The announcement “{message}” will be removed permanently. This cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "toasts": {
+      "created": "Announcement created.",
+      "updated": "Changes saved.",
+      "deleted": "Announcement deleted.",
+      "activated": "Announcement turned on.",
+      "deactivated": "Announcement turned off."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "notMigrated": "The CMS tables do not exist in the database yet. Apply the CMS migration first.",
+      "loadFailed": "Announcements could not be loaded.",
+      "notFound": "Announcement not found. Someone may have deleted it in the meantime.",
+      "validation": "Please check the highlighted fields."
+    },
+    "locales": {
+      "sk": "Slovak",
+      "en": "English",
+      "de": "German",
+      "cs": "Czech",
+      "pl": "Polish"
+    },
+    "form": {
+      "createTitle": "New announcement",
+      "editTitle": "Edit announcement",
+      "back": "Back to announcements",
+      "messageSection": "Message",
+      "messageHint": "The Slovak text is required. Where a translation is missing, the Slovak (or English) version is shown.",
+      "messageLabel": "Text – {language}",
+      "required": "(required)",
+      "optional": "(optional)",
+      "linkSection": "Link",
+      "linkUrlLabel": "Link address",
+      "linkUrlHint": "Optional. A path on this site (e.g. /en/jobs) or a full address starting with https://. External links open in a new tab.",
+      "linkLabelLabel": "Link text – {language}",
+      "linkLabelPlaceholder": "Learn more",
+      "settingsSection": "Display",
+      "variantLabel": "Type",
+      "audienceLabel": "Shown to",
+      "startsAtLabel": "Show from",
+      "endsAtLabel": "Show until",
+      "timeZoneHint": "Times are in Slovak time (Europe/Bratislava). Leave a field empty for no start or end.",
+      "activeLabel": "On",
+      "activeHint": "An announcement that is off is shown to nobody, even within its scheduled time.",
+      "dismissibleLabel": "Visitors can close it",
+      "dismissibleHint": "A closed announcement reappears for that visitor only after you edit it.",
+      "preview": "Preview",
+      "previewPlaceholder": "The announcement text goes here.",
+      "previewLinkLabel": "Learn more",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "errors": {
+        "messageRequired": "Enter the Slovak announcement text (at most 300 characters).",
+        "linkInvalid": "Enter a path starting with a slash (e.g. /en/jobs) or an address starting with https://.",
+        "windowInvalid": "The end must be later than the start."
+      }
+    }
+  },
+  "announcementBar": {
+    "label": "Announcements",
+    "dismiss": "Close announcement",
+    "learnMore": "Learn more",
+    "opensInNewTab": "opens in a new tab"
+  },
+  "adminBlog": {
+    "metaTitle": "Blog – content management",
+    "notMigrated": "The CMS tables do not exist in the database yet. Apply the 20261124_cms migration first.",
+    "newPost": "New article",
+    "categoriesLink": "Categories",
+    "empty": "No articles match the filter.",
+    "filters": {
+      "locale": "Language",
+      "allLocales": "All languages",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "apply": "Filter"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "SCHEDULED": "Scheduled"
+    },
+    "columns": {
+      "title": "Title",
+      "locale": "Language",
+      "status": "Status",
+      "category": "Category",
+      "publishedAt": "Published",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit",
+      "view": "View on site",
+      "delete": "Delete"
+    },
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}",
+    "toast": {
+      "deleted": "The article has been deleted.",
+      "deleteFailed": "The article could not be deleted."
+    },
+    "deleteDialog": {
+      "title": "Delete article?",
+      "description": "The article “{title}” will be permanently removed. This cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "form": {
+      "newTitle": "New article",
+      "editTitle": "Edit article",
+      "title": "Title",
+      "slug": "URL (slug)",
+      "slugHelp": "The article will be available at {path}",
+      "slugInvalid": "The slug may only contain lowercase letters without accents, digits and dashes.",
+      "slugTaken": "An article with this URL already exists in this language.",
+      "excerpt": "Excerpt",
+      "excerptHelp": "Short summary for the article list ({count}/{max} characters).",
+      "body": "Article text",
+      "locale": "Language",
+      "status": "Status",
+      "publishedAt": "Publication date (Bratislava time)",
+      "publishedAtHelp": "Leave empty to publish immediately on save.",
+      "publishedAtScheduled": "The date is in the future – the article will appear on the site only then.",
+      "scheduledFor": "Scheduled for {date}",
+      "category": "Category",
+      "noCategory": "No category",
+      "tags": "Tags",
+      "tagsHelp": "Separate with commas, at most {max} ({count} entered).",
+      "tagsInvalid": "At most {max} tags, each up to {length} characters.",
+      "coverImage": "Cover image",
+      "coverUpload": "Upload image",
+      "coverUploadFailed": "The image could not be uploaded (JPG, PNG or WEBP, max. 4 MB).",
+      "coverRemove": "Remove cover image",
+      "coverPreviewAlt": "Cover image preview",
+      "seo": "SEO",
+      "seoTitle": "SEO title",
+      "seoDescription": "SEO description",
+      "submitDraft": "Save draft",
+      "submitPublish": "Publish",
+      "submitSchedule": "Schedule",
+      "cancel": "Back to list",
+      "saved": "The article has been saved.",
+      "saveFailed": "The article could not be saved."
+    },
+    "categories": {
+      "title": "Blog categories",
+      "backToPosts": "Back to articles",
+      "newTitle": "New category",
+      "nameIn": "Name ({locale})",
+      "slug": "URL (slug)",
+      "create": "Create category",
+      "save": "Save",
+      "created": "The category has been created.",
+      "saved": "The category has been saved.",
+      "deleted": "The category has been deleted.",
+      "saveFailed": "The category could not be saved.",
+      "slugTaken": "A category with this URL already exists.",
+      "slugInvalid": "The slug may only contain lowercase letters without accents, digits and dashes.",
+      "nameRequired": "Enter a name in at least one language.",
+      "empty": "You have no categories yet.",
+      "postCount": "{count, plural, one {# article} other {# articles}}",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "deleteTitle": "Delete category?",
+      "deleteDescription": "The category “{name}” will be removed. Its articles ({count}) are kept, just without a category."
+    }
+  },
+  "careerPage": {
+    "notFoundTitle": "Career page not found",
+    "metaTitle": "Careers at {company}",
+    "metaDescription": "Open positions, benefits and life at {company}.",
+    "logoAlt": "{company} logo",
+    "eyebrow": "Careers at {company}",
+    "viewPositions": "Open positions ({count})",
+    "companyProfile": "Company profile",
+    "aboutHeading": "About {company}",
+    "videoHeading": "Take a look inside",
+    "videoTitle": "{company} video",
+    "openPositions": "Open positions",
+    "noPositions": "There are no open positions right now. Please check back later.",
+    "remote": "Remote",
+    "benefitsHeading": "What we offer",
+    "employees": "{size} employees",
+    "website": "Website",
+    "companyLink": "Career page"
+  },
+  "employerCareerPage": {
+    "title": "Career page",
+    "description": "Your company's public page for candidates – your story, benefits, video and every open position in one place.",
+    "loading": "Loading…",
+    "unavailableTitle": "Not available yet",
+    "unavailable": "Career pages are not enabled in this environment yet. Please try again later.",
+    "loadFailedTitle": "Could not load",
+    "loadFailed": "The career page could not be loaded. Refresh the page and try again.",
+    "readOnlyTitle": "Read only",
+    "readOnly": "Only organization admins can edit the career page.",
+    "saved": "Career page saved.",
+    "saveFailed": "Saving failed. Please try again.",
+    "save": "Save",
+    "saving": "Saving…",
+    "publicUrl": {
+      "label": "Public address",
+      "copy": "Copy",
+      "copied": "Link copied.",
+      "copyFailed": "Could not copy the link.",
+      "open": "Open",
+      "live": "The page is published and visible to candidates.",
+      "notLive": "The page is not published yet. Turn on “Publish” and save."
+    },
+    "sections": {
+      "content": "Content",
+      "branding": "Look & feel"
+    },
+    "published": {
+      "label": "Publish",
+      "hint": "When off, the page is not publicly available and not listed in the sitemap."
+    },
+    "headline": {
+      "label": "Headline",
+      "placeholder": "e.g. We build software people love"
+    },
+    "subheadline": {
+      "label": "Subheadline",
+      "placeholder": "In a sentence, why people should work with you"
+    },
+    "about": {
+      "label": "About the company"
+    },
+    "benefits": {
+      "label": "Benefits",
+      "hint": "Up to {max} short points.",
+      "empty": "No benefits added yet.",
+      "itemLabel": "Benefit {number}",
+      "placeholder": "e.g. 5 weeks of paid vacation",
+      "remove": "Remove benefit {number}",
+      "add": "Add benefit",
+      "limitReached": "Maximum reached"
+    },
+    "cover": {
+      "label": "Cover image",
+      "hint": "JPG, PNG or WEBP up to 5 MB. Landscape works best, e.g. 1800 × 600 px.",
+      "previewAlt": "Cover image preview",
+      "none": "No cover image",
+      "upload": "Upload image",
+      "replace": "Replace image",
+      "uploading": "Uploading…",
+      "remove": "Remove",
+      "uploaded": "Image uploaded. Don't forget to save.",
+      "uploadFailed": "Could not upload the image.",
+      "tooLarge": "The image is too large (max 4 MB).",
+      "invalidType": "Unsupported format. Use JPG, PNG or WEBP."
+    },
+    "brandColor": {
+      "label": "Brand color",
+      "picker": "Pick brand color",
+      "reset": "Clear",
+      "hint": "Used in the page header. Format #RRGGBB."
+    },
+    "video": {
+      "label": "Video (YouTube or Vimeo)",
+      "hint": "Paste a link like youtube.com/watch?v=…, youtu.be/… or vimeo.com/…"
+    },
+    "errors": {
+      "brandColor": "Enter a color as #RRGGBB, e.g. #2563eb.",
+      "videoUrl": "Only https YouTube or Vimeo links are supported.",
+      "invalid": "Some values are not valid. Please check the form."
+    }
+  },
+  "adminCmsPages": {
+    "metaTitle": "Pages | Site content",
+    "title": "Static pages",
+    "description": "Terms, privacy, GDPR and About us in every language. Until a version is published, the site shows the built-in text.",
+    "notMigrated": "The CMS database tables do not exist yet. The site shows the built-in texts and changes cannot be saved for now.",
+    "columns": {
+      "page": "Page"
+    },
+    "slugs": {
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "gdpr": "GDPR",
+      "about": "About us"
+    },
+    "editAria": "Edit page {page} ({lang})",
+    "status": {
+      "published": "Published",
+      "draft": "Draft",
+      "builtIn": "Built-in text"
+    },
+    "create": "Create",
+    "legend": "Built-in text = the page shows the original content from the translations. Drafts are not shown publicly.",
+    "back": "Back to overview",
+    "editTitle": "{page} — {lang}",
+    "editExisting": "You are editing the saved version of this page.",
+    "editNew": "No version exists yet. The form is prefilled with the current built-in text.",
+    "fields": {
+      "title": "Heading",
+      "body": "Content",
+      "seoTitle": "SEO title",
+      "seoTitleHint": "{count}/{max} characters. Empty = the heading is used.",
+      "seoDescription": "SEO description",
+      "seoDescriptionHint": "{count}/{max} characters. Empty = the beginning of the content.",
+      "status": "Status",
+      "statusHint": "Only the published version is shown publicly."
+    },
+    "save": "Save",
+    "viewPublic": "View on site",
+    "delete": "Delete version",
+    "deleteConfirm": "Really delete this version? The page will go back to the built-in text.",
+    "deleted": "The version was deleted.",
+    "savedPublished": "Saved and published.",
+    "savedDraft": "Saved as draft.",
+    "saveFailed": "Saving failed. Check the fields and try again."
+  },
+  "adminCmsFaq": {
+    "metaTitle": "FAQ | Site content",
+    "title": "Frequently asked questions (FAQ)",
+    "description": "Questions and answers on the /faq page. Each language has its own list; change the order with the arrows.",
+    "languageLabel": "Language",
+    "notMigrated": "The CMS database tables do not exist yet. Changes cannot be saved for now.",
+    "add": "Add question",
+    "viewPublic": "View on site",
+    "empty": "There are no questions in this language yet.",
+    "newTitle": "New question",
+    "editTitle": "Edit question",
+    "fields": {
+      "question": "Question",
+      "category": "Category",
+      "answer": "Answer",
+      "published": "Publish on the site"
+    },
+    "categories": {
+      "general": "General",
+      "candidates": "For candidates",
+      "employers": "For employers"
+    },
+    "published": "Published",
+    "draft": "Hidden",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Really delete the question “{question}”?",
+    "deleted": "The question was deleted.",
+    "saved": "Saved.",
+    "saveFailed": "Saving failed. Check the fields and try again.",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "adminCmsTexts": {
+    "metaTitle": "Site texts | Site content",
+    "title": "Site texts",
+    "description": "Override selected texts on the home page, the pricing page and the for-employers page. Empty field = built-in text. Plain text only, no HTML.",
+    "languageLabel": "Language",
+    "notMigrated": "The CMS database tables do not exist yet. The site shows the built-in texts and changes cannot be saved for now.",
+    "groups": {
+      "home": "Home page",
+      "pricing": "Pricing",
+      "forEmployers": "For employers"
+    },
+    "labels": {
+      "hero_title": "Main heading",
+      "hero_subtitle": "Subheading",
+      "hero_ctaPrimary": "Primary button",
+      "hero_ctaSecondary": "Secondary button",
+      "page_cta_title": "Closing call to action — heading",
+      "page_cta_subtitle": "Closing call to action — text",
+      "pricing_title": "Pricing heading",
+      "pricing_subtitle": "Pricing subheading",
+      "pricing_cta_title": "Call to action below pricing — heading",
+      "pricing_cta_subtitle": "Call to action below pricing — text",
+      "forEmployers_hero_title": "Main heading",
+      "forEmployers_hero_subtitle": "Subheading",
+      "forEmployers_hero_cta_start": "Primary button",
+      "forEmployers_cta_title": "Closing call to action — heading",
+      "forEmployers_cta_subtitle": "Closing call to action — text"
+    },
+    "overridden": "Customized",
+    "builtIn": "Built-in text",
+    "placeholder": "Empty = the built-in text is used",
+    "save": "Save",
+    "reset": "Restore original",
+    "saved": "The text was saved.",
+    "resetDone": "Built-in text restored.",
+    "saveFailed": "Saving failed. The text can have at most 500 characters and must not contain HTML."
+  },
+  "faqPage": {
+    "metaTitle": "Frequently asked questions | JobSphere",
+    "metaDescription": "Answers to the questions candidates and employers ask most often about JobSphere.",
+    "title": "Frequently asked questions",
+    "subtitle": "Quick answers to what candidates and employers ask us most often.",
+    "empty": "We are preparing answers to frequently asked questions. In the meantime, write to us — we are happy to help.",
+    "contactCta": "Contact us",
+    "stillQuestions": "Did not find your answer?",
+    "categories": {
+      "general": "General",
+      "candidates": "For candidates",
+      "employers": "For employers"
+    },
+    "footerLink": "FAQ"
   }
 }

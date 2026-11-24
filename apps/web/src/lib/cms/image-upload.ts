@@ -1,12 +1,12 @@
 /**
  * Shared image upload for CMS content (admin pages/blog) and employer career pages.
- * JPEG/PNG/WEBP only, max 5 MB, verified by magic bytes (the browser-sent MIME type is
+ * JPEG/PNG/WEBP only, max 4 MB (Vercel's request body limit is 4.5 MB), verified by magic bytes (the browser-sent MIME type is
  * attacker-controlled). SVG is never accepted (inline scripts => stored XSS).
  */
 
 import { put } from '@vercel/blob'
 
-export const CMS_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+export const CMS_IMAGE_MAX_BYTES = 4 * 1024 * 1024
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'] as const
 type AllowedType = (typeof ALLOWED)[number]
 
@@ -35,7 +35,7 @@ export async function storeCmsImage(file: unknown, folder: string): Promise<Imag
     return { ok: false, status: 400, code: 'no_file', error: 'No file provided' }
   }
   if (file.size > CMS_IMAGE_MAX_BYTES) {
-    return { ok: false, status: 400, code: 'too_large', error: 'Image too large (max 5 MB).' }
+    return { ok: false, status: 400, code: 'too_large', error: 'Image too large (max 4 MB).' }
   }
   const bytes = new Uint8Array(await file.arrayBuffer())
   const type = sniffImageType(bytes.subarray(0, 16))

@@ -601,5 +601,21 @@
     "file": "apps/web/src/lib/audit-log.ts, lib/admin-billing.ts",
     "status": "open",
     "summary": "Audit privilegovaných akcií je best-effort mimo transakcie; pri zlyhaní zápisu akcia prejde bez stopy. Duplicitné manuálne granty plánu pri súbehu (findLiveSubscription mimo tx)."
+  },
+  {
+    "id": "2026-11-C1",
+    "severity": "Low",
+    "category": "R - Resource abuse",
+    "file": "apps/web/src/app/api/employer/career-page/upload/route.ts",
+    "status": "open",
+    "summary": "Každý ORG_ADMIN (self-signup) môže nahrávať verejné obrázky do Vercel Blob bez kvóty na organizáciu; nahradené obrázky sa nemažú. Rate limit je v produkcii len in-memory (M2). Oprava: kvóta objektov pod career/<orgId>/ a mazanie starého cover obrázka."
+  },
+  {
+    "id": "2026-11-C2",
+    "severity": "Low",
+    "category": "X - XSS / Injection",
+    "file": "apps/web/src/lib/cms/markdown.ts, lib/cms/constants.ts, api/admin/organizations/route.ts",
+    "status": "fixed",
+    "summary": "CMS review 2026-11-24: relatívne img src v Markdowne (GET s cookies na vlastnú doménu), odkaz /\\evil.com v oznamoch (open redirect) a kariérna stránka pozastavenej firmy v ISR cache – opravené, s testami."
   }
 ]

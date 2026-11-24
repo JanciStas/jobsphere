@@ -77,10 +77,19 @@ export function renderMarkdown(markdown: string | null | undefined): string {
           },
         }
       },
-      img: (tagName, attribs) => ({
-        tagName,
-        attribs: { ...attribs, loading: 'lazy' },
-      }),
+      // allowedSchemesByTag only checks URLs that HAVE a scheme; a relative src (`/api/...`)
+      // would still make every visitor's browser send a cookie-bearing GET to our origin.
+      img: (tagName, attribs) => {
+        const { src, ...rest } = attribs
+        return {
+          tagName,
+          attribs: {
+            ...rest,
+            ...(src && /^https:\/\/[^/\\]/i.test(src) && { src }),
+            loading: 'lazy',
+          },
+        }
+      },
     },
   }).trim()
 }
