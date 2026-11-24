@@ -7,8 +7,11 @@ import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Building2, Globe, MapPin, Briefcase, Euro, Users } from 'lucide-react'
+import { Building2, Globe, MapPin, Briefcase, Euro, Users, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
+import { getPublishedCareerSlug } from '@/lib/career/queries'
+import { careerPagePath } from '@/lib/career/media'
 
 export const revalidate = 3600 // Revalidate company profile every hour
 
@@ -116,7 +119,11 @@ export default async function CompanyProfilePage({
     notFound()
   }
 
-  const jobs = await getPublishedJobs(company.id)
+  const [jobs, careerSlug, tCareer] = await Promise.all([
+    getPublishedJobs(company.id),
+    getPublishedCareerSlug(company.id),
+    getTranslations({ locale: params.locale, namespace: 'careerPage' }),
+  ])
   const initial = company.name?.trim().charAt(0).toUpperCase() || '?'
 
   return (
@@ -160,6 +167,16 @@ export default async function CompanyProfilePage({
                     <Globe className="h-4 w-4" />
                     {company.website}
                   </a>
+                )}
+                {careerSlug && (
+                  <div>
+                    <Button asChild size="sm" className="mt-1">
+                      <Link href={careerPagePath(params.locale, careerSlug)}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        {tCareer('companyLink')}
+                      </Link>
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

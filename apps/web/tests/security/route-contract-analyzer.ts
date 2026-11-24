@@ -47,6 +47,9 @@ const AUTH_GUARD_IDENTIFIERS = new Set([
   // shared secret rather than a session. It guards a data-erasure endpoint, so
   // it belongs here rather than in the allowlist of unauthenticated routes.
   'requireCronAuth',
+  // src/lib/career/employer-context.ts — auth() first (401), then active membership
+  // (404), suspended org (403) and, for writes, ORG_ADMIN (403).
+  'resolveCareerEmployer',
 ])
 
 export interface RouteHandler {
