@@ -3821,7 +3821,7 @@
     "saveFailed": "Saving failed. The text can have at most 500 characters and must not contain HTML."
   },
   "faqPage": {
-    "metaTitle": "Frequently asked questions | JobSphere",
+    "metaTitle": "Frequently asked questions",
     "metaDescription": "Answers to the questions candidates and employers ask most often about JobSphere.",
     "title": "Frequently asked questions",
     "subtitle": "Quick answers to what candidates and employers ask us most often.",

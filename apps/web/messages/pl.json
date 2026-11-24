@@ -3821,7 +3821,7 @@
     "saveFailed": "Zapisywanie nie powiodło się. Tekst może mieć najwyżej 500 znaków i nie może zawierać HTML."
   },
   "faqPage": {
-    "metaTitle": "Najczęstsze pytania | JobSphere",
+    "metaTitle": "Najczęstsze pytania",
     "metaDescription": "Odpowiedzi na pytania, które kandydaci i pracodawcy najczęściej zadają o JobSphere.",
     "title": "Najczęstsze pytania",
     "subtitle": "Szybkie odpowiedzi na to, o co kandydaci i pracodawcy pytają nas najczęściej.",

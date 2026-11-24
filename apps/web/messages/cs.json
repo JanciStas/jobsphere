@@ -3821,7 +3821,7 @@
     "saveFailed": "Uložení se nezdařilo. Text může mít nejvýše 500 znaků a nesmí obsahovat HTML."
   },
   "faqPage": {
-    "metaTitle": "Časté dotazy | JobSphere",
+    "metaTitle": "Časté dotazy",
     "metaDescription": "Odpovědi na nejčastější dotazy kandidátů a zaměstnavatelů o JobSphere.",
     "title": "Časté dotazy",
     "subtitle": "Rychlé odpovědi na to, na co se nás kandidáti a zaměstnavatelé ptají nejčastěji.",
