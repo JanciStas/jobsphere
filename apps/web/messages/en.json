@@ -769,7 +769,8 @@
       "sectionCount": "{count, plural, =0 {no sections} one {# section} other {# sections}}",
       "inviteCount": "{count, plural, =0 {not sent yet} one {# invite} other {# invites}}",
       "duration": "{minutes} min"
-    }
+    },
+    "careerPageTab": "Career page"
   },
   "common": {
     "cancel": "Cancel",
@@ -3211,7 +3212,8 @@
       "team": "Admin team",
       "gdpr": "GDPR",
       "settings": "Settings",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "content": "Content"
     },
     "login": {
       "title": "Administrator sign-in",
@@ -3339,6 +3341,29 @@
         "invalidEmail": "Invalid email.",
         "generic": "Something went wrong. Please try again."
       }
+    }
+  },
+  "adminContent": {
+    "title": "Site content",
+    "description": "Pages, FAQ, site texts, blog and announcements.",
+    "tabs": {
+      "label": "Content sections",
+      "pages": "Pages",
+      "faq": "FAQ",
+      "texts": "Site texts",
+      "blog": "Blog",
+      "announcements": "Announcements"
+    }
+  },
+  "cmsCommon": {
+    "editor": {
+      "write": "Write",
+      "preview": "Preview",
+      "insertImage": "Insert image",
+      "loading": "Loading",
+      "previewFailed": "Could not load the preview.",
+      "uploadFailed": "Could not upload the image (JPG, PNG or WEBP, max 5 MB).",
+      "help": "Markdown: ## heading, **bold**, *italic*, - list, [link](https://…). HTML is not used."
     }
   }
 }

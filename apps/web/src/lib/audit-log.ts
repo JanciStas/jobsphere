@@ -69,6 +69,15 @@ export type AuditResource =
   | 'SETTING'
   | 'FEATURE_FLAG'
   | 'SCRAPER'
+  // CMS
+  | 'CMS_PAGE'
+  | 'CMS_FAQ'
+  | 'CMS_TEXT'
+  | 'BLOG_POST'
+  | 'BLOG_CATEGORY'
+  | 'ANNOUNCEMENT'
+  | 'CAREER_PAGE'
+  | 'CMS_UPLOAD'
 
 export interface AuditLogEntry {
   userId?: string

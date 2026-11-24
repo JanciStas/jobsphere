@@ -698,7 +698,8 @@
       "sectionCount": "{count, plural, =0 {keine Abschnitte} one {# Abschnitt} other {# Abschnitte}}",
       "inviteCount": "{count, plural, =0 {noch nicht gesendet} one {# Einladung} other {# Einladungen}}",
       "duration": "{minutes} Min."
-    }
+    },
+    "careerPageTab": "Karriereseite"
   },
   "common": {
     "cancel": "Abbrechen",
@@ -3211,7 +3212,8 @@
       "team": "Admin-Team",
       "gdpr": "DSGVO",
       "settings": "Einstellungen",
-      "logout": "Abmelden"
+      "logout": "Abmelden",
+      "content": "Inhalte"
     },
     "login": {
       "title": "Administrator-Anmeldung",
@@ -3339,6 +3341,29 @@
         "invalidEmail": "Ungültige E-Mail.",
         "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
       }
+    }
+  },
+  "adminContent": {
+    "title": "Website-Inhalte",
+    "description": "Seiten, FAQ, Website-Texte, Blog und Ankündigungen.",
+    "tabs": {
+      "label": "Inhaltsbereiche",
+      "pages": "Seiten",
+      "faq": "FAQ",
+      "texts": "Website-Texte",
+      "blog": "Blog",
+      "announcements": "Ankündigungen"
+    }
+  },
+  "cmsCommon": {
+    "editor": {
+      "write": "Schreiben",
+      "preview": "Vorschau",
+      "insertImage": "Bild einfügen",
+      "loading": "Wird geladen",
+      "previewFailed": "Vorschau konnte nicht geladen werden.",
+      "uploadFailed": "Bild konnte nicht hochgeladen werden (JPG, PNG oder WEBP, max. 5 MB).",
+      "help": "Markdown: ## Überschrift, **fett**, *kursiv*, - Liste, [Link](https://…). HTML wird nicht verwendet."
     }
   }
 }

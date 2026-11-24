@@ -6,6 +6,7 @@ import { TeamTab } from '@/components/settings/team-tab'
 import { BranchesTab } from '@/components/settings/branches-tab'
 import { BillingTab } from '@/components/settings/billing-tab'
 import { NotificationsTab } from '@/components/settings/notifications-tab'
+import { CareerPageTab } from '@/components/settings/career-page-tab'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -35,12 +36,13 @@ export default function SettingsClient() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 lg:w-auto">
             <TabsTrigger value="profile">Company Profile</TabsTrigger>
             <TabsTrigger value="team">Team Members</TabsTrigger>
             <TabsTrigger value="branches">{t('branches')}</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="career">{t('careerPageTab')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -61,6 +63,10 @@ export default function SettingsClient() {
 
           <TabsContent value="notifications">
             <NotificationsTab />
+          </TabsContent>
+
+          <TabsContent value="career">
+            <CareerPageTab />
           </TabsContent>
         </Tabs>
       </div>

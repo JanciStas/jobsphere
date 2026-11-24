@@ -698,7 +698,8 @@
       "sectionCount": "{count, plural, =0 {brak sekcji} one {# sekcja} few {# sekcje} many {# sekcji} other {# sekcji}}",
       "inviteCount": "{count, plural, =0 {jeszcze nie wysłano} one {# zaproszenie} few {# zaproszenia} many {# zaproszeń} other {# zaproszeń}}",
       "duration": "{minutes} min"
-    }
+    },
+    "careerPageTab": "Strona kariery"
   },
   "common": {
     "cancel": "Anuluj",
@@ -3211,7 +3212,8 @@
       "team": "Zespół adminów",
       "gdpr": "RODO",
       "settings": "Ustawienia",
-      "logout": "Wyloguj się"
+      "logout": "Wyloguj się",
+      "content": "Treści"
     },
     "login": {
       "title": "Logowanie administratora",
@@ -3339,6 +3341,29 @@
         "invalidEmail": "Nieprawidłowy e-mail.",
         "generic": "Coś poszło nie tak. Spróbuj ponownie."
       }
+    }
+  },
+  "adminContent": {
+    "title": "Treści serwisu",
+    "description": "Strony, FAQ, teksty serwisu, blog i ogłoszenia.",
+    "tabs": {
+      "label": "Sekcje treści",
+      "pages": "Strony",
+      "faq": "FAQ",
+      "texts": "Teksty serwisu",
+      "blog": "Blog",
+      "announcements": "Ogłoszenia"
+    }
+  },
+  "cmsCommon": {
+    "editor": {
+      "write": "Pisz",
+      "preview": "Podgląd",
+      "insertImage": "Wstaw obraz",
+      "loading": "Ładowanie",
+      "previewFailed": "Nie udało się wczytać podglądu.",
+      "uploadFailed": "Nie udało się przesłać obrazu (JPG, PNG lub WEBP, maks. 5 MB).",
+      "help": "Markdown: ## nagłówek, **pogrubienie**, *kursywa*, - lista, [link](https://…). HTML nie jest używany."
     }
   }
 }

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   FileWarning,
   Settings,
+  FileText,
   type LucideIcon,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
@@ -45,6 +46,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { key: 'audit', href: '/admin/audit', icon: ScrollText },
   { key: 'team', href: '/admin/team', icon: ShieldCheck },
   { key: 'gdpr', href: '/admin/gdpr', icon: FileWarning },
+  { key: 'content', href: '/admin/content', icon: FileText },
   { key: 'settings', href: '/admin/settings', icon: Settings },
 ]
 

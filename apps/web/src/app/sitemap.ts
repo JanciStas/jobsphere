@@ -1,11 +1,23 @@
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
+import { getBlogSitemapEntries } from '@/lib/blog/sitemap'
+import { getCareerSitemapEntries } from '@/lib/career/sitemap'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsphere.com'
 const locales = ['en', 'de', 'cs', 'sk', 'pl']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticPages = ['', '/jobs', '/pricing', '/for-employers', '/academy', '/login', '/signup']
+  const staticPages = [
+    '',
+    '/jobs',
+    '/pricing',
+    '/for-employers',
+    '/academy',
+    '/blog',
+    '/faq',
+    '/login',
+    '/signup',
+  ]
 
   const staticEntries = locales.flatMap((locale) =>
     staticPages.map((page) => ({
@@ -37,5 +49,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not available during build — skip dynamic entries
   }
 
-  return [...staticEntries, ...jobEntries]
+  const [blogEntries, careerEntries] = await Promise.all([
+    getBlogSitemapEntries(BASE_URL),
+    getCareerSitemapEntries(BASE_URL),
+  ])
+
+  return [...staticEntries, ...jobEntries, ...blogEntries, ...careerEntries]
 }

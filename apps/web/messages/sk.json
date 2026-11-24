@@ -720,7 +720,8 @@
       "sectionCount": "{count, plural, =0 {žiadne sekcie} one {# sekcia} few {# sekcie} other {# sekcií}}",
       "inviteCount": "{count, plural, =0 {zatiaľ neodoslaný} one {# pozvánka} few {# pozvánky} other {# pozvánok}}",
       "duration": "{minutes} min"
-    }
+    },
+    "careerPageTab": "Kariérna stránka"
   },
   "common": {
     "cancel": "Zrušiť",
@@ -3211,7 +3212,8 @@
       "team": "Tím adminov",
       "gdpr": "GDPR",
       "settings": "Nastavenia",
-      "logout": "Odhlásiť sa"
+      "logout": "Odhlásiť sa",
+      "content": "Obsah"
     },
     "login": {
       "title": "Prihlásenie administrátora",
@@ -3339,6 +3341,29 @@
         "invalidEmail": "Neplatný e-mail.",
         "generic": "Niečo sa pokazilo. Skúste to znova."
       }
+    }
+  },
+  "adminContent": {
+    "title": "Obsah webu",
+    "description": "Stránky, FAQ, texty webu, blog a oznámenia.",
+    "tabs": {
+      "label": "Sekcie obsahu",
+      "pages": "Stránky",
+      "faq": "FAQ",
+      "texts": "Texty webu",
+      "blog": "Blog",
+      "announcements": "Oznámenia"
+    }
+  },
+  "cmsCommon": {
+    "editor": {
+      "write": "Písať",
+      "preview": "Náhľad",
+      "insertImage": "Vložiť obrázok",
+      "loading": "Načítava sa",
+      "previewFailed": "Náhľad sa nepodarilo načítať.",
+      "uploadFailed": "Obrázok sa nepodarilo nahrať (JPG, PNG alebo WEBP, max. 5 MB).",
+      "help": "Formát Markdown: ## nadpis, **tučné**, *kurzíva*, - zoznam, [odkaz](https://…). HTML sa nepoužije."
     }
   }
 }

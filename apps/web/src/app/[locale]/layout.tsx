@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { SessionProvider } from '@/components/providers/session-provider'
 import { Header } from '@/components/layout/header'
+import { AnnouncementBar } from '@/components/layout/announcement-bar'
 import { Footer } from '@/components/layout/footer'
 import { SkipNav } from '@/components/layout/skip-nav'
 import { locales } from '@/config/i18n'
@@ -98,6 +99,7 @@ export default async function LocaleLayout({
             <NextIntlClientProvider locale={locale} messages={messages}>
               <SkipNav />
               <div className="relative flex min-h-screen flex-col">
+                <AnnouncementBar locale={locale} />
                 <Header />
                 <main id="main-content" className="flex-1" role="main" tabIndex={-1}>
                   {children}
